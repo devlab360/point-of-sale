@@ -20,6 +20,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
 import { usePreferences } from "@/contexts/PreferencesContext";
 import { PURCHASE_STATUSES } from "@/constants";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   Eye,
   Plus,
@@ -67,6 +68,7 @@ export const Route = createFileRoute("/purchases/")({
 });
 
 function PurchasesPage() {
+  const { t } = useLanguage();
   const { formatDate } = usePreferences();
   const navigate = useNavigate();
   const { formatCurrency } = useCurrency();
@@ -158,14 +160,14 @@ function PurchasesPage() {
   return (
     <>
       <DataPage
-        title="Purchase Orders & Inbound Stock"
-        description="Receive stock from suppliers, update inventory valuations, and track vendor bills."
+        title={t("purchases", "Purchase Orders & Inbound Stock")}
+        description={t("managePurchases", "Receive stock from suppliers, update inventory valuations, and track vendor bills.")}
         primaryAction={{
-          label: "New Purchase",
+          label: t("newPurchase", "New Purchase"),
           onClick: () => void navigate({ to: "/purchases/new" }),
           icon: Plus,
         }}
-        searchPlaceholder="Search by invoice #, PO or vendor name..."
+        searchPlaceholder={t("searchPurchases", "Search by invoice #, PO or vendor name...")}
         searchValue={query}
         onSearchChange={setQuery}
         hideToolbar={false}
@@ -176,15 +178,15 @@ function PurchasesPage() {
           <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
             <div className="flex-1 space-y-4">
               <div className="space-y-2">
-                <Label>Status</Label>
+                <Label>{t("status", "Status")}</Label>
                 <SearchableSelect
                   options={[
-                    { value: "", label: "All Statuses" },
+                    { value: "", label: t("allStatus", "All Statuses") },
                     ...PURCHASE_STATUSES.map((s) => ({ value: s.value, label: s.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder="Filter by Status"
+                  placeholder={t("filterByStatus", "Filter by Status")}
                 />
               </div>
             </div>
@@ -196,7 +198,7 @@ function PurchasesPage() {
                   close();
                 }}
               >
-                Apply Filters
+                {t("applyFilters", "Apply Filters")}
               </Button>
             </div>
           </div>
@@ -205,7 +207,7 @@ function PurchasesPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
             <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
               <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Total Orders
+                {t("totalOrders", "Total Orders")}
               </span>
               <span className="text-xl sm:text-2xl font-black text-foreground">
                 {metrics.totalOrders}
@@ -214,7 +216,7 @@ function PurchasesPage() {
 
             <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
               <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Total Invoiced
+                {t("totalInvoiced", "Total Invoiced")}
               </span>
               <span className="text-xl sm:text-2xl font-black text-info">
                 {formatCurrency(metrics.totalSpent)}
@@ -223,7 +225,7 @@ function PurchasesPage() {
 
             <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
               <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Paid to Vendors
+                {t("paidToVendors", "Paid to Vendors")}
               </span>
               <span className="text-xl sm:text-2xl font-black text-success">
                 {formatCurrency(metrics.totalPaid)}
@@ -232,7 +234,7 @@ function PurchasesPage() {
 
             <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
               <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Vendor Khata Due
+                {t("vendorKhataDue", "Vendor Khata Due")}
               </span>
               <span className="text-xl sm:text-2xl font-black text-destructive">
                 {formatCurrency(metrics.totalDue)}
@@ -254,28 +256,28 @@ function PurchasesPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="font-bold text-xs uppercase tracking-wider">
-                        Invoice / PO #
+                        {t("invoice", "Invoice")} / {t("po", "PO #")}
                       </TableHead>
                       <TableHead className="font-bold text-xs uppercase tracking-wider">
-                        Supplier Name
+                        {t("supplier", "Supplier Name")}
                       </TableHead>
                       <TableHead className="font-bold text-xs uppercase tracking-wider">
-                        Order Date
+                        {t("date", "Order Date")}
                       </TableHead>
                       <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                        Items
+                        {t("items", "Items")}
                       </TableHead>
                       <TableHead className="font-bold text-xs uppercase tracking-wider">
-                        Status
+                        {t("status", "Status")}
                       </TableHead>
                       <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                        Total
+                        {t("total", "Total")}
                       </TableHead>
                       <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                        Paid / Due
+                        {t("payment", "Paid / Due")}
                       </TableHead>
                       <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                        Actions
+                        {t("actions", "Actions")}
                       </TableHead>
                     </TableRow>
                   </TableHeader>
@@ -495,20 +497,20 @@ function PurchasesPage() {
                 {/* Items Table */}
                 <div className="rounded-xl border border-border overflow-hidden">
                   <div className="bg-muted/40 p-3 border-b border-border text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Purchased Line Items
+                    {t("purchases.purchasedLineItems", "Purchased Line Items")}
                   </div>
                   <Table>
                     <TableHeader className="bg-muted/20">
                       <TableRow>
-                        <TableHead className="text-xs font-bold uppercase">Product</TableHead>
+                        <TableHead className="text-xs font-bold uppercase">{t("common.product", "Product")}</TableHead>
                         <TableHead className="text-xs font-bold uppercase text-right">
-                          Quantity
+                          {t("common.quantity", "Quantity")}
                         </TableHead>
                         <TableHead className="text-xs font-bold uppercase text-right">
-                          Cost
+                          {t("common.cost", "Cost")}
                         </TableHead>
                         <TableHead className="text-xs font-bold uppercase text-right">
-                          Total
+                          {t("common.total", "Total")}
                         </TableHead>
                       </TableRow>
                     </TableHeader>

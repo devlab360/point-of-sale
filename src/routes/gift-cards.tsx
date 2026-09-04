@@ -71,6 +71,7 @@ import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/gift-cards")({
   head: () => ({ meta: [{ title: `Gift Cards · ${appName}` }] }),
@@ -78,6 +79,7 @@ export const Route = createFileRoute("/gift-cards")({
 });
 
 function GiftCardsPage() {
+  const { t } = useLanguage();
   const { formatDate } = usePreferences();
   const { formatCurrency, currencySymbol } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
@@ -303,13 +305,13 @@ function GiftCardsPage() {
         Expires: c.expires ? c.expires.split("T")[0] : "",
       })),
       [
-        { key: "Code", label: "Card Code" },
-        { key: "Customer", label: "Customer" },
-        { key: "Initial Balance", label: "Initial Balance" },
-        { key: "Current Balance", label: "Current Balance" },
-        { key: "Status", label: "Status" },
-        { key: "Issued", label: "Issued Date" },
-        { key: "Expires", label: "Expiry Date" },
+        { key: "Code", label: t("cardCode", "Card Code") },
+        { key: "Customer", label: t("customer", "Customer") },
+        { key: "Initial Balance", label: t("initialBalance", "Initial Balance") },
+        { key: "Current Balance", label: t("currentBalance", "Current Balance") },
+        { key: "Status", label: t("status", "Status") },
+        { key: "Issued", label: t("issuedDate", "Issued Date") },
+        { key: "Expires", label: t("expiryDate", "Expiry Date") },
       ],
       "gift-cards-export",
     );
@@ -368,10 +370,10 @@ function GiftCardsPage() {
   return (
     <div className="space-y-6">
       <DataPage
-        title="Gift Cards & Vouchers"
-        description="Issue stored-value customer gift cards, track live balances, top-ups, and expirations."
-        primaryAction={{ label: "Issue Gift Card", onClick: handleOpenAdd }}
-        searchPlaceholder="Search by card code or recipient..."
+        title={t("giftCardsVouchers", "Gift Cards & Vouchers")}
+        description={t("giftCardsDesc", "Issue stored-value customer gift cards, track live balances, top-ups, and expirations.")}
+        primaryAction={{ label: t("issueGiftCard", "Issue Gift Card"), onClick: handleOpenAdd }}
+        searchPlaceholder={t("searchGiftCardsPlaceholder", "Search by card code or recipient...")}
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={false}
@@ -384,16 +386,16 @@ function GiftCardsPage() {
             <div className="flex-1 space-y-4">
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Card Status
+                  {t("cardStatus", "Card Status")}
                 </Label>
                 <SearchableSelect
                   options={[
-                    { value: "", label: "All Statuses" },
+                    { value: "", label: t("allStatuses", "All Statuses") },
                     ...GIFT_CARD_STATUSES.map((g) => ({ value: g.value, label: g.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder="Filter by Status"
+                  placeholder={t("filterByStatus", "Filter by Status")}
                 />
               </div>
             </div>
@@ -405,7 +407,7 @@ function GiftCardsPage() {
                   close();
                 }}
               >
-                Apply Filters
+                {t("applyFilters", "Apply Filters")}
               </Button>
             </div>
           </div>
@@ -415,7 +417,7 @@ function GiftCardsPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Total Issued
+                  {t("totalIssued", "Total Issued")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
                   <Gift className="size-4" />
@@ -429,7 +431,7 @@ function GiftCardsPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-success/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Active Cards
+                  {t("activeCards", "Active Cards")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-success/15 text-success">
                   <CheckCircle2 className="size-4" />
@@ -443,7 +445,7 @@ function GiftCardsPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-blue-500/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Total Issued Value
+                  {t("totalIssuedValue", "Total Issued Value")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
                   <CreditCard className="size-4" />
@@ -457,7 +459,7 @@ function GiftCardsPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Available Balance
+                  {t("availableBalance", "Available Balance")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
                   <DollarSign className="size-4" />
@@ -485,28 +487,28 @@ function GiftCardsPage() {
                     <TableHeader className="bg-muted/50">
                       <TableRow>
                         <TableHead className="font-bold text-xs uppercase tracking-wider">
-                          Card Code
+                          {t("cardCode", "Card Code")}
                         </TableHead>
                         <TableHead className="font-bold text-xs uppercase tracking-wider">
-                          Recipient / Customer
+                          {t("recipientCustomer", "Recipient / Customer")}
                         </TableHead>
                         <TableHead className="font-bold text-xs uppercase tracking-wider">
-                          Issued Date
+                          {t("issuedDate", "Issued Date")}
                         </TableHead>
                         <TableHead className="font-bold text-xs uppercase tracking-wider">
-                          Expiry Date
+                          {t("expiryDate", "Expiry Date")}
                         </TableHead>
                         <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                          Initial Value
+                          {t("initialValue", "Initial Value")}
                         </TableHead>
                         <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                          Current Balance
+                          {t("currentBalance", "Current Balance")}
                         </TableHead>
                         <TableHead className="font-bold text-xs uppercase tracking-wider text-center">
-                          Status
+                          {t("status", "Status")}
                         </TableHead>
                         <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                          Actions
+                          {t("actions", "Actions")}
                         </TableHead>
                       </TableRow>
                     </TableHeader>
@@ -516,13 +518,13 @@ function GiftCardsPage() {
                           <TableCell colSpan={8} className="h-64 text-center">
                             <EmptyState
                               icon={Gift}
-                              title="No gift cards found"
+                              title={t("noGiftCardsFound", "No gift cards found")}
                               description={
                                 search
-                                  ? "No gift cards matched your search query."
-                                  : "You haven't issued any gift cards yet."
+                                  ? t("noGiftCardsMatchQuery", "No gift cards matched your search query.")
+                                  : t("noGiftCardsYet", "You haven't issued any gift cards yet.")
                               }
-                              actionLabel="Issue Gift Card"
+                              actionLabel={t("issueGiftCard", "Issue Gift Card")}
                               onAction={handleOpenAdd}
                               className="border-none bg-transparent my-0 py-8 shadow-none"
                             />
@@ -540,13 +542,13 @@ function GiftCardsPage() {
                               </div>
                             </TableCell>
                             <TableCell className="font-semibold text-foreground whitespace-nowrap">
-                              {g.customer || "Walk-in Customer"}
+                              {g.customer || t("walkInCustomer", "Walk-in Customer")}
                             </TableCell>
                             <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
                               {g.issued ? formatDate(g.issued) : "—"}
                             </TableCell>
                             <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
-                              {g.expires ? formatDate(g.expires) : "Never"}
+                              {g.expires ? formatDate(g.expires) : t("never", "Never")}
                             </TableCell>
                             <TableCell className="text-right text-xs font-semibold text-muted-foreground whitespace-nowrap">
                               {formatCurrency(Number(g.initialBalance) || Number(g.balance) || 0)}
@@ -578,9 +580,9 @@ function GiftCardsPage() {
                                     setTopUpItem(g);
                                     setTopUpAmount("");
                                   }}
-                                  title="Add Balance"
+                                  title={t("topUp", "Top-up")}
                                 >
-                                  <RefreshCw className="mr-1 size-3.5" /> Top-up
+                                  <RefreshCw className="mr-1 size-3.5" /> {t("topUp", "Top-up")}
                                 </Button>
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
@@ -597,13 +599,13 @@ function GiftCardsPage() {
                                       onClick={() => handleOpenEdit(g)}
                                       className="text-xs font-semibold cursor-pointer"
                                     >
-                                      <Edit2 className="mr-2 size-3.5" /> Edit Card
+                                      <Edit2 className="mr-2 size-3.5" /> {t("editCard", "Edit Card")}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                       className="text-destructive text-xs font-semibold cursor-pointer"
                                       onClick={() => setDeleteId(g.id)}
                                     >
-                                      <Trash2 className="mr-2 size-3.5" /> Delete
+                                      <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
@@ -621,9 +623,9 @@ function GiftCardsPage() {
                   {paginatedCards.length === 0 ? (
                     <EmptyState
                       icon={Gift}
-                      title="No gift cards found"
-                      description="You haven't issued any gift cards yet."
-                      actionLabel="Issue Gift Card"
+                      title={t("noGiftCardsFound", "No gift cards found")}
+                      description={t("noGiftCardsYet", "You haven't issued any gift cards yet.")}
+                      actionLabel={t("issueGiftCard", "Issue Gift Card")}
                       onAction={handleOpenAdd}
                       className="border-none bg-transparent my-0 py-6 shadow-none"
                     />
@@ -643,7 +645,7 @@ function GiftCardsPage() {
                                 {g.code}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                {g.customer || "Walk-in Customer"}
+                                {g.customer || t("walkInCustomer", "Walk-in Customer")}
                               </p>
                             </div>
                           </div>
@@ -664,7 +666,7 @@ function GiftCardsPage() {
                         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/60 text-xs">
                           <div>
                             <span className="text-[10px] uppercase font-bold text-muted-foreground block">
-                              Balance
+                              {t("balance", "Balance")}
                             </span>
                             <span className="text-base font-black text-primary">
                               {formatCurrency(Number(g.balance) || 0)}
@@ -672,10 +674,10 @@ function GiftCardsPage() {
                           </div>
                           <div className="text-right">
                             <span className="text-[10px] uppercase font-bold text-muted-foreground block">
-                              Expires
+                              {t("expires", "Expires")}
                             </span>
                             <span className="font-medium text-foreground">
-                              {g.expires ? formatDate(g.expires) : "Never"}
+                              {g.expires ? formatDate(g.expires) : t("never", "Never")}
                             </span>
                           </div>
                         </div>
@@ -690,7 +692,7 @@ function GiftCardsPage() {
                               setTopUpAmount("");
                             }}
                           >
-                            <RefreshCw className="mr-1 size-3.5" /> Top-up
+                            <RefreshCw className="mr-1 size-3.5" /> {t("topUp", "Top-up")}
                           </Button>
                           <Button
                             variant="outline"
@@ -698,7 +700,7 @@ function GiftCardsPage() {
                             className="h-8 text-xs font-semibold"
                             onClick={() => handleOpenEdit(g)}
                           >
-                            <Edit2 className="mr-1 size-3.5" /> Edit
+                            <Edit2 className="mr-1 size-3.5" /> {t("edit", "Edit")}
                           </Button>
                           <Button
                             variant="ghost"
@@ -751,10 +753,10 @@ function GiftCardsPage() {
           <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
             <SheetTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
               <Gift className="size-5 text-primary" />
-              <span>{editItem ? "Edit Gift Card Profile" : "Issue New Gift Card"}</span>
+              <span>{editItem ? t("editGiftCardProfile", "Edit Gift Card Profile") : t("issueNewGiftCard", "Issue New Gift Card")}</span>
             </SheetTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Issue stored-value customer gift cards or vouchers for store purchases.
+              {t("issueGiftCardDesc", "Issue stored-value customer gift cards or vouchers for store purchases.")}
             </p>
           </SheetHeader>
           <form noValidate onSubmit={handleSave} className="flex flex-col flex-1 overflow-hidden">
@@ -762,7 +764,7 @@ function GiftCardsPage() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="code">
-                    Card Code / Voucher Number <span className="text-destructive">*</span>
+                    {t("cardCodeVoucherNo", "Card Code / Voucher Number")} <span className="text-destructive">*</span>
                   </Label>
                   {!editItem && (
                     <button
@@ -774,7 +776,7 @@ function GiftCardsPage() {
                       }}
                       className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
                     >
-                      <Sparkles className="size-3" /> Auto-generate
+                      <Sparkles className="size-3" /> {t("autoGenerate", "Auto-generate")}
                     </button>
                   )}
                 </div>
@@ -791,12 +793,12 @@ function GiftCardsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="customer">Customer / Recipient</Label>
+                <Label htmlFor="customer">{t("customerRecipient", "Customer / Recipient")}</Label>
                 <SearchableSelect
                   options={customers.map((c) => ({ value: c.name, label: c.name }))}
                   value={selectedCustomerId}
                   onChange={(val) => setSelectedCustomerId(val)}
-                  placeholder="Select customer or leave blank for Walk-in..."
+                  placeholder={t("selectCustomerWalkIn", "Select customer or leave blank for Walk-in...")}
                   onCreate={async (name) => {
                     const res = await createCustomerFn({ data: { customer: { name } } });
                     if (res?.success) {
@@ -810,7 +812,7 @@ function GiftCardsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="initialBalance">
-                    Initial Balance ({currencySymbol}) <span className="text-destructive">*</span>
+                    {t("initialBalance", "Initial Balance")} ({currencySymbol}) <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="initialBalance"
@@ -831,12 +833,12 @@ function GiftCardsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="status">Card Status</Label>
+                  <Label htmlFor="status">{t("cardStatus", "Card Status")}</Label>
                   <SearchableSelect
                     options={GIFT_CARD_STATUSES.map((g) => ({ value: g.value, label: g.label }))}
                     value={editItem?.status || "active"}
                     onChange={() => {}}
-                    placeholder="Select Status"
+                    placeholder={t("selectStatus", "Select Status")}
                   />
                   <input type="hidden" name="status" value={editItem?.status || "active"} />
                 </div>
@@ -844,7 +846,7 @@ function GiftCardsPage() {
 
               <div className="space-y-1.5">
                 <Label htmlFor="expires">
-                  Expiry Date <span className="text-destructive">*</span>
+                  {t("expiryDate", "Expiry Date")} <span className="text-destructive">*</span>
                 </Label>
                 <DatePicker
                   name="expires"
@@ -868,11 +870,11 @@ function GiftCardsPage() {
                   clearGiftAll();
                 }}
               >
-                Cancel
+                {t("cancel", "Cancel")}
               </Button>
               <Button type="submit" disabled={isSaving} className="min-w-[150px]">
                 {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
-                {editItem ? "Save Changes" : "Issue Gift Card"}
+                {editItem ? t("saveChanges", "Save Changes") : t("issueGiftCard", "Issue Gift Card")}
               </Button>
             </div>
           </form>
@@ -896,32 +898,32 @@ function GiftCardsPage() {
           <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
             <SheetTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
               <RefreshCw className="size-5 text-primary" />
-              <span>Top-up Gift Card Balance</span>
+              <span>{t("topUpGiftCardBalance", "Top-up Gift Card Balance")}</span>
             </SheetTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Add credit to <strong>{topUpItem?.code}</strong> ({topUpItem?.customer || "Walk-in"}).
+              {t("addCreditToCard", "Add credit to card.")}
             </p>
           </SheetHeader>
           <form onSubmit={handleTopUpSubmit} className="flex flex-col flex-1 overflow-hidden">
             <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
               <div className="rounded-xl bg-muted/40 border border-border/80 p-4 space-y-2 text-sm">
                 <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Current Balance:</span>
+                  <span className="text-muted-foreground">{t("currentBalance", "Current Balance")}:</span>
                   <span className="font-black text-foreground">
                     {formatCurrency(Number(topUpItem?.balance) || 0)}
                   </span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Recipient:</span>
+                  <span className="text-muted-foreground">{t("recipient", "Recipient")}:</span>
                   <span className="font-semibold text-foreground">
-                    {topUpItem?.customer || "Walk-in Customer"}
+                    {topUpItem?.customer || t("walkInCustomer", "Walk-in Customer")}
                   </span>
                 </div>
               </div>
 
               <div className="space-y-1.5">
                 <Label htmlFor="topUpAmount">
-                  Recharge Amount ({currencySymbol}) <span className="text-destructive">*</span>
+                  {t("rechargeAmount", "Recharge Amount")} ({currencySymbol}) <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="topUpAmount"
@@ -946,11 +948,11 @@ function GiftCardsPage() {
                   setTopUpAmount("");
                 }}
               >
-                Cancel
+                {t("cancel", "Cancel")}
               </Button>
               <Button type="submit" disabled={isTopUpLoading} className="min-w-[140px]">
                 {isTopUpLoading && <Loader2 className="size-4 animate-spin mr-2" />}
-                Add Balance
+                {t("addBalance", "Add Balance")}
               </Button>
             </div>
           </form>
@@ -961,19 +963,18 @@ function GiftCardsPage() {
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent className="rounded-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Gift Card?</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteGiftCardTitle", "Delete Gift Card?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the gift card record and
-              its balance.
+              {t("deleteGiftCardDesc", "This action cannot be undone. This will permanently delete the gift card record and its balance.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel", "Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {t("delete", "Delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

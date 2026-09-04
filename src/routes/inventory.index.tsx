@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCurrency } from "@/lib/currency";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/layout/StatCard";
@@ -68,6 +69,7 @@ import {
 } from "@/api/inventory";
 
 function InventoryDashboard() {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const { formatCurrency } = useCurrency();
 
@@ -332,8 +334,8 @@ function InventoryDashboard() {
     <div className="space-y-6 animate-in fade-in duration-300 pb-20 max-w-[1600px] mx-auto">
       {/* Header */}
       <PageHeader
-        title="Multi-Branch Stock Matrix & Inventory Master"
-        description="Monitor, reconcile, and rapidly edit physical stock across store branches, transit hubs, and regional warehouses."
+        title={t("multiBranchStockMatrix", "Multi-Branch Stock Matrix & Inventory Master")}
+        description={t("multiBranchStockMatrixDesc", "Monitor, reconcile, and rapidly edit physical stock across store branches, transit hubs, and regional warehouses.")}
         actions={
           <div className="flex items-center gap-2">
             <input
@@ -350,7 +352,7 @@ function InventoryDashboard() {
               className="rounded-xl h-9 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs border-border/80"
             >
               <Download className="size-3.5 text-muted-foreground" />
-              <span>Export Matrix CSV</span>
+              <span>{t("exportMatrixCsv", "Export Matrix CSV")}</span>
             </Button>
             <Button
               variant="outline"
@@ -364,7 +366,7 @@ function InventoryDashboard() {
               ) : (
                 <Upload className="size-3.5 text-muted-foreground" />
               )}
-              <span>Import Matrix CSV</span>
+              <span>{t("importMatrixCsv", "Import Matrix CSV")}</span>
             </Button>
             <Button
               variant="outline"
@@ -373,7 +375,7 @@ function InventoryDashboard() {
               className="rounded-xl h-9 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs border-border/80"
             >
               <RefreshCw className="size-3.5 text-muted-foreground" />
-              <span>Refresh</span>
+              <span>{t("refresh", "Refresh")}</span>
             </Button>
           </div>
         }
@@ -382,30 +384,30 @@ function InventoryDashboard() {
       {/* KPI Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Total Catalog Items"
+          label={t("totalCatalogItems", "Total Catalog Items")}
           value={String(totalItemsCount)}
-          hint="Products & active variants"
+          hint={t("productsActiveVariants", "Products & active variants")}
           icon={Package}
           accent="primary"
         />
         <StatCard
-          label="Total Units in Network"
+          label={t("totalUnitsInNetwork", "Total Units in Network")}
           value={totalUnitsInNetwork.toLocaleString()}
-          hint="Aggregate across all network branches"
+          hint={t("aggregateNetworkBranches", "Aggregate across all network branches")}
           icon={Boxes}
           accent="info"
         />
         <StatCard
-          label="Low Stock Alerts"
+          label={t("lowStockAlerts", "Low Stock Alerts")}
           value={String(lowStockCount)}
-          hint="Branch stock points ≤ reorder level"
+          hint={t("reorderLevelThreshold", "Branch stock points ≤ reorder level")}
           icon={AlertTriangle}
           accent={lowStockCount > 0 ? "warning" : "success"}
         />
         <StatCard
-          label="Active Store Outlets"
+          label={t("activeStoreOutlets", "Active Store Outlets")}
           value={String(locations.length)}
-          hint="Physical stores & logistics hubs"
+          hint={t("physicalStoresHubs", "Physical stores & logistics hubs")}
           icon={Building2}
           accent="primary"
         />
@@ -419,7 +421,7 @@ function InventoryDashboard() {
             <div className="relative flex-1 min-w-[220px] max-w-sm">
               <Search className="size-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
               <Input
-                placeholder="Search product by name, SKU, barcode..."
+                placeholder={t("searchProductInventory", "Search product by name, SKU, barcode...")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9 rounded-xl h-10 text-xs bg-background"
@@ -430,10 +432,10 @@ function InventoryDashboard() {
             <div className="w-[180px]">
               <Select value={selectedCategory} onValueChange={(val) => setSelectedCategory(val)}>
                 <SelectTrigger className="h-10 rounded-xl text-xs font-semibold bg-background shadow-2xs">
-                  <SelectValue placeholder="All Categories" />
+                  <SelectValue placeholder={t("allCategories", "All Categories")} />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl shadow-soft">
-                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="all">{t("allCategories", "All Categories")}</SelectItem>
                   {categories.map((c) => (
                     <SelectItem key={c.id} value={c.id || c.name} className="text-xs">
                       {c.name}
@@ -532,12 +534,12 @@ function InventoryDashboard() {
             <TableHeader className="bg-muted/40 sticky top-0 z-10 backdrop-blur-md">
               <TableRow className="border-b border-border/80">
                 <TableHead className="font-bold text-xs py-3.5 min-w-[240px] sticky left-0 z-20 bg-muted/90 backdrop-blur-md">
-                  Item & Variant
+                  {t("inventory.itemAndVariant", "Item & Variant")}
                 </TableHead>
-                <TableHead className="font-bold text-xs min-w-[120px]">SKU</TableHead>
-                <TableHead className="font-bold text-xs min-w-[100px]">Category</TableHead>
+                <TableHead className="font-bold text-xs min-w-[120px]">{t("products.sku", "SKU")}</TableHead>
+                <TableHead className="font-bold text-xs min-w-[100px]">{t("products.category", "Category")}</TableHead>
                 <TableHead className="font-bold text-xs text-right min-w-[100px]">
-                  Total System
+                  {t("inventory.totalSystem", "Total System")}
                 </TableHead>
 
                 {/* Branch Columns */}
@@ -549,7 +551,7 @@ function InventoryDashboard() {
                     <div className="flex flex-col items-end">
                       <span className="truncate max-w-[120px]">{loc.name}</span>
                       <span className="text-[10px] text-muted-foreground font-normal capitalize">
-                        {loc.isHeadOffice ? "Central Hub" : loc.type || "Store"}
+                        {loc.isHeadOffice ? t("common.centralHub", "Central Hub") : loc.type || t("common.store", "Store")}
                       </span>
                     </div>
                   </TableHead>
@@ -564,7 +566,7 @@ function InventoryDashboard() {
                     className="h-44 text-center text-muted-foreground"
                   >
                     <Loader2 className="size-6 animate-spin mx-auto mb-2 text-[#B58D4C]" />
-                    <span>Loading multi-branch stock matrix...</span>
+                    <span>{t("inventory.loadingMatrix", "Loading multi-branch stock matrix...")}</span>
                   </TableCell>
                 </TableRow>
               ) : filteredRows.length === 0 ? (
@@ -573,7 +575,7 @@ function InventoryDashboard() {
                     colSpan={4 + displayedLocations.length}
                     className="h-40 text-center text-muted-foreground text-xs"
                   >
-                    No products found matching filters.
+                    {t("inventory.noProductsMatch", "No products found matching filters.")}
                   </TableCell>
                 </TableRow>
               ) : (

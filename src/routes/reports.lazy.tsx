@@ -72,6 +72,7 @@ import { ReportSkeleton } from "@/components/skeletons/ReportSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/layout/StatCard";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createLazyFileRoute("/reports")({
   component: ReportsPage,
@@ -96,6 +97,7 @@ type ReportType =
   | null;
 
 function ReportsPage() {
+  const { t } = useLanguage();
   const { formatDate } = usePreferences();
   const { formatAppDate } = useAppFormatter();
   const { currencySymbol, formatCurrency } = useCurrency();
@@ -354,37 +356,37 @@ function ReportsPage() {
     <div className="page-container space-y-6">
       {/* Standard PageHeader */}
       <PageHeader
-        title="Reports & Financial Intelligence"
-        description="Comprehensive accounting statements, gross margins, GST return files, and inventory asset valuation."
+        title={t("reportsIntelligence", "Reports & Financial Intelligence")}
+        description={t("reportsIntelligenceDesc", "Comprehensive accounting statements, gross margins, GST return files, and inventory asset valuation.")}
       />
 
       {/* Standard StatCard Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Gross Revenue"
+          label={t("grossRevenue", "Gross Revenue")}
           value={formatCurrency(totalRevenue)}
-          hint="From all POS sales"
+          hint={t("fromPosSales", "From all POS sales")}
           icon={DollarSign}
           accent="primary"
         />
         <StatCard
-          label="Gross Profit Margin"
+          label={t("grossProfitMargin", "Gross Profit Margin")}
           value={`${marginPercent}%`}
-          hint={`Profit: ${formatCurrency(grossProfit)}`}
+          hint={`${t("profit", "Profit")}: ${formatCurrency(grossProfit)}`}
           icon={Percent}
           accent="success"
         />
         <StatCard
-          label="Operating Expenses"
+          label={t("operatingExpenses", "Operating Expenses")}
           value={formatCurrency(totalExpenses)}
-          hint={`${expenses.length} logged expense bills`}
+          hint={`${expenses.length} ${t("loggedExpenseBills", "logged expense bills")}`}
           icon={BarChart3}
           accent="warning"
         />
         <StatCard
-          label="Net Operating Income"
+          label={t("netOperatingIncome", "Net Operating Income")}
           value={formatCurrency(netIncome)}
-          hint="After COGS and expenses"
+          hint={t("afterCogsExpenses", "After COGS and expenses")}
           icon={TrendingUp}
           accent={netIncome >= 0 ? "success" : "destructive"}
         />
@@ -394,19 +396,19 @@ function ReportsPage() {
       <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
           <div>
-            <h3 className="font-bold text-base text-foreground">Branch-Wise Sales Breakdown</h3>
+            <h3 className="font-bold text-base text-foreground">{t("branchWiseSales", "Branch-Wise Sales Breakdown")}</h3>
             <p className="text-xs text-muted-foreground">
-              Revenue, transactions, and revenue share grouped by branch (location).
+              {t("branchWiseSalesDesc", "Revenue, transactions, and revenue share grouped by branch (location).")}
             </p>
           </div>
           <Badge variant="outline" className="text-xs font-semibold w-fit">
-            {branchSales.length} Branches
+            {branchSales.length} {t("branches", "Branches")}
           </Badge>
         </div>
 
         {branchSales.length === 0 ? (
           <div className="text-sm text-muted-foreground py-6 text-center">
-            No sales recorded yet. Completed POS sales will appear here grouped by branch.
+            {t("noSalesRecordedYet", "No sales recorded yet. Completed POS sales will appear here grouped by branch.")}
           </div>
         ) : (
           <div className="space-y-3">
@@ -571,10 +573,10 @@ function ReportsPage() {
                   <Table className="text-xs">
                     <TableHeader className="bg-muted/40">
                       <TableRow>
-                        <TableHead>Record ID / Ref</TableHead>
-                        <TableHead>Date / Timestamp</TableHead>
-                        <TableHead>Description / Category</TableHead>
-                        <TableHead className="text-right">Total Amount</TableHead>
+                        <TableHead>{t("reports.recordIdRef", "Record ID / Ref")}</TableHead>
+                        <TableHead>{t("reports.dateTimestamp", "Date / Timestamp")}</TableHead>
+                        <TableHead>{t("reports.descriptionCategory", "Description / Category")}</TableHead>
+                        <TableHead className="text-right">{t("reports.totalAmount", "Total Amount")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { appName } from "@/lib/env";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   ChefHat,
   Clock,
@@ -80,6 +81,7 @@ function sendBrowserNotification(title: string, body: string) {
 export const KOT_CHANNEL = "onedesk360-kot";
 
 function KitchenPage() {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -190,10 +192,10 @@ function KitchenPage() {
             </div>
             <div>
               <p className="text-sm font-bold text-foreground">
-                {newIds.length} New Order{newIds.length > 1 ? "s" : ""} Received!
+                {newIds.length} {t("newOrdersReceived", "New Order(s) Received!")}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {tableLabel} · {itemCount} items ready for preparation
+                {tableLabel} · {itemCount} {t("itemsReadyForPrep", "items ready for preparation")}
               </p>
             </div>
           </div>
@@ -201,7 +203,7 @@ function KitchenPage() {
         { duration: 6000 },
       );
     }
-  }, [kots, soundEnabled, showBanner]);
+  }, [kots, soundEnabled, showBanner, t]);
 
   // ── Cleanup banner timer on unmount ──────────────────────────────────────
   useEffect(() => {
@@ -231,7 +233,7 @@ function KitchenPage() {
       if (context?.previousKOTs) {
         queryClient.setQueryData(["kots"], context.previousKOTs);
       }
-      toast.error("Failed to update status");
+      toast.error(t("failedToUpdateStatus", "Failed to update status"));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["kots"] });
@@ -241,7 +243,7 @@ function KitchenPage() {
         if (vars.status === "ready" && soundEnabled) {
           playKitchenChime("ready");
         }
-        toast.success("Order status updated!");
+        toast.success(t("orderStatusUpdated", "Order status updated!"));
       }
     },
   });
@@ -268,8 +270,8 @@ function KitchenPage() {
     if (!("Notification" in window)) return;
     const p = await Notification.requestPermission();
     setNotifPermission(p);
-    if (p === "granted") toast.success("Browser notifications enabled for kitchen alerts!");
-    else toast.error("Notification permission denied. Enable via browser settings.");
+    if (p === "granted") toast.success(t("browserNotificationsEnabled", "Browser notifications enabled for kitchen alerts!"));
+    else toast.error(t("notificationPermissionDenied", "Notification permission denied. Enable via browser settings."));
   };
 
   const renderTicket = (kot: any, stage: "pending" | "preparing" | "ready") => {
@@ -335,11 +337,11 @@ function KitchenPage() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-foreground">
-                  {kot.tableId ? `Table #${kot.tableId.substring(0, 4)}` : "Takeaway Order"}
+                  {kot.tableId ? `${t("table", "Table")} #${kot.tableId.substring(0, 4)}` : t("takeawayOrder", "Takeaway Order")}
                 </span>
                 {isLate && (
                   <Badge variant="destructive" className="text-[9px] font-bold px-1.5 py-0.5">
-                    OVERDUE ({elapsedMinutes}m)
+                    {t("overdue", "OVERDUE")} ({elapsedMinutes}m)
                   </Badge>
                 )}
               </div>
@@ -360,7 +362,7 @@ function KitchenPage() {
               <div key={course} className="space-y-1.5">
                 <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/50 pb-1 flex items-center gap-1.5">
                   <UtensilsCrossed className="size-3 text-primary" />
-                  {course}
+                  {t(course.toLowerCase().replace(/\s+/g, ""), course)}
                 </h4>
                 <ul className="space-y-1.5">
                   {groupedItems[course].map((item: any, idx: number) => (
@@ -378,7 +380,7 @@ function KitchenPage() {
                       </div>
                       {(item.variantName || (item.modifiers && item.modifiers.length > 0)) && (
                         <div className="text-xs text-muted-foreground mt-1 ml-6 border-l-2 border-primary/40 pl-2 space-y-0.5">
-                          {item.variantName && <div>Portion: {item.variantName}</div>}
+                          {item.variantName && <div>{t("portion", "Portion")}: {item.variantName}</div>}
                           {item.modifiers?.map((m: any, i: number) => (
                             <div key={i}>+ {m.optionName}</div>
                           ))}
@@ -392,7 +394,7 @@ function KitchenPage() {
 
             {kot.note && (
               <div className="p-2.5 rounded-xl border border-warning/30 bg-warning/10 text-xs text-warning-foreground">
-                <span className="font-bold block">Chef Note:</span>
+                <span className="font-bold block">{t("chefNote", "Chef Note")}:</span>
                 {kot.note}
               </div>
             )}
@@ -405,9 +407,9 @@ function KitchenPage() {
               onClick={() => advanceStatus(kot)}
               disabled={updateStatus.isPending}
             >
-              {stage === "pending" && "Start Preparation →"}
-              {stage === "preparing" && "Mark Ready for Serving →"}
-              {stage === "ready" && "Complete & Hand Off ✓"}
+              {stage === "pending" && `${t("startPreparation", "Start Preparation")} →`}
+              {stage === "preparing" && `${t("markReadyForServing", "Mark Ready for Serving")} →`}
+              {stage === "ready" && `${t("completeAndHandOff", "Complete & Hand Off")} ✓`}
             </Button>
           </div>
         </Card>
@@ -433,11 +435,10 @@ function KitchenPage() {
               </div>
               <div className="flex-1">
                 <p className="text-sm font-extrabold text-foreground">
-                  🍽️ {newOrderBanner.count} New Kitchen Order{newOrderBanner.count > 1 ? "s" : ""}{" "}
-                  Received!
+                  🍽️ {newOrderBanner.count} {t("newKitchenOrdersReceived", "New Kitchen Order(s) Received!")}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  New tickets arrived in the Incoming Orders queue — chef action required.
+                  {t("newTicketsArrivedChefAction", "New tickets arrived in the Incoming Orders queue — chef action required.")}
                 </p>
               </div>
               <button
@@ -453,8 +454,8 @@ function KitchenPage() {
 
       {/* Standard PageHeader */}
       <PageHeader
-        title="Kitchen Display System (KDS)"
-        description="Live synchronized course sequences, order preparation timers, chef notes, and fulfillment pipeline."
+        title={t("kitchenDisplaySystem", "Kitchen Display System (KDS)")}
+        description={t("kitchenDisplayDesc", "Live synchronized course sequences, order preparation timers, chef notes, and fulfillment pipeline.")}
         actions={
           <div className="flex items-center gap-2">
             {/* Notification Permission */}
@@ -464,16 +465,16 @@ function KitchenPage() {
                 size="sm"
                 onClick={requestNotifPermission}
                 className="gap-1.5 text-xs font-semibold text-warning border-warning/40 hover:bg-warning/10"
-                title="Enable browser notifications for new order alerts"
+                title={t("enableBrowserNotifications", "Enable browser notifications for new order alerts")}
               >
                 <BellOff className="size-4" />
-                <span className="hidden sm:inline">Enable Alerts</span>
+                <span className="hidden sm:inline">{t("enableAlerts", "Enable Alerts")}</span>
               </Button>
             )}
             {notifPermission === "granted" && (
               <div className="hidden sm:flex items-center gap-1.5 text-xs text-success bg-success/10 border border-success/25 px-2.5 py-1 rounded-lg">
                 <Bell className="size-3.5" />
-                Alerts Active
+                {t("alertsActive", "Alerts Active")}
               </div>
             )}
 
@@ -488,7 +489,7 @@ function KitchenPage() {
               ) : (
                 <VolumeX className="size-4 text-muted-foreground" />
               )}
-              {soundEnabled ? "Chimes ON" : "Muted"}
+              {soundEnabled ? t("chimesOn", "Chimes ON") : t("muted", "Muted")}
             </Button>
 
             <Button
@@ -497,12 +498,12 @@ function KitchenPage() {
               onClick={toggleFullscreen}
               className="gap-1.5 text-xs font-semibold"
             >
-              <Maximize2 className="size-4" /> Fullscreen
+              <Maximize2 className="size-4" /> {t("fullscreen", "Fullscreen")}
             </Button>
 
             {isLoading && (
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/40 px-2.5 py-1 rounded-lg border border-border/60">
-                <Loader2 className="size-3.5 animate-spin text-primary" /> Syncing
+                <Loader2 className="size-3.5 animate-spin text-primary" /> {t("syncing", "Syncing")}
               </div>
             )}
           </div>
@@ -512,23 +513,23 @@ function KitchenPage() {
       {/* Standard StatCard Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
-          label="Incoming Orders"
+          label={t("incomingOrders", "Incoming Orders")}
           value={String(pendingKots.length)}
-          hint="Awaiting stove start"
+          hint={t("awaitingStoveStart", "Awaiting stove start")}
           icon={Flame}
           accent="destructive"
         />
         <StatCard
-          label="On Stoves / Preparing"
+          label={t("onStovesPreparing", "On Stoves / Preparing")}
           value={String(preparingKots.length)}
-          hint="Active kitchen cooking"
+          hint={t("activeKitchenCooking", "Active kitchen cooking")}
           icon={Timer}
           accent="warning"
         />
         <StatCard
-          label="Plated & Ready to Serve"
+          label={t("platedReadyToServe", "Plated & Ready to Serve")}
           value={String(readyKots.length)}
-          hint="Ready for waitstaff pickup"
+          hint={t("readyForWaitstaffPickup", "Ready for waitstaff pickup")}
           icon={CheckCircle2}
           accent="success"
         />
@@ -544,7 +545,7 @@ function KitchenPage() {
             <div className="flex items-center justify-between pb-2 border-b border-border/60">
               <div className="flex items-center gap-2">
                 <span className="size-2.5 rounded-full bg-destructive" />
-                <h2 className="font-bold text-sm text-foreground">Incoming Orders</h2>
+                <h2 className="font-bold text-sm text-foreground">{t("incomingOrders", "Incoming Orders")}</h2>
               </div>
               <Badge variant="outline" className="font-mono text-xs font-bold">
                 {pendingKots.length}
@@ -555,7 +556,7 @@ function KitchenPage() {
               <AnimatePresence mode="popLayout">
                 {pendingKots.length === 0 ? (
                   <div className="p-8 text-center text-xs text-muted-foreground">
-                    No incoming orders.
+                    {t("noIncomingOrders", "No incoming orders.")}
                   </div>
                 ) : (
                   pendingKots.map((k: any) => renderTicket(k, "pending"))
@@ -569,7 +570,7 @@ function KitchenPage() {
             <div className="flex items-center justify-between pb-2 border-b border-border/60">
               <div className="flex items-center gap-2">
                 <span className="size-2.5 rounded-full bg-warning" />
-                <h2 className="font-bold text-sm text-foreground">In Preparation</h2>
+                <h2 className="font-bold text-sm text-foreground">{t("inPreparation", "In Preparation")}</h2>
               </div>
               <Badge variant="outline" className="font-mono text-xs font-bold">
                 {preparingKots.length}
@@ -580,7 +581,7 @@ function KitchenPage() {
               <AnimatePresence mode="popLayout">
                 {preparingKots.length === 0 ? (
                   <div className="p-8 text-center text-xs text-muted-foreground">
-                    No tickets on stoves.
+                    {t("noTicketsOnStoves", "No tickets on stoves.")}
                   </div>
                 ) : (
                   preparingKots.map((k: any) => renderTicket(k, "preparing"))
@@ -594,7 +595,7 @@ function KitchenPage() {
             <div className="flex items-center justify-between pb-2 border-b border-border/60">
               <div className="flex items-center gap-2">
                 <span className="size-2.5 rounded-full bg-success" />
-                <h2 className="font-bold text-sm text-foreground">Ready to Serve</h2>
+                <h2 className="font-bold text-sm text-foreground">{t("readyToServe", "Ready to Serve")}</h2>
               </div>
               <Badge variant="outline" className="font-mono text-xs font-bold">
                 {readyKots.length}
@@ -605,7 +606,7 @@ function KitchenPage() {
               <AnimatePresence mode="popLayout">
                 {readyKots.length === 0 ? (
                   <div className="p-8 text-center text-xs text-muted-foreground">
-                    No tickets ready.
+                    {t("noTicketsReady", "No tickets ready.")}
                   </div>
                 ) : (
                   readyKots.map((k: any) => renderTicket(k, "ready"))

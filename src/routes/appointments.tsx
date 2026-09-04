@@ -68,12 +68,15 @@ import { exportToCSV } from "@/lib/csv";
 import { PersistStore } from "@/lib/session-store";
 import { ErrorState } from "@/components/ui/error-state";
 
+import { useLanguage } from "@/contexts/LanguageContext";
+
 export const Route = createFileRoute("/appointments")({
   head: () => ({ meta: [{ title: `Appointments & Bookings · ${appName}` }] }),
   component: AppointmentsPage,
 });
 
 function AppointmentsPage() {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const { formatAppDate } = useAppFormatter();
   const orgId = PersistStore.getOrgId() || "default";
@@ -237,13 +240,13 @@ function AppointmentsPage() {
         Notes: a.notes || "-",
       })),
       [
-        { key: "Customer", label: "Customer" },
-        { key: "Phone", label: "Phone" },
-        { key: "Service", label: "Service" },
-        { key: "Staff", label: "Staff Specialist" },
-        { key: "Date & Time", label: "Date & Time" },
-        { key: "Status", label: "Status" },
-        { key: "Notes", label: "Notes" },
+        { key: "Customer", label: t("customer", "Customer") },
+        { key: "Phone", label: t("phone", "Phone") },
+        { key: "Service", label: t("service", "Service") },
+        { key: "Staff", label: t("staffSpecialist", "Staff Specialist") },
+        { key: "Date & Time", label: t("dateTime", "Date & Time") },
+        { key: "Status", label: t("status", "Status") },
+        { key: "Notes", label: t("notes", "Notes") },
       ],
       "appointments-schedule",
     );
@@ -252,10 +255,10 @@ function AppointmentsPage() {
   return (
     <div className="space-y-6">
       <DataPage
-        title="Appointments & Service Bookings"
-        description="Salon, clinic, and spa scheduling with staff assignments and live booking status."
-        primaryAction={{ label: "New Appointment", onClick: () => setIsCreateOpen(true) }}
-        searchPlaceholder="Search by customer, service, or staff..."
+        title={t("appointmentsBookings", "Appointments & Service Bookings")}
+        description={t("appointmentsDesc", "Salon, clinic, and spa scheduling with staff assignments and live booking status.")}
+        primaryAction={{ label: t("newAppointment", "New Appointment"), onClick: () => setIsCreateOpen(true) }}
+        searchPlaceholder={t("searchAppointmentsPlaceholder", "Search by customer, service, or staff...")}
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={false}
@@ -267,16 +270,16 @@ function AppointmentsPage() {
             <div className="flex-1 space-y-4">
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Status
+                  {t("status", "Status")}
                 </Label>
                 <SearchableSelect
                   options={[
-                    { value: "", label: "All Bookings" },
+                    { value: "", label: t("allBookings", "All Bookings") },
                     ...APPOINTMENT_STATUSES.map((s) => ({ value: s.value, label: s.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder="Filter by Status"
+                  placeholder={t("filterByStatus", "Filter by Status")}
                 />
               </div>
             </div>
@@ -288,7 +291,7 @@ function AppointmentsPage() {
                   close();
                 }}
               >
-                Apply Filters
+                {t("applyFilters", "Apply Filters")}
               </Button>
             </div>
           </div>
@@ -298,7 +301,7 @@ function AppointmentsPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Total Bookings
+                  {t("totalBookings", "Total Bookings")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
                   <CalendarDays className="size-4" />
@@ -310,7 +313,7 @@ function AppointmentsPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-blue-500/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Upcoming
+                  {t("upcoming", "Upcoming")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
                   <Clock className="size-4" />
@@ -324,7 +327,7 @@ function AppointmentsPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-amber-500/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  In Progress
+                  {t("inProgress", "In Progress")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
                   <Sparkles className="size-4" />
@@ -338,7 +341,7 @@ function AppointmentsPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-success/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Completed
+                  {t("completed", "Completed")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-success/15 text-success">
                   <CheckCircle2 className="size-4" />
@@ -366,22 +369,22 @@ function AppointmentsPage() {
                     <TableHeader className="bg-muted/50">
                       <TableRow>
                         <TableHead className="font-bold text-xs uppercase tracking-wider">
-                          Customer
+                          {t("customer", "Customer")}
                         </TableHead>
                         <TableHead className="font-bold text-xs uppercase tracking-wider">
-                          Service & Notes
+                          {t("serviceNotes", "Service & Notes")}
                         </TableHead>
                         <TableHead className="font-bold text-xs uppercase tracking-wider">
-                          Staff Specialist
+                          {t("staffSpecialist", "Staff Specialist")}
                         </TableHead>
                         <TableHead className="font-bold text-xs uppercase tracking-wider">
-                          Date & Time
+                          {t("dateTime", "Date & Time")}
                         </TableHead>
                         <TableHead className="font-bold text-xs uppercase tracking-wider text-center">
-                          Status
+                          {t("status", "Status")}
                         </TableHead>
                         <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                          Actions
+                          {t("actions", "Actions")}
                         </TableHead>
                       </TableRow>
                     </TableHeader>
@@ -391,13 +394,13 @@ function AppointmentsPage() {
                           <TableCell colSpan={6} className="h-64 text-center">
                             <EmptyState
                               icon={CalendarDays}
-                              title="No appointments found"
+                              title={t("noAppointmentsFound", "No appointments found")}
                               description={
                                 search
-                                  ? "No appointments matched your search query."
-                                  : "You haven't scheduled any appointments yet."
+                                  ? t("noAppointmentsMatchQuery", "No appointments matched your search query.")
+                                  : t("noAppointmentsYet", "You haven't scheduled any appointments yet.")
                               }
-                              actionLabel="Schedule Appointment"
+                              actionLabel={t("scheduleAppointment", "Schedule Appointment")}
                               onAction={() => setIsCreateOpen(true)}
                               className="border-none bg-transparent my-0 py-8 shadow-none"
                             />
@@ -434,7 +437,7 @@ function AppointmentsPage() {
                               )}
                             </TableCell>
                             <TableCell className="text-xs text-foreground whitespace-nowrap font-medium">
-                              {a.staffName || "Unassigned"}
+                              {a.staffName || t("unassigned", "Unassigned")}
                             </TableCell>
                             <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
                               <div className="flex items-center gap-1.5">
@@ -473,7 +476,7 @@ function AppointmentsPage() {
                                       })
                                     }
                                   >
-                                    {a.status === "scheduled" ? "Start" : "Complete"}
+                                    {a.status === "scheduled" ? t("start", "Start") : t("complete", "Complete")}
                                   </Button>
                                 )}
                                 <DropdownMenu>
@@ -493,7 +496,7 @@ function AppointmentsPage() {
                                       }
                                       className="text-xs font-semibold cursor-pointer"
                                     >
-                                      Mark Completed
+                                      {t("markCompleted", "Mark Completed")}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                       onClick={() =>
@@ -501,13 +504,13 @@ function AppointmentsPage() {
                                       }
                                       className="text-xs font-semibold cursor-pointer text-destructive"
                                     >
-                                      Cancel Booking
+                                      {t("cancelBooking", "Cancel Booking")}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                       onClick={() => setDeleteId(a.id)}
                                       className="text-xs font-semibold cursor-pointer text-destructive"
                                     >
-                                      <Trash2 className="mr-2 size-3.5" /> Delete
+                                      <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
@@ -525,9 +528,9 @@ function AppointmentsPage() {
                   {paginatedAppointments.length === 0 ? (
                     <EmptyState
                       icon={CalendarDays}
-                      title="No appointments found"
-                      description="You haven't scheduled any appointments yet."
-                      actionLabel="Schedule Appointment"
+                      title={t("noAppointmentsFound", "No appointments found")}
+                      description={t("noAppointmentsYet", "You haven't scheduled any appointments yet.")}
+                      actionLabel={t("scheduleAppointment", "Schedule Appointment")}
                       onAction={() => setIsCreateOpen(true)}
                       className="border-none bg-transparent my-0 py-6 shadow-none"
                     />
@@ -561,15 +564,15 @@ function AppointmentsPage() {
                         <div className="grid grid-cols-2 gap-2 text-xs border-t border-border/60 pt-2 text-muted-foreground">
                           <div>
                             <span className="text-[10px] uppercase font-bold text-muted-foreground block">
-                              Staff
+                              {t("staff", "Staff")}
                             </span>
                             <span className="font-semibold text-foreground">
-                              {a.staffName || "Unassigned"}
+                              {a.staffName || t("unassigned", "Unassigned")}
                             </span>
                           </div>
                           <div className="text-right">
                             <span className="text-[10px] uppercase font-bold text-muted-foreground block">
-                              Time
+                              {t("time", "Time")}
                             </span>
                             <span className="font-semibold text-foreground">
                               {formatAppDate(a.dateTime, "datetime", "PP · p")}
@@ -590,7 +593,7 @@ function AppointmentsPage() {
                                 })
                               }
                             >
-                              {a.status === "scheduled" ? "Start" : "Complete"}
+                              {a.status === "scheduled" ? t("start", "Start") : t("complete", "Complete")}
                             </Button>
                           )}
                           <Button
@@ -634,17 +637,17 @@ function AppointmentsPage() {
           <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
             <SheetTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
               <CalendarDays className="size-5 text-primary" />
-              <span>Schedule Service Appointment</span>
+              <span>{t("scheduleServiceAppointment", "Schedule Service Appointment")}</span>
             </SheetTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Book salon, clinic, spa, or consulting services with assigned staff.
+              {t("scheduleServiceAppointmentDesc", "Book salon, clinic, spa, or consulting services with assigned staff.")}
             </p>
           </SheetHeader>
           <div className="flex flex-col flex-1 overflow-hidden">
             <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label>Customer Name *</Label>
+                  <Label>{t("customerName", "Customer Name")} *</Label>
                   <SearchableSelect
                     options={customers.map((c) => ({
                       value: c.name,
@@ -660,7 +663,7 @@ function AppointmentsPage() {
                         customerPhone: found?.phone || formData.customerPhone,
                       });
                     }}
-                    placeholder="Search or enter customer..."
+                    placeholder={t("searchOrEnterCustomer", "Search or enter customer...")}
                     onCreate={async (name) => {
                       const res = await createCustomerFn({ data: { customer: { name } } });
                       if (res?.success) {
@@ -671,37 +674,37 @@ function AppointmentsPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Phone Number</Label>
+                  <Label>{t("phoneNumber", "Phone Number")}</Label>
                   <Input
                     value={formData.customerPhone}
                     onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
-                    placeholder="e.g. +1 555 0192"
+                    placeholder={t("phonePlaceholder", "e.g. +1 555 0192")}
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label>Service / Treatment *</Label>
+                  <Label>{t("serviceTreatment", "Service / Treatment")} *</Label>
                   <Input
                     value={formData.serviceName}
                     onChange={(e) => setFormData({ ...formData, serviceName: e.target.value })}
-                    placeholder="e.g. Hair Spa, Dental Checkup, Massage"
+                    placeholder={t("serviceTreatmentPlaceholder", "e.g. Hair Spa, Dental Checkup, Massage")}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Staff / Specialist</Label>
+                  <Label>{t("staffSpecialist", "Staff / Specialist")}</Label>
                   <Input
                     value={formData.staffName}
                     onChange={(e) => setFormData({ ...formData, staffName: e.target.value })}
-                    placeholder="e.g. Dr. Alex, Sarah"
+                    placeholder={t("staffSpecialistPlaceholder", "e.g. Dr. Alex, Sarah")}
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1.5">
-                  <Label>Date</Label>
+                  <Label>{t("date", "Date")}</Label>
                   <DatePicker
                     date={formData.date}
                     onDateChange={(d) =>
@@ -713,7 +716,7 @@ function AppointmentsPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Time</Label>
+                  <Label>{t("time", "Time")}</Label>
                   <TimePicker
                     value={formData.time}
                     onChange={(t) => setFormData({ ...formData, time: t })}
@@ -721,7 +724,7 @@ function AppointmentsPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Duration (min)</Label>
+                  <Label>{t("durationMin", "Duration (min)")}</Label>
                   <Input
                     type="number"
                     min={15}
@@ -735,18 +738,18 @@ function AppointmentsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label>Notes & Instructions</Label>
+                <Label>{t("notesInstructions", "Notes & Instructions")}</Label>
                 <Input
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Optional customer requests or preferences..."
+                  placeholder={t("notesPlaceholder", "Optional customer requests or preferences...")}
                 />
               </div>
             </div>
 
             <div className="border-t border-border p-4 bg-card/80 backdrop-blur-sm flex items-center justify-end gap-3 shrink-0">
               <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-                Cancel
+                {t("cancel", "Cancel")}
               </Button>
               <Button
                 onClick={handleCreate}
@@ -756,7 +759,7 @@ function AppointmentsPage() {
                 className="min-w-[160px]"
               >
                 {createAppointment.isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
-                Save Appointment
+                {t("saveAppointment", "Save Appointment")}
               </Button>
             </div>
           </div>
@@ -767,18 +770,18 @@ function AppointmentsPage() {
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent className="rounded-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Appointment?</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteAppointmentTitle", "Delete Appointment?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently remove the appointment record.
+              {t("deleteAppointmentDesc", "This action cannot be undone. This will permanently remove the appointment record.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel", "Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId && deleteAppointment.mutate(deleteId)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {t("delete", "Delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

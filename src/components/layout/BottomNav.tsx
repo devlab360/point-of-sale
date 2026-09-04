@@ -140,7 +140,7 @@ export function BottomNav() {
               strokeWidth={moreOpen || !isOnMainNav ? 2.5 : 2}
             />
           </div>
-          <span className="leading-none">More</span>
+          <span className="leading-none">{t("more", "More")}</span>
           {(moreOpen || !isOnMainNav) && (
             <div className="absolute top-0 left-1/2 -translate-x-1/2 h-0.5 w-6 rounded-full bg-primary" />
           )}
@@ -152,7 +152,7 @@ export function BottomNav() {
         <div className="fixed inset-0 z-[60] flex flex-col bg-background md:hidden">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <h2 className="text-base font-bold text-foreground">All Modules</h2>
+            <h2 className="text-base font-bold text-foreground">{t("allModules", "All Modules")}</h2>
             <button
               onClick={() => setMoreOpen(false)}
               className="grid size-9 place-items-center rounded-full bg-muted text-muted-foreground hover:bg-accent hover:text-foreground transition-colors touch-target"

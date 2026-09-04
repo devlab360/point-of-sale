@@ -285,12 +285,12 @@ function StockList() {
             <Table className="min-w-[800px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead className="text-right">Stock on Hand</TableHead>
-                  <TableHead className="text-right">Reorder Point</TableHead>
-                  <TableHead className="text-right">Stock Value</TableHead>
-                  <TableHead>Health Status</TableHead>
+                  <TableHead>{t("common.product", "Product")}</TableHead>
+                  <TableHead>{t("products.sku", "SKU")}</TableHead>
+                  <TableHead className="text-right">{t("inventory.stockOnHand", "Stock on Hand")}</TableHead>
+                  <TableHead className="text-right">{t("inventory.reorderPoint", "Reorder Point")}</TableHead>
+                  <TableHead className="text-right">{t("inventory.stockValue", "Stock Value")}</TableHead>
+                  <TableHead>{t("inventory.healthStatus", "Health Status")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -299,11 +299,11 @@ function StockList() {
                     <TableCell colSpan={6} className="h-64 text-center">
                       <EmptyState
                         icon={PackageSearch}
-                        title="No inventory records"
+                        title={t("inventory.noInventoryRecords", "No inventory records")}
                         description={
                           search || filters.status
-                            ? "Try adjusting your search or active filters."
-                            : "You don't have any products in your inventory yet."
+                            ? t("inventory.adjustSearchFilters", "Try adjusting your search or active filters.")
+                            : t("inventory.startAddingStock", "Start by adding products and recording stock.")
                         }
                         actionLabel="Add Product"
                         onAction={() => router.navigate({ to: "/products" })}

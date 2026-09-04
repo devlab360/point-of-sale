@@ -69,6 +69,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { sendAutomatedReport } from "@/lib/automation/report-bot";
 import { MessageCircle } from "lucide-react";
 import { useAppFormatter } from "@/hooks/useAppFormatter";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -84,6 +85,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Dashboard() {
+  const { t } = useLanguage();
   const { currencySymbol, formatCurrency } = useCurrency();
   const { formatAppDate, timeZone } = useAppFormatter();
   const { user, saasPlan, saasOrg } = useAuth();
@@ -468,14 +470,14 @@ function Dashboard() {
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground font-display">
-              Overview
+              {t("overview", "Overview")}
             </h1>
             <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-0.5 text-xs font-bold text-primary font-display">
-              {saasOrg?.name || "Main Store"}
+              {saasOrg?.name || t("mainStore", "Main Store")}
             </span>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Real-time sales, revenue, and inventory performance for today.
+            {t("realtimeOverview", "Real-time sales, revenue, and inventory performance for today.")}
           </p>
         </div>
 
@@ -487,7 +489,7 @@ function Dashboard() {
               onClick={() => setIsDailyReportOpen(true)}
               className="text-xs font-bold gap-2 h-10 px-4 rounded-xl border-border/80 shadow-xs"
             >
-              <Receipt className="size-4" /> Daily Summary
+              <Receipt className="size-4" /> {t("dailySummary", "Daily Summary")}
             </Button>
           )}
           {canAccessPos && (
@@ -498,7 +500,7 @@ function Dashboard() {
               className="gap-2 font-extrabold h-10 px-5 rounded-xl shadow-md"
             >
               <Link to="/pos">
-                <ShoppingBag className="size-4" /> Open POS Terminal
+                <ShoppingBag className="size-4" /> {t("openPosTerminal", "Open POS Terminal")}
               </Link>
             </Button>
           )}
@@ -508,33 +510,33 @@ function Dashboard() {
       {/* KPI Stat Cards Grid */}
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Today's Revenue"
+          label={t("todaysRevenue", "Today's Revenue")}
           value={fmt(displayRevenue)}
           delta={revenueDelta}
-          hint="vs yesterday"
+          hint={t("vsYesterday", "vs yesterday")}
           icon={Wallet}
           accent="primary"
         />
         <StatCard
-          label="Today's Orders"
+          label={t("todaysOrders", "Today's Orders")}
           value={displayOrders.toString()}
           delta={ordersDelta}
-          hint="vs yesterday"
+          hint={t("vsYesterday", "vs yesterday")}
           icon={ShoppingCart}
           accent="info"
         />
         <StatCard
-          label="Est. Net Profit"
+          label={t("estNetProfit", "Est. Net Profit")}
           value={fmt(displayProfit)}
           delta={profitDelta}
-          hint="vs yesterday"
+          hint={t("vsYesterday", "vs yesterday")}
           icon={TrendingUp}
           accent="success"
         />
         <StatCard
-          label="Low Stock Alerts"
+          label={t("lowStockAlerts", "Low Stock Alerts")}
           value={lowStock.length.toString()}
-          hint={lowStock.length > 0 ? "Requires restock" : "Inventory healthy"}
+          hint={lowStock.length > 0 ? t("requiresRestock", "Requires restock") : t("inventoryHealthy", "Inventory healthy")}
           icon={AlertTriangle}
           accent={lowStock.length > 0 ? "warning" : "success"}
         />
@@ -546,9 +548,9 @@ function Dashboard() {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 className="text-sm sm:text-base font-bold text-foreground">
-                Revenue & Profit Performance
+                {t("revenueProfitPerformance", "Revenue & Profit Performance")}
               </h2>
-              <p className="text-xs text-muted-foreground">Rolling 12-month trajectory</p>
+              <p className="text-xs text-muted-foreground">{t("rolling12Month", "Rolling 12-month trajectory")}</p>
             </div>
             <div className="flex items-center rounded-lg bg-muted/60 p-0.5 border border-border/50">
               <button
@@ -561,7 +563,7 @@ function Dashboard() {
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                Revenue
+                {t("revenue", "Revenue")}
               </button>
               <button
                 type="button"
@@ -573,7 +575,7 @@ function Dashboard() {
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                Net Profit
+                {t("netProfit", "Net Profit")}
               </button>
             </div>
           </div>
@@ -627,7 +629,7 @@ function Dashboard() {
                   }}
                   formatter={(v: number) => [
                     fmt(v),
-                    chartView === "revenue" ? "Revenue" : "Net Profit",
+                    chartView === "revenue" ? t("revenue", "Revenue") : t("netProfit", "Net Profit"),
                   ]}
                 />
                 <Area
@@ -647,8 +649,8 @@ function Dashboard() {
           <div>
             <div className="mb-3 flex items-center justify-between">
               <div>
-                <h2 className="text-sm sm:text-base font-bold text-foreground">Category Mix</h2>
-                <p className="text-xs text-muted-foreground">Product share by volume</p>
+                <h2 className="text-sm sm:text-base font-bold text-foreground">{t("categoryMix", "Category Mix")}</h2>
+                <p className="text-xs text-muted-foreground">{t("productShareByVolume", "Product share by volume")}</p>
               </div>
             </div>
             <div className="h-52 w-full">
@@ -674,7 +676,7 @@ function Dashboard() {
                       borderRadius: 12,
                       fontSize: 12,
                     }}
-                    formatter={(v: number) => [`${v}%`, "Share"]}
+                    formatter={(v: number) => [`${v}%`, t("share", "Share")]}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -703,8 +705,8 @@ function Dashboard() {
         <div className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-card xl:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h2 className="text-sm sm:text-base font-bold text-foreground">Sales This Week</h2>
-              <p className="text-xs text-muted-foreground">Daily volume breakdown</p>
+              <h2 className="text-sm sm:text-base font-bold text-foreground">{t("salesThisWeek", "Sales This Week")}</h2>
+              <p className="text-xs text-muted-foreground">{t("dailyVolumeBreakdown", "Daily volume breakdown")}</p>
             </div>
             {/* Real WoW calculation using last 7 days vs prior 7 days */}
             {(() => {
@@ -744,7 +746,7 @@ function Dashboard() {
                   )}
                 >
                   {wow >= 0 ? "+" : ""}
-                  {wow}% WoW
+                  {wow}% {t("wow", "WoW")}
                 </Badge>
               );
             })()}
@@ -778,7 +780,7 @@ function Dashboard() {
                     borderRadius: 12,
                     fontSize: 12,
                   }}
-                  formatter={(v: number) => [fmt(v), "Sales"]}
+                  formatter={(v: number) => [fmt(v), t("sales", "Sales")]}
                 />
                 <Bar
                   dataKey="sales"
@@ -797,12 +799,12 @@ function Dashboard() {
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <h2 className="text-sm sm:text-base font-bold text-foreground flex items-center gap-1.5">
-                  <AlertTriangle className="size-4 text-warning" /> Low Stock Items
+                  <AlertTriangle className="size-4 text-warning" /> {t("lowStockItems", "Low Stock Items")}
                 </h2>
-                <p className="text-xs text-muted-foreground">Inventory below reorder thresholds</p>
+                <p className="text-xs text-muted-foreground">{t("inventoryBelowReorder", "Inventory below reorder thresholds")}</p>
               </div>
               <Link to="/inventory" className="text-xs font-semibold text-primary hover:underline">
-                View All
+                {t("viewAll", "View All")}
               </Link>
             </div>
 
@@ -811,7 +813,7 @@ function Dashboard() {
                 <div className="grid size-10 place-items-center rounded-full bg-success/10 text-success">
                   ✓
                 </div>
-                <span>All product inventory levels healthy</span>
+                <span>{t("allProductsHealthy", "All product inventory levels healthy")}</span>
               </div>
             ) : (
               <ul className="divide-y divide-border/60">
@@ -856,10 +858,10 @@ function Dashboard() {
                             isCritical ? "text-destructive" : "text-warning",
                           )}
                         >
-                          {p.stock} left
+                          {p.stock} {t("left", "left")}
                         </div>
                         <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                          Reorder at {p.reorderLevel}
+                          {t("reorderAt", "Reorder at")} {p.reorderLevel}
                         </div>
                       </div>
                     </li>
@@ -876,7 +878,7 @@ function Dashboard() {
               size="sm"
               className="w-full text-xs font-semibold gap-1"
             >
-              <Link to="/inventory">Manage Stock Adjustments</Link>
+              <Link to="/inventory">{t("manageStockAdjustments", "Manage Stock Adjustments")}</Link>
             </Button>
           </div>
         </div>
@@ -889,12 +891,12 @@ function Dashboard() {
             <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-border/60">
               <div>
                 <h2 className="text-sm sm:text-base font-bold text-foreground">
-                  Recent Transactions
+                  {t("recentTransactions", "Recent Transactions")}
                 </h2>
-                <p className="text-xs text-muted-foreground">Latest invoices generated</p>
+                <p className="text-xs text-muted-foreground">{t("latestInvoicesGenerated", "Latest invoices generated")}</p>
               </div>
               <Link to="/sales" className="text-xs font-semibold text-primary hover:underline">
-                View All Sales History →
+                {t("viewAllSalesHistory", "View All Sales History →")}
               </Link>
             </div>
 
@@ -903,11 +905,11 @@ function Dashboard() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Invoice</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Payment</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>{t("invoice", "Invoice")}</TableHead>
+                    <TableHead>{t("customer", "Customer")}</TableHead>
+                    <TableHead>{t("payment", "Payment")}</TableHead>
+                    <TableHead>{t("status", "Status")}</TableHead>
+                    <TableHead className="text-right">{t("amount", "Amount")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -917,7 +919,7 @@ function Dashboard() {
                         colSpan={5}
                         className="py-8 text-center text-xs text-muted-foreground"
                       >
-                        No sales transactions recorded yet today.
+                        {t("noSalesToday", "No sales transactions recorded yet today.")}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -927,7 +929,7 @@ function Dashboard() {
                           #{s.id.slice(0, 8).toUpperCase()}
                         </TableCell>
                         <TableCell className="whitespace-nowrap font-medium text-foreground">
-                          {s.customerName || "Walk-in Customer"}
+                          {s.customerName || t("walkInCustomer", "Walk-in Customer")}
                         </TableCell>
                         <TableCell className="text-muted-foreground capitalize whitespace-nowrap text-xs">
                           {s.paymentMethod || "cash"}
@@ -949,7 +951,7 @@ function Dashboard() {
             <div className="table-mobile-cards p-3 space-y-2.5">
               {recentSales.length === 0 ? (
                 <div className="py-8 text-center text-xs text-muted-foreground">
-                  No sales transactions recorded yet today.
+                  {t("noSalesToday", "No sales transactions recorded yet today.")}
                 </div>
               ) : (
                 recentSales.slice(0, 5).map((s) => (
@@ -965,7 +967,7 @@ function Dashboard() {
                         <StatusBadge status={s.status} />
                       </div>
                       <p className="text-xs text-muted-foreground truncate mt-0.5">
-                        {s.customerName || "Walk-in"} ·{" "}
+                        {s.customerName || t("walkInCustomer", "Walk-in")} ·{" "}
                         <span className="capitalize">{s.paymentMethod || "Cash"}</span>
                       </p>
                     </div>
@@ -984,18 +986,18 @@ function Dashboard() {
           <div>
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-sm sm:text-base font-bold text-foreground">Top Sellers</h2>
-                <p className="text-xs text-muted-foreground">Best performing items</p>
+                <h2 className="text-sm sm:text-base font-bold text-foreground">{t("topSellers", "Top Sellers")}</h2>
+                <p className="text-xs text-muted-foreground">{t("bestPerformingItems", "Best performing items")}</p>
               </div>
               <Link to="/products" className="text-xs font-semibold text-primary hover:underline">
-                Catalog →
+                {t("catalog", "Catalog")} →
               </Link>
             </div>
 
             <ul className="space-y-3">
               {topSelling.length === 0 ? (
                 <li className="py-8 text-center text-xs text-muted-foreground">
-                  No sales data yet.
+                  {t("noSalesDataYet", "No sales data yet.")}
                 </li>
               ) : (
                 topSelling.map((p, i) => {
@@ -1026,7 +1028,7 @@ function Dashboard() {
                           {p.name}
                         </div>
                         <div className="text-[11px] text-muted-foreground">
-                          {p.sold} units · {formatCurrency(p.sold * (Number(p.price) || 0))}
+                          {p.sold} {t("unitsSold", "units")} · {formatCurrency(p.sold * (Number(p.price) || 0))}
                         </div>
                       </div>
                       <ArrowUpRight className="size-4 text-success shrink-0" />
@@ -1038,8 +1040,8 @@ function Dashboard() {
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-2.5 border-t border-border/60 pt-4">
-            <Quick icon={Users} label="Total Customers" value={customers.length.toString()} />
-            <Quick icon={Package} label="Active SKUs" value={products.length.toString()} />
+            <Quick icon={Users} label={t("totalCustomers", "Total Customers")} value={customers.length.toString()} />
+            <Quick icon={Package} label={t("activeSkus", "Active SKUs")} value={products.length.toString()} />
           </div>
         </div>
       </div>
@@ -1057,10 +1059,10 @@ function Dashboard() {
                 {formatAppDate(new Date(), "date", "EEEE, MMMM d, yyyy")}
               </div>
               <SheetTitle className="text-xl font-extrabold flex items-center gap-2">
-                <Receipt className="size-5 text-primary" /> Today's Performance Snapshot
+                <Receipt className="size-5 text-primary" /> {t("todaysPerformanceSnapshot", "Today's Performance Snapshot")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Real-time summary of sales, profit and volume metrics generated for this shift.
+                {t("performanceSnapshotDesc", "Real-time summary of sales, profit and volume metrics generated for this shift.")}
               </SheetDescription>
             </SheetHeader>
 
@@ -1068,27 +1070,27 @@ function Dashboard() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="bg-primary/8 border border-primary/20 rounded-xl p-3.5 text-center">
                   <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1">
-                    <DollarSign className="size-3.5 text-primary" /> Total Revenue
+                    <DollarSign className="size-3.5 text-primary" /> {t("totalRevenue", "Total Revenue")}
                   </div>
                   <div className="text-xl font-black text-primary">{fmt(displayRevenue)}</div>
                 </div>
                 <div className="bg-success/10 border border-success/30 rounded-xl p-3.5 text-center">
                   <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1">
-                    <TrendingUp className="size-3.5 text-success" /> Est. Net Profit
+                    <TrendingUp className="size-3.5 text-success" /> {t("estNetProfit", "Est. Net Profit")}
                   </div>
                   <div className="text-xl font-black text-success">{fmt(displayProfit)}</div>
                 </div>
                 <div className="bg-primary/8 border border-primary/20 rounded-xl p-3.5 text-center">
                   <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1">
-                    <ShoppingBag className="size-3.5 text-primary" /> Transactions
+                    <ShoppingBag className="size-3.5 text-primary" /> {t("transactions", "Transactions")}
                   </div>
-                  <div className="text-xl font-black text-primary">{displayOrders} Orders</div>
+                  <div className="text-xl font-black text-primary">{displayOrders} {t("orders", "Orders")}</div>
                 </div>
               </div>
 
               <div className="bg-muted/40 rounded-xl p-3.5 border border-border/80 space-y-2">
                 <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Top Selling Product Today
+                  {t("topSellingProductToday", "Top Selling Product Today")}
                 </h4>
                 {topSelling.length > 0 ? (
                   <div className="flex items-center justify-between">
@@ -1101,12 +1103,12 @@ function Dashboard() {
                       </span>
                     </div>
                     <Badge variant="secondary" className="font-mono text-xs font-bold">
-                      {topSelling[0].sold} sold
+                      {topSelling[0].sold} {t("unitsSold", "sold")}
                     </Badge>
                   </div>
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    No product sales recorded yet today.
+                    {t("noSalesToday", "No sales transactions recorded yet today.")}
                   </p>
                 )}
               </div>
@@ -1118,7 +1120,7 @@ function Dashboard() {
                 onClick={() => window.print()}
                 className="text-xs font-semibold"
               >
-                <Printer className="size-4 mr-2" /> Print Summary
+                <Printer className="size-4 mr-2" /> {t("printSummary", "Print Summary")}
               </Button>
               {canAccessReports && (
                 <Button
@@ -1126,7 +1128,7 @@ function Dashboard() {
                   className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs"
                 >
                   <Link to="/reports" onClick={() => setIsDailyReportOpen(false)}>
-                    <BarChart3 className="size-4 mr-2" /> Detailed Reports{" "}
+                    <BarChart3 className="size-4 mr-2" /> {t("detailedReports", "Detailed Reports")}{" "}
                     <ArrowRight className="size-4 ml-1" />
                   </Link>
                 </Button>

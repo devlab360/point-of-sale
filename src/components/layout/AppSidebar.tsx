@@ -218,7 +218,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
               <span>{settings?.storeName || "ONEDESK360"}</span>
             </div>
             <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[#B58D4C] mt-0.5">
-              <span>ADMIN DASHBOARD</span>
+              <span>{t("adminDashboard", "ADMIN DASHBOARD")}</span>
             </div>
           </div>
         </Link>
@@ -249,7 +249,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
               </Link>
             </TooltipTrigger>
             <TooltipContent side="right" className="font-bold text-xs">
-              Dashboard
+              {t("dashboard", "Dashboard")}
             </TooltipContent>
           </Tooltip>
         ) : (
@@ -269,7 +269,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                 isDashboardActive ? "text-white" : "text-foreground/80",
               )}
             />
-            <span>Dashboard</span>
+            <span>{t("dashboard", "Dashboard")}</span>
           </Link>
         )}
 
@@ -522,7 +522,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                 )}
               </Link>
             </TooltipTrigger>
-            <TooltipContent side="right">View Profile</TooltipContent>
+            <TooltipContent side="right">{t("viewProfile", "View Profile")}</TooltipContent>
           </Tooltip>
 
           <Button
@@ -534,7 +534,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
               "shrink-0 text-muted-foreground hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive",
               isMinimized ? "size-8 w-full" : "size-7.5",
             )}
-            tooltip="Log out"
+            tooltip={t("logout", "Log out")}
           >
             <LogOut className="size-4" />
           </Button>

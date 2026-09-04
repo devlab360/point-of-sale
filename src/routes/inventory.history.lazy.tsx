@@ -31,6 +31,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
   Table,
@@ -48,29 +49,29 @@ export const Route = createLazyFileRoute("/inventory/history")({
   component: HistoryPage,
 });
 
-function getActionVisuals(action: string) {
+function getActionVisuals(action: string, t: (key: string, fallback: string) => string) {
   const a = (action || "").toLowerCase();
   if (a.includes("sale") || a.includes("pos")) {
     return {
-      label: "POS Sale",
+      label: t("posSale", "POS Sale"),
       badge: "bg-destructive/10 text-destructive border-destructive/25",
     };
   }
   if (a.includes("purchase") || a.includes("inward") || a.includes("receive")) {
     return {
-      label: "Purchase Inward",
+      label: t("purchaseInward", "Purchase Inward"),
       badge: "bg-success/15 text-success border-success/30",
     };
   }
   if (a.includes("adjust")) {
     return {
-      label: "Adjustment",
+      label: t("adjustment", "Adjustment"),
       badge: "bg-warning/15 text-warning-foreground border-warning/30",
     };
   }
   if (a.includes("transfer")) {
     return {
-      label: "Branch Transfer",
+      label: t("branchTransfer", "Branch Transfer"),
       badge: "bg-info/10 text-info border-info/20",
     };
   }
@@ -81,6 +82,7 @@ function getActionVisuals(action: string) {
 }
 
 function HistoryPage() {
+  const { t } = useLanguage();
   const { formatDateTime } = usePreferences();
   const orgId = PersistStore.getOrgId() || "default";
 
@@ -140,37 +142,37 @@ function HistoryPage() {
     <div className="page-container space-y-6">
       {/* Standard PageHeader */}
       <PageHeader
-        title="Stock Movement Ledger"
-        description="Immutable audit trail of all SKU balance adjustments, POS sale dispatches, purchases, and transfer movements."
+        title={t("stockMovementLedgerTitle", "Stock Movement Ledger")}
+        description={t("stockMovementLedgerDesc", "Immutable audit trail of all SKU balance adjustments, POS sale dispatches, purchases, and transfer movements.")}
       />
 
       {/* Standard StatCard Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Total Ledger Events"
+          label={t("totalLedgerEvents", "Total Ledger Events")}
           value={String(totalEvents)}
-          hint="Continuous movement log"
+          hint={t("continuousMovementLog", "Continuous movement log")}
           icon={History}
           accent="primary"
         />
         <StatCard
-          label="POS Sales Dispatched"
+          label={t("posSalesDispatched", "POS Sales Dispatched")}
           value={String(posSalesOut)}
-          hint="Retail checkout events"
+          hint={t("retailCheckoutEvents", "Retail Checkout Events")}
           icon={ShoppingCart}
           accent="destructive"
         />
         <StatCard
-          label="Purchase Inward Orders"
+          label={t("purchaseInwardOrders", "Purchase Inward Orders")}
           value={String(inwardPurchases)}
-          hint="Vendor supply receipts"
+          hint={t("vendorSupplyReceipts", "Vendor supply receipts")}
           icon={Truck}
           accent="success"
         />
         <StatCard
-          label="Audit Adjustments"
+          label={t("auditAdjustments", "Audit Adjustments")}
           value={String(adjustmentsCount)}
-          hint="Manual reconciliation entries"
+          hint={t("manualReconciliationEntries", "Manual reconciliation entries")}
           icon={RotateCcw}
           accent="warning"
         />
@@ -183,7 +185,7 @@ function HistoryPage() {
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search product name or movement notes..."
+              placeholder={t("searchProductOrMovementPlaceholder", "Search product name or movement notes...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-9 text-sm rounded-lg"
@@ -193,14 +195,14 @@ function HistoryPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Select value={actionFilter} onValueChange={setActionFilter}>
               <SelectTrigger className="h-9 w-40 text-xs rounded-lg">
-                <SelectValue placeholder="All Event Types" />
+                <SelectValue placeholder={t("allEventTypes", "All Event Types")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Event Types</SelectItem>
-                <SelectItem value="sale">POS Sales Out</SelectItem>
-                <SelectItem value="purchase">Purchase Inward</SelectItem>
-                <SelectItem value="adjust">Stock Adjustments</SelectItem>
-                <SelectItem value="transfer">Branch Transfers</SelectItem>
+                <SelectItem value="all">{t("allEventTypes", "All Event Types")}</SelectItem>
+                <SelectItem value="sale">{t("posSalesOut", "POS Sales Out")}</SelectItem>
+                <SelectItem value="purchase">{t("purchaseInward", "Purchase Inward")}</SelectItem>
+                <SelectItem value="adjust">{t("stockAdjustments", "Stock Adjustments")}</SelectItem>
+                <SelectItem value="transfer">{t("branchTransfers", "Branch Transfers")}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -243,11 +245,11 @@ function HistoryPage() {
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={History}
-            title="No inventory movement logs found"
+            title={t("noInventoryMovementLogsFound", "No inventory movement logs found")}
             description={
               search
-                ? "Try adjusting your search criteria."
-                : "Movement audit entries will automatically appear as POS sales and stock changes occur."
+                ? t("noMovementLogsSearchDesc", "Try adjusting your search criteria.")
+                : t("noMovementLogsDefaultDesc", "Movement audit entries will automatically appear as POS sales and stock changes occur.")
             }
           />
         ) : viewMode === "table" ? (
@@ -257,16 +259,16 @@ function HistoryPage() {
               <Table className="min-w-[750px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Product Name</TableHead>
-                    <TableHead>Event Type</TableHead>
-                    <TableHead>Stock Delta</TableHead>
-                    <TableHead>Movement Details</TableHead>
-                    <TableHead className="text-right">Timestamp</TableHead>
+                    <TableHead>{t("productName", "Product Name")}</TableHead>
+                    <TableHead>{t("eventType", "Event Type")}</TableHead>
+                    <TableHead>{t("stockDelta", "Stock Delta")}</TableHead>
+                    <TableHead>{t("movementDetails", "Movement Details")}</TableHead>
+                    <TableHead className="text-right">{t("timestamp", "Timestamp")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedMovements.map((m: any) => {
-                    const visuals = getActionVisuals(m.action);
+                    const visuals = getActionVisuals(m.action, t);
                     const isPositive = (m.quantity || 0) > 0;
 
                     return (
@@ -288,11 +290,11 @@ function HistoryPage() {
                                 : "bg-destructive/15 text-destructive border-destructive/30"
                             }`}
                           >
-                            {isPositive ? `+${m.quantity} units` : `${m.quantity} units`}
+                            {isPositive ? `+${m.quantity} ${t("units", "units")}` : `${m.quantity} ${t("units", "units")}`}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground max-w-sm truncate">
-                          {m.notes || "System movement audit"}
+                          {m.notes || t("systemMovementAudit", "System movement audit")}
                         </TableCell>
                         <TableCell className="text-right text-xs text-muted-foreground">
                           {formatDateTime(m.timestamp || m.createdAt)}
@@ -321,7 +323,7 @@ function HistoryPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {paginatedMovements.map((m: any) => {
-                const visuals = getActionVisuals(m.action);
+                const visuals = getActionVisuals(m.action, t);
                 const isPositive = (m.quantity || 0) > 0;
 
                 return (
@@ -342,7 +344,7 @@ function HistoryPage() {
                               : "bg-destructive/15 text-destructive border-destructive/30"
                           }`}
                         >
-                          {isPositive ? `+${m.quantity}` : `${m.quantity}`} units
+                          {isPositive ? `+${m.quantity}` : `${m.quantity}`} {t("units", "units")}
                         </Badge>
                       </div>
 
@@ -351,13 +353,13 @@ function HistoryPage() {
                           {m.productName}
                         </h3>
                         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                          {m.notes || "System movement audit"}
+                          {m.notes || t("systemMovementAudit", "System movement audit")}
                         </p>
                       </div>
                     </div>
 
                     <div className="pt-3 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground">
-                      <span>Audit Record</span>
+                      <span>{t("auditRecord", "Audit Record")}</span>
                       <span>{formatDateTime(m.timestamp || m.createdAt)}</span>
                     </div>
                   </div>

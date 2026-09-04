@@ -458,7 +458,7 @@ function SalesPage() {
                       <TableHead>{t("sync") || "Sync"}</TableHead>
                       <TableHead>{t("status") || "Status"}</TableHead>
                       <TableHead className="text-right">{t("total") || "Total"}</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="text-right">{t("common.actions", "Actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -714,16 +714,16 @@ function SalesPage() {
                       <TableHeader className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
                         <TableRow>
                           <TableHead className="px-3 py-2 whitespace-nowrap text-left">
-                            Item
+                            {t("sales.item", "Item")}
                           </TableHead>
                           <TableHead className="px-3 py-2 whitespace-nowrap text-right">
-                            Qty
+                            {t("common.qty", "Qty")}
                           </TableHead>
                           <TableHead className="px-3 py-2 whitespace-nowrap text-right">
-                            Price
+                            {t("common.price", "Price")}
                           </TableHead>
                           <TableHead className="px-3 py-2 whitespace-nowrap text-right">
-                            Total
+                            {t("common.total", "Total")}
                           </TableHead>
                         </TableRow>
                       </TableHeader>

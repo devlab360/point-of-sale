@@ -13,9 +13,9 @@ import {
   generateVerificationOtp,
   getTrialDaysFromEnv,
 } from "@/lib/email-service";
-import { toast } from "sonner";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/verify-email")({
   head: () => ({ meta: [{ title: `Email Verification · ${appName} SaaS` }] }),
@@ -23,6 +23,7 @@ export const Route = createFileRoute("/verify-email")({
 });
 
 function VerifyEmailPage() {
+  const { t } = useLanguage();
   const { user, settings } = useAuth();
   const navigate = useNavigate();
 
@@ -94,11 +95,11 @@ function VerifyEmailPage() {
       console.log("Verify OTP response:", res);
 
       if (res?.success) {
-        toast.success(`Email verified successfully! Welcome to ${appName}.`);
+        toast.success(t("emailVerifiedSuccess", `Email verified successfully! Welcome to ${appName}.`));
         // Reload window to update auth state across app
         window.location.href = "/";
       } else {
-        toast.error(res?.error || "Invalid verification code. Please try again.");
+        toast.error(res?.error || t("invalidVerificationCode", "Invalid verification code. Please try again."));
         setOtp(""); // Clear OTP on error so user can type again easily
       }
     } catch (error: any) {
@@ -119,21 +120,17 @@ function VerifyEmailPage() {
             <Mail className="size-7" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
-            Verify Your Email
+            {t("verifyYourEmail", "Verify Your Email")}
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 font-medium">
-            Activate your account and start your{" "}
-            <strong className="text-primary font-semibold">
-              {trialDays}-Day Full Enterprise Trial
-            </strong>
-            .
+            {t("activateAccountTrial", `Activate your account and start your ${trialDays}-Day Full Enterprise Trial.`)}
           </p>
         </div>
 
         <div className="space-y-5 pt-4">
           <div className="rounded-2xl border border-border/80 p-3.5 bg-muted/20 text-center space-y-1">
             <div className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider">
-              Verification Code Sent To
+              {t("verificationCodeSentTo", "Verification Code Sent To")}
             </div>
             <div className="font-bold text-sm text-foreground truncate">
               {user?.email || settings?.email}
@@ -143,7 +140,7 @@ function VerifyEmailPage() {
           <form noValidate onSubmit={handleVerify} className="space-y-4">
             <div className="space-y-2">
               <label className="text-xs font-bold text-foreground block text-center">
-                Enter 6-Digit Verification Code
+                {t("enterSixDigitCode", "Enter 6-Digit Verification Code")}
               </label>
               <Input
                 type="text"
@@ -169,13 +166,13 @@ function VerifyEmailPage() {
               disabled={isVerifying}
             >
               {isVerifying && <Loader2 className="mr-2 size-4 animate-spin" />}
-              {isVerifying ? "Verifying Code..." : "Verify & Activate Store"}
+              {isVerifying ? t("verifyingCode", "Verifying Code...") : t("verifyActivateStore", "Verify & Activate Store")}
               <ArrowRight className="size-4" />
             </Button>
           </form>
 
           <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 border-t border-border/60">
-            <span>Didn't receive code?</span>
+            <span>{t("didntReceiveCode", "Didn't receive code?")}</span>
             <Button
               variant="ghost"
               size="sm"
@@ -183,8 +180,7 @@ function VerifyEmailPage() {
               disabled={isSending}
               className="h-8 text-xs font-bold text-primary rounded-xl hover:bg-primary/10"
             >
-              <RefreshCw className={`mr-1.5 size-3.5 ${isSending ? "animate-spin" : ""}`} /> Resend
-              Code
+              <RefreshCw className={`mr-1.5 size-3.5 ${isSending ? "animate-spin" : ""}`} /> {t("resendCode", "Resend Code")}
             </Button>
           </div>
         </div>

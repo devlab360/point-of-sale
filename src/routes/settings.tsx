@@ -972,16 +972,16 @@ function SettingsPage() {
     <div className="page-container pb-32 animate-in fade-in duration-300">
       {/* Top Header */}
       <PageHeader
-        title="Settings & Preferences"
+        title={t("settings", "Settings & Preferences")}
         description="Manage your business profile, receipt design, taxation, team security, and billing."
         actions={
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
             {hasChanges && (
               <Badge
                 variant="outline"
-                className="bg-primary/10 text-primary border-primary/20 text-xs font-semibold py-1 px-2.5 gap-1.5 animate-pulse hidden sm:flex"
+                className="bg-primary/10 text-primary border-primary/20 text-xs font-semibold py-1 px-2.5 gap-1.5 animate-pulse hidden md:flex"
               >
-                <span className="size-1.5 rounded-full bg-primary" /> Unsaved Changes
+                <span className="size-1.5 rounded-full bg-primary" /> {t("unsavedChanges", "Unsaved Changes")}
               </Badge>
             )}
             <Button
@@ -992,22 +992,23 @@ function SettingsPage() {
                 toast.info("Reverted to last saved settings");
               }}
               disabled={!hasChanges || isSaving}
-              className="text-xs font-semibold h-9 px-3"
+              className="text-xs font-semibold h-9 px-2.5 sm:px-3 shrink-0"
             >
-              Discard
+              {t("discard", "Discard")}
             </Button>
             <Button
               onClick={handleSave}
               disabled={isSaving}
               size="sm"
-              className="font-bold text-xs shadow-soft min-w-[130px] h-9"
+              className="font-bold text-xs shadow-soft min-w-[95px] sm:min-w-[130px] h-9 px-3 sm:px-4 shrink-0"
             >
               {isSaving ? (
                 <Loader2 className="size-3.5 mr-1.5 animate-spin" />
               ) : (
                 <Check className="size-3.5 mr-1.5" />
               )}
-              Save Settings
+              <span className="hidden sm:inline">{t("saveSettings", "Save Settings")}</span>
+              <span className="sm:hidden">{t("save", "Save")}</span>
             </Button>
           </div>
         }
@@ -2031,13 +2032,13 @@ function SettingsPage() {
                         <Table className="min-w-[640px]">
                           <TableHeader>
                             <TableRow className="bg-muted/40 text-[11px]">
-                              <TableHead>Name & Rules</TableHead>
-                              <TableHead>Tax Rate</TableHead>
-                              <TableHead>Type</TableHead>
-                              <TableHead>Breakdown / Split</TableHead>
-                              <TableHead>Default</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead className="text-right">Actions</TableHead>
+                              <TableHead>{t("settings.nameAndRules", "Name & Rules")}</TableHead>
+                              <TableHead>{t("settings.taxRate", "Tax Rate")}</TableHead>
+                              <TableHead>{t("common.type", "Type")}</TableHead>
+                              <TableHead>{t("settings.breakdownSplit", "Breakdown / Split")}</TableHead>
+                              <TableHead>{t("common.default", "Default")}</TableHead>
+                              <TableHead>{t("common.status", "Status")}</TableHead>
+                              <TableHead className="text-right">{t("common.actions", "Actions")}</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -2833,35 +2834,42 @@ function SettingsPage() {
 
       {/* Floating Unsaved Changes Bottom Banner */}
       {hasChanges && (
-        <div className="fixed bottom-6 inset-x-0 z-50 flex justify-center px-4 animate-in fade-in slide-in-from-bottom-4 duration-300 pointer-events-none">
-          <div className="pointer-events-auto flex items-center gap-3.5 rounded-2xl border border-primary/30 bg-card/95 backdrop-blur-xl px-5 py-3 shadow-2xl ring-2 ring-primary/20">
-            <span className="flex size-2.5 rounded-full bg-primary animate-ping" />
-            <span className="text-xs font-black text-foreground">You have unsaved changes</span>
-            <div className="h-4 w-px bg-border/80 mx-1" />
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                if (dbSettings) setSettings(dbSettings);
-                toast.info("Changes discarded");
-              }}
-              className="h-8 text-xs font-semibold"
-            >
-              Discard
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleSave}
-              disabled={isSaving}
-              className="h-8 text-xs font-bold shadow-soft min-w-[110px]"
-            >
-              {isSaving ? (
-                <Loader2 className="size-3.5 mr-1 animate-spin" />
-              ) : (
-                <Check className="size-3.5 mr-1" />
-              )}
-              Save Now
-            </Button>
+        <div className="fixed bottom-20 sm:bottom-6 inset-x-0 z-50 flex justify-center px-3 sm:px-4 animate-in fade-in slide-in-from-bottom-4 duration-300 pointer-events-none">
+          <div className="pointer-events-auto flex items-center justify-between sm:justify-start gap-2 sm:gap-3.5 rounded-2xl border border-primary/30 bg-card/95 backdrop-blur-xl px-3.5 py-2.5 sm:px-5 sm:py-3 shadow-2xl ring-2 ring-primary/20 max-w-lg w-full sm:w-auto">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="flex size-2 shrink-0 sm:size-2.5 rounded-full bg-primary animate-ping" />
+              <span className="text-xs font-black text-foreground truncate">
+                {t("unsavedChanges", "Unsaved Changes")}
+              </span>
+            </div>
+            <div className="h-4 w-px bg-border/80 mx-0.5 sm:mx-1 shrink-0 hidden xs:block" />
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  if (dbSettings) setSettings(dbSettings);
+                  toast.info("Changes discarded");
+                }}
+                className="h-8 text-xs font-semibold px-2 sm:px-3"
+              >
+                {t("discard", "Discard")}
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSave}
+                disabled={isSaving}
+                className="h-8 text-xs font-bold shadow-soft min-w-[85px] sm:min-w-[110px] px-2.5 sm:px-3"
+              >
+                {isSaving ? (
+                  <Loader2 className="size-3.5 mr-1 animate-spin" />
+                ) : (
+                  <Check className="size-3.5 mr-1" />
+                )}
+                <span className="hidden xs:inline sm:inline">{t("save", "Save Now")}</span>
+                <span className="xs:hidden sm:hidden">{t("save", "Save")}</span>
+              </Button>
+            </div>
           </div>
         </div>
       )}
@@ -3823,16 +3831,16 @@ function LocationsTab() {
               <thead className="bg-muted/40 border-b border-border/60">
                 <tr>
                   <th className="text-left px-4 py-3 font-bold text-muted-foreground uppercase tracking-wider">
-                    Branch / Facility
+                    {t("settings.branchFacility", "Branch / Facility")}
                   </th>
                   <th className="text-left px-4 py-3 font-bold text-muted-foreground uppercase tracking-wider">
-                    Type
+                    {t("common.type", "Type")}
                   </th>
                   <th className="text-left px-4 py-3 font-bold text-muted-foreground uppercase tracking-wider">
-                    Status
+                    {t("common.status", "Status")}
                   </th>
                   <th className="text-right px-4 py-3 font-bold text-muted-foreground uppercase tracking-wider">
-                    Actions
+                    {t("common.actions", "Actions")}
                   </th>
                 </tr>
               </thead>

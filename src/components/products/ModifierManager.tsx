@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useCurrency } from "@/lib/currency";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export interface ModifierOption {
   id?: string;
@@ -35,6 +36,7 @@ interface ModifierManagerProps {
 }
 
 export function ModifierManager({ modifiers, onChange }: ModifierManagerProps) {
+  const { t } = useLanguage();
   const { currencySymbol } = useCurrency();
   const addGroup = () => {
     onChange([
@@ -96,16 +98,16 @@ export function ModifierManager({ modifiers, onChange }: ModifierManagerProps) {
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="space-y-2">
-                <Label>Modifier Group Name</Label>
+                <Label>{t("products.modifierGroupName", "Modifier Group Name")}</Label>
                 <Input
                   value={group.name}
                   onChange={(e) => updateGroup(groupIndex, "name", e.target.value)}
-                  placeholder="e.g. Size, Add-ons"
+                  placeholder={t("products.modifierGroupPlaceholder", "e.g. Size, Add-ons")}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Selection Type</Label>
+                <Label>{t("products.selectionType", "Selection Type")}</Label>
                 <Select
                   value={group.selectionType}
                   onValueChange={(val) => updateGroup(groupIndex, "selectionType", val)}
@@ -114,8 +116,8 @@ export function ModifierManager({ modifiers, onChange }: ModifierManagerProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="single">Single Choice (Radio)</SelectItem>
-                    <SelectItem value="multiple">Multiple Choice (Checkbox)</SelectItem>
+                    <SelectItem value="single">{t("products.singleChoice", "Single Choice (Radio)")}</SelectItem>
+                    <SelectItem value="multiple">{t("products.multipleChoice", "Multiple Choice (Checkbox)")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -127,7 +129,7 @@ export function ModifierManager({ modifiers, onChange }: ModifierManagerProps) {
                     onCheckedChange={(checked) => updateGroup(groupIndex, "isRequired", checked)}
                     id={`required-${groupIndex}`}
                   />
-                  <Label htmlFor={`required-${groupIndex}`}>Required</Label>
+                  <Label htmlFor={`required-${groupIndex}`}>{t("common.required", "Required")}</Label>
                 </div>
               </div>
             </div>
@@ -144,7 +146,7 @@ export function ModifierManager({ modifiers, onChange }: ModifierManagerProps) {
 
           <div className="pl-4 border-l-2 space-y-3">
             <Label className="text-muted-foreground text-xs uppercase tracking-wider">
-              Options
+              {t("products.options", "Options")}
             </Label>
 
             {group.options.map((option, optionIndex) => (
@@ -152,7 +154,7 @@ export function ModifierManager({ modifiers, onChange }: ModifierManagerProps) {
                 <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
                 <Input
                   className="flex-1"
-                  placeholder="Option Name (e.g. Extra Cheese)"
+                  placeholder={t("products.optionNamePlaceholder", "Option Name (e.g. Extra Cheese)")}
                   value={option.name}
                   onChange={(e) => updateOption(groupIndex, optionIndex, "name", e.target.value)}
                 />
@@ -165,7 +167,7 @@ export function ModifierManager({ modifiers, onChange }: ModifierManagerProps) {
                     type="number"
                     min="0"
                     step="0.01"
-                    placeholder="Price"
+                    placeholder={t("common.price", "Price")}
                     value={option.price}
                     onChange={(e) =>
                       updateOption(
@@ -195,7 +197,7 @@ export function ModifierManager({ modifiers, onChange }: ModifierManagerProps) {
               onClick={() => addOption(groupIndex)}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Add Option
+              {t("products.addOption", "Add Option")}
             </Button>
           </div>
         </div>
@@ -208,7 +210,7 @@ export function ModifierManager({ modifiers, onChange }: ModifierManagerProps) {
         className="w-full border-dashed border-2"
       >
         <Plus className="h-4 w-4 mr-2" />
-        Add Modifier Group
+        {t("products.addModifierGroup", "Add Modifier Group")}
       </Button>
     </div>
   );

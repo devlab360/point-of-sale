@@ -63,6 +63,7 @@ import { ACCOUNT_TYPES, VOUCHER_TYPES } from "@/constants";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/accounts")({
   head: () => ({ meta: [{ title: `Chart of Accounts & Vouchers · ${appName}` }] }),
@@ -70,6 +71,7 @@ export const Route = createFileRoute("/accounts")({
 });
 
 function AccountsPage() {
+  const { t } = useLanguage();
   const { formatDateTime, formatDate } = usePreferences();
   const { formatCurrency, currencySymbol } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
@@ -181,8 +183,8 @@ function AccountsPage() {
     clearError: clearAccError,
     clearAll: clearAccAll,
   } = useFormValidation({
-    code: { required: "Account code is required" },
-    name: { required: "Account name is required" },
+    code: { required: t("accountCodeRequired", "Account code is required") },
+    name: { required: t("accountNameRequired", "Account name is required") },
   });
 
   const {
@@ -191,11 +193,11 @@ function AccountsPage() {
     clearError: clearVchError,
     clearAll: clearVchAll,
   } = useFormValidation({
-    debitAccId: { required: "Debit account is required" },
-    creditAccId: { required: "Credit account is required" },
+    debitAccId: { required: t("debitAccountRequired", "Debit account is required") },
+    creditAccId: { required: t("creditAccountRequired", "Credit account is required") },
     voucherAmount: {
-      required: "Voucher amount is required",
-      positive: "Amount must be a positive number",
+      required: t("voucherAmountRequired", "Voucher amount is required"),
+      positive: t("amountPositiveRequired", "Amount must be a positive number"),
     },
   });
 
@@ -205,12 +207,12 @@ function AccountsPage() {
       const res = await seedDefaultAccountsFn({ data: {} });
       if (res.success) {
         queryClient.invalidateQueries({ queryKey: ["accounts"] });
-        toast.success(`Seeded Standard Chart of Accounts successfully!`);
+        toast.success(t("seededAccountsSuccess", "Seeded Standard Chart of Accounts successfully!"));
       } else {
-        toast.error("Failed to seed standard accounts: " + res.error);
+        toast.error(t("failedToSeedAccounts", "Failed to seed standard accounts: ") + res.error);
       }
     } catch (err: any) {
-      toast.error("Error seeding accounts");
+      toast.error(t("errorSeedingAccounts", "Error seeding accounts"));
     } finally {
       setIsSeeding(false);
     }
@@ -239,7 +241,7 @@ function AccountsPage() {
             balance,
           },
         });
-        toast.success(`Account "${name}" updated!`);
+        toast.success(t("accountUpdated", `Account "${name}" updated!`));
       } else {
         await createAccountFn({
           data: {
@@ -250,14 +252,14 @@ function AccountsPage() {
             isSystem: false,
           },
         });
-        toast.success(`Account "${name}" added to Chart of Accounts!`);
+        toast.success(t("accountAddedToChart", `Account "${name}" added to Chart of Accounts!`));
       }
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
       setIsAddAccountOpen(false);
       setEditingAccount(null);
       clearAccAll();
     } catch (err) {
-      toast.error("Failed to save account");
+      toast.error(t("failedToSaveAccount", "Failed to save account"));
     } finally {
       setIsSubmittingAccount(false);
     }
@@ -268,13 +270,13 @@ function AccountsPage() {
     try {
       const res = await deleteAccountFn({ data: { id: deletingAccount.id } });
       if (res.success) {
-        toast.success(`Account "${deletingAccount.name}" deleted.`);
+        toast.success(t("accountDeletedSuccess", `Account "${deletingAccount.name}" deleted.`));
         queryClient.invalidateQueries({ queryKey: ["accounts"] });
       } else {
-        toast.error("Failed to delete account: " + res.error);
+        toast.error(t("failedToDeleteAccount", "Failed to delete account: ") + res.error);
       }
     } catch (err) {
-      toast.error("Error deleting account");
+      toast.error(t("errorDeletingAccount", "Error deleting account"));
     } finally {
       setDeletingAccount(null);
     }
@@ -289,7 +291,7 @@ function AccountsPage() {
     const amt = parseFloat(voucherAmount);
 
     if (debitAccId === creditAccId) {
-      toast.error("Debit and Credit accounts cannot be the same");
+      toast.error(t("debitCreditCannotBeSame", "Debit and Credit accounts cannot be the same"));
       return;
     }
 
@@ -316,16 +318,16 @@ function AccountsPage() {
       if (res.success) {
         queryClient.invalidateQueries({ queryKey: ["vouchers"] });
         queryClient.invalidateQueries({ queryKey: ["accounts"] });
-        toast.success(`Voucher ${vNo} posted successfully!`);
+        toast.success(t("voucherPostedSuccess", `Voucher ${vNo} posted successfully!`));
         setIsAddVoucherOpen(false);
         setVoucherAmount("");
         setNarration("");
         clearVchAll();
       } else {
-        toast.error("Error: " + res.error);
+        toast.error(t("errorPrefix", "Error: ") + res.error);
       }
     } catch (err) {
-      toast.error("Failed to post voucher");
+      toast.error(t("failedToPostVoucher", "Failed to post voucher"));
     } finally {
       setIsPostingVoucher(false);
     }
@@ -335,10 +337,10 @@ function AccountsPage() {
     exportToCSV(
       rawAccounts,
       [
-        { key: "code", label: "Code" },
-        { key: "name", label: "Name" },
-        { key: "type", label: "Category" },
-        { key: "balance", label: "Balance" },
+        { key: "code", label: t("code", "Code") },
+        { key: "name", label: t("name", "Name") },
+        { key: "type", label: t("category", "Category") },
+        { key: "balance", label: t("balance", "Balance") },
       ],
       "chart-of-accounts",
     );
@@ -348,7 +350,7 @@ function AccountsPage() {
     try {
       const data = await parseCSV(file);
       if (data.length === 0) {
-        toast.error("No data found in the CSV");
+        toast.error(t("noDataInCsv", "No data found in the CSV"));
         return;
       }
 
@@ -374,9 +376,9 @@ function AccountsPage() {
       }
 
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
-      toast.success(`Successfully imported ${count} accounts`);
+      toast.success(t("importedAccountsSuccess", `Successfully imported ${count} accounts`));
     } catch (error) {
-      toast.error("Failed to parse CSV file");
+      toast.error(t("failedToParseCsv", "Failed to parse CSV file"));
     }
   };
 
@@ -417,10 +419,16 @@ function AccountsPage() {
   return (
     <div className="space-y-6">
       <DataPage
-        title="Double-Entry Financial Accounting"
-        description="Manage Chart of Accounts, General Ledgers, and Double-Entry Journal Vouchers."
+        title={t("doubleEntryAccounting", "Double-Entry Financial Accounting")}
+        description={t(
+          "doubleEntryAccountingDesc",
+          "Manage Chart of Accounts, General Ledgers, and Double-Entry Journal Vouchers.",
+        )}
         primaryAction={{
-          label: activeTab === "accounts" ? "Add Ledger Account" : "Post New Voucher",
+          label:
+            activeTab === "accounts"
+              ? t("addLedgerAccount", "Add Ledger Account")
+              : t("postNewVoucher", "Post New Voucher"),
           onClick: () => {
             if (activeTab === "accounts") {
               setEditingAccount(null);
@@ -432,7 +440,9 @@ function AccountsPage() {
           },
         }}
         searchPlaceholder={
-          activeTab === "vouchers" ? "Search vouchers..." : "Search accounts by name or code..."
+          activeTab === "vouchers"
+            ? t("searchVouchersPlaceholder", "Search vouchers...")
+            : t("searchAccountsPlaceholder", "Search accounts by name or code...")
         }
         searchValue={search}
         onSearchChange={setSearch}
@@ -447,10 +457,10 @@ function AccountsPage() {
                 <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
                   <div className="flex-1 space-y-4">
                     <div className="space-y-2">
-                      <Label>Voucher Type</Label>
+                      <Label>{t("voucherType", "Voucher Type")}</Label>
                       <SearchableSelect
                         options={[
-                          { value: "", label: "All Types" },
+                          { value: "", label: t("allTypes", "All Types") },
                           ...VOUCHER_TYPES.map((v) => ({
                             value: v.value,
                             label: v.label.split(" (")[0],
@@ -458,7 +468,7 @@ function AccountsPage() {
                         ]}
                         value={draftFilters.type}
                         onChange={(val) => setDraftFilters((prev) => ({ ...prev, type: val }))}
-                        placeholder="Filter by Type"
+                        placeholder={t("filterByType", "Filter by Type")}
                       />
                     </div>
                   </div>
@@ -470,7 +480,7 @@ function AccountsPage() {
                         close();
                       }}
                     >
-                      Apply Filters
+                      {t("applyFilters", "Apply Filters")}
                     </Button>
                   </div>
                 </div>
@@ -483,7 +493,7 @@ function AccountsPage() {
               <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-card p-5 text-left card-interactive shadow-card">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-black uppercase tracking-wider text-primary">
-                    Total Enterprise Assets
+                    {t("totalEnterpriseAssets", "Total Enterprise Assets")}
                   </span>
                   <TrendingUp className="size-4 text-primary" />
                 </div>
@@ -491,14 +501,14 @@ function AccountsPage() {
                   {formatCurrency(totalAssets)}
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  Cash, Bank Accounts, Receivables & Stock
+                  {t("assetsDescription", "Cash, Bank Accounts, Receivables & Stock")}
                 </p>
               </div>
 
               <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-card p-5 text-left card-interactive shadow-card">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                    Total Liabilities
+                    {t("totalLiabilities", "Total Liabilities")}
                   </span>
                   <TrendingDown className="size-4 text-amber-500" />
                 </div>
@@ -506,14 +516,14 @@ function AccountsPage() {
                   {formatCurrency(totalLiabilities)}
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  Accounts Payable, Supplier Dues & Taxes
+                  {t("liabilitiesDescription", "Accounts Payable, Supplier Dues & Taxes")}
                 </p>
               </div>
 
               <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-card p-5 text-left card-interactive shadow-card">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                    Owner's Equity
+                    {t("ownersEquity", "Owner's Equity")}
                   </span>
                   <CheckCircle2 className="size-4 text-emerald-500" />
                 </div>
@@ -521,7 +531,7 @@ function AccountsPage() {
                   {formatCurrency(totalEquity || totalAssets - totalLiabilities)}
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  Net Capital Investment & Retained Earnings
+                  {t("equityDescription", "Net Capital Investment & Retained Earnings")}
                 </p>
               </div>
             </div>
@@ -537,7 +547,7 @@ function AccountsPage() {
               onClick={() => setActiveTab("accounts")}
               className="gap-1.5 font-bold shadow-soft rounded-xl text-xs h-9"
             >
-              <Layers className="size-4" /> Chart of Accounts ({rawAccounts.length})
+              <Layers className="size-4" /> {t("chartOfAccounts", "Chart of Accounts")} ({rawAccounts.length})
             </Button>
             <Button
               variant={activeTab === "vouchers" ? "default" : "outline"}
@@ -545,7 +555,7 @@ function AccountsPage() {
               onClick={() => setActiveTab("vouchers")}
               className="gap-1.5 font-bold shadow-soft rounded-xl text-xs h-9"
             >
-              <BookOpen className="size-4" /> Journal & Vouchers ({rawVouchers.length})
+              <BookOpen className="size-4" /> {t("journalAndVouchers", "Journal & Vouchers")} ({rawVouchers.length})
             </Button>
           </div>
 
@@ -562,7 +572,7 @@ function AccountsPage() {
               ) : (
                 <Sparkles className="size-3.5" />
               )}
-              Seed Standard Accounts
+              {t("seedStandardAccounts", "Seed Standard Accounts")}
             </Button>
           )}
         </div>
@@ -577,11 +587,13 @@ function AccountsPage() {
                 </div>
                 <div className="max-w-md space-y-1">
                   <h3 className="text-lg font-black text-foreground">
-                    No Chart of Accounts Set Up
+                    {t("noChartOfAccountsSetUp", "No Chart of Accounts Set Up")}
                   </h3>
                   <p className="text-xs text-muted-foreground">
-                    Set up double-entry ledger accounts for Cash, Bank, Sales, Payables, and
-                    Expenses, or initialize the standard predefined chart in one click.
+                    {t(
+                      "accountsEmptyDesc",
+                      "Set up double-entry ledger accounts for Cash, Bank, Sales, Payables, and Expenses, or initialize the standard predefined chart in one click.",
+                    )}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3 pt-2">
@@ -595,7 +607,7 @@ function AccountsPage() {
                     ) : (
                       <Sparkles className="size-4 mr-2" />
                     )}
-                    Initialize Standard Chart of Accounts
+                    {t("initStandardAccounts", "Initialize Standard Chart of Accounts")}
                   </Button>
                   <Button
                     variant="outline"
@@ -605,7 +617,7 @@ function AccountsPage() {
                     }}
                     className="font-bold text-xs"
                   >
-                    <Plus className="size-4 mr-1.5" /> Create Custom Account
+                    <Plus className="size-4 mr-1.5" /> {t("createCustomAccount", "Create Custom Account")}
                   </Button>
                 </div>
               </div>
@@ -626,14 +638,14 @@ function AccountsPage() {
                             variant="outline"
                             className={`capitalize font-black text-xs px-2.5 py-0.5 ${categoryColor(cat)}`}
                           >
-                            {cat} Accounts
+                            {t(`${cat}Accounts`, `${cat} Accounts`)}
                           </Badge>
                           <span className="text-xs text-muted-foreground font-semibold">
                             ({items.length})
                           </span>
                         </div>
                         <span className="text-xs font-mono font-black text-foreground">
-                          Total: {formatCurrency(catTotal)}
+                          {t("total", "Total")}: {formatCurrency(catTotal)}
                         </span>
                       </div>
 
@@ -653,7 +665,7 @@ function AccountsPage() {
                                 </span>
                                 {acc.isSystem && (
                                   <span className="text-[10px] text-muted-foreground">
-                                    Standard System Head
+                                    {t("standardSystemHead", "Standard System Head")}
                                   </span>
                                 )}
                               </div>
@@ -668,7 +680,7 @@ function AccountsPage() {
                                   size="sm"
                                   variant="ghost"
                                   className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
-                                  title="View Account Ledger"
+                                  title={t("viewAccountLedger", "View Account Ledger")}
                                   onClick={() => setSelectedLedgerAccount(acc)}
                                 >
                                   <History className="size-3.5" />
@@ -677,7 +689,7 @@ function AccountsPage() {
                                   size="sm"
                                   variant="ghost"
                                   className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-                                  title="Edit Account"
+                                  title={t("editAccount", "Edit Account")}
                                   onClick={() => {
                                     setEditingAccount(acc);
                                     setAccountType(acc.type);
@@ -691,7 +703,7 @@ function AccountsPage() {
                                     size="sm"
                                     variant="ghost"
                                     className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                    title="Delete Account"
+                                    title={t("deleteAccount", "Delete Account")}
                                     onClick={() => setDeletingAccount(acc)}
                                   >
                                     <Trash2 className="size-3.5" />
@@ -716,13 +728,13 @@ function AccountsPage() {
                 <Table className="min-w-[800px]">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Voucher #</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Debit Account (+)</TableHead>
-                      <TableHead>Credit Account (-)</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                      <TableHead>Narration</TableHead>
+                      <TableHead>{t("voucherNumber", "Voucher #")}</TableHead>
+                      <TableHead>{t("date", "Date")}</TableHead>
+                      <TableHead>{t("type", "Type")}</TableHead>
+                      <TableHead>{t("debitAccountPlus", "Debit Account (+)")}</TableHead>
+                      <TableHead>{t("creditAccountMinus", "Credit Account (-)")}</TableHead>
+                      <TableHead className="text-right">{t("amount", "Amount")}</TableHead>
+                      <TableHead>{t("narration", "Narration")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -733,8 +745,8 @@ function AccountsPage() {
                           className="py-12 text-center text-xs text-muted-foreground"
                         >
                           {search || filters.type
-                            ? "No vouchers match your search query."
-                            : 'No journal vouchers posted yet. Click "Post New Voucher" to record transactions.'}
+                            ? t("noVouchersMatchSearch", "No vouchers match your search query.")
+                            : t("noVouchersPostedYet", 'No journal vouchers posted yet. Click "Post New Voucher" to record transactions.')}
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -774,7 +786,7 @@ function AccountsPage() {
               <div className="table-mobile-cards p-3 space-y-2.5">
                 {filteredVouchers.length === 0 ? (
                   <p className="text-center py-6 text-xs text-muted-foreground">
-                    No vouchers found
+                    {t("noVouchersFound", "No vouchers found")}
                   </p>
                 ) : (
                   paginatedVouchers.map((v) => (
@@ -793,13 +805,13 @@ function AccountsPage() {
                       <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border/50">
                         <div>
                           <span className="text-muted-foreground block text-[10px]">
-                            Debit (+):
+                            {t("debitPlus", "Debit (+):")}
                           </span>
                           <span className="font-bold text-primary">{v.debitAccountName}</span>
                         </div>
                         <div>
                           <span className="text-muted-foreground block text-[10px]">
-                            Credit (-):
+                            {t("creditMinus", "Credit (-):")}
                           </span>
                           <span className="font-bold text-muted-foreground">
                             {v.creditAccountName}
@@ -849,7 +861,7 @@ function AccountsPage() {
             <div className="flex items-center justify-between">
               <SheetTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
                 <History className="size-5 text-primary" />
-                <span>Account Ledger Statement</span>
+                <span>{t("accountLedgerStatement", "Account Ledger Statement")}</span>
               </SheetTitle>
               <Badge
                 variant="outline"
@@ -864,12 +876,12 @@ function AccountsPage() {
                   [{selectedLedgerAccount?.code}] {selectedLedgerAccount?.name}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  Detailed double-entry ledger history
+                  {t("detailedLedgerHistory", "Detailed double-entry ledger history")}
                 </span>
               </div>
               <div className="text-right">
                 <span className="text-[10px] text-muted-foreground uppercase font-bold block">
-                  Current Balance
+                  {t("currentBalance", "Current Balance")}
                 </span>
                 <span className="text-lg font-black text-primary">
                   {formatCurrency(selectedLedgerAccount?.balance || 0)}
@@ -882,17 +894,17 @@ function AccountsPage() {
             {ledgerTransactions.length === 0 ? (
               <div className="py-16 text-center text-xs text-muted-foreground space-y-2">
                 <FileSpreadsheet className="size-8 mx-auto text-muted-foreground/50" />
-                <p>No journal vouchers recorded against this account yet.</p>
+                <p>{t("noVouchersForAccount", "No journal vouchers recorded against this account yet.")}</p>
               </div>
             ) : (
               <div className="rounded-xl border border-border/80 overflow-hidden shadow-sm">
                 <Table className="text-xs">
                   <TableHeader className="bg-muted/50">
                     <TableRow>
-                      <TableHead>Date / Voucher</TableHead>
-                      <TableHead>Narration</TableHead>
-                      <TableHead className="text-right text-primary">Debit (+)</TableHead>
-                      <TableHead className="text-right text-muted-foreground">Credit (-)</TableHead>
+                      <TableHead>{t("dateVoucher", "Date / Voucher")}</TableHead>
+                      <TableHead>{t("narration", "Narration")}</TableHead>
+                      <TableHead className="text-right text-primary">{t("debitPlus", "Debit (+)")}</TableHead>
+                      <TableHead className="text-right text-muted-foreground">{t("creditMinus", "Credit (-)")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -943,12 +955,12 @@ function AccountsPage() {
           <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
             <SheetTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
               <Wallet className="size-5 text-primary" />
-              <span>{editingAccount ? "Edit Ledger Account" : "Add Ledger Account"}</span>
+              <span>{editingAccount ? t("editLedgerAccount", "Edit Ledger Account") : t("addLedgerAccount", "Add Ledger Account")}</span>
             </SheetTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
               {editingAccount
-                ? "Update general ledger head code, title, and initial balance."
-                : "Create a new general ledger head in your Chart of Accounts."}
+                ? t("editAccountSubtitle", "Update general ledger head code, title, and initial balance.")
+                : t("addAccountSubtitle", "Create a new general ledger head in your Chart of Accounts.")}
             </p>
           </SheetHeader>
           <form
@@ -960,7 +972,7 @@ function AccountsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="code">
-                    Account Code <span className="text-destructive">*</span>
+                    {t("accountCode", "Account Code")} <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="code"
@@ -975,19 +987,19 @@ function AccountsPage() {
                   <FieldError message={accErrors.code} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="type">Account Category *</Label>
+                  <Label htmlFor="type">{t("accountCategory", "Account Category")} *</Label>
                   <input type="hidden" name="type" value={accountType} />
                   <SearchableSelect
                     options={ACCOUNT_TYPES.map((a) => ({ value: a.value, label: a.label }))}
                     value={accountType}
                     onChange={(val) => setAccountType(val as any)}
-                    placeholder="Select Category..."
+                    placeholder={t("selectCategory", "Select Category...")}
                   />
                 </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="name">
-                  Account Name <span className="text-destructive">*</span>
+                  {t("accountName", "Account Name")} <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="name"
@@ -1002,7 +1014,7 @@ function AccountsPage() {
                 <FieldError message={accErrors.name} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="balance">Opening Balance ({currencySymbol})</Label>
+                <Label htmlFor="balance">{t("openingBalance", "Opening Balance")} ({currencySymbol})</Label>
                 <Input
                   id="balance"
                   name="balance"
@@ -1022,7 +1034,7 @@ function AccountsPage() {
                   clearAccAll();
                 }}
               >
-                Cancel
+                {t("cancel", "Cancel")}
               </Button>
               <Button
                 type="submit"
@@ -1030,7 +1042,7 @@ function AccountsPage() {
                 className="min-w-[140px] font-bold"
               >
                 {isSubmittingAccount && <Loader2 className="size-4 animate-spin mr-2" />}
-                {editingAccount ? "Update Account" : "Save Account"}
+                {editingAccount ? t("updateAccount", "Update Account") : t("saveAccount", "Save Account")}
               </Button>
             </div>
           </form>
@@ -1054,11 +1066,13 @@ function AccountsPage() {
           <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
             <SheetTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
               <ArrowRightLeft className="size-5 text-primary" />
-              <span>Post Journal / Payment Voucher</span>
+              <span>{t("postJournalPaymentVoucher", "Post Journal / Payment Voucher")}</span>
             </SheetTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Record double-entry debit and credit transactions with automatic ledger balance
-              updating.
+              {t(
+                "postVoucherSubtitle",
+                "Record double-entry debit and credit transactions with automatic ledger balance updating.",
+              )}
             </p>
           </SheetHeader>
           <form
@@ -1068,19 +1082,19 @@ function AccountsPage() {
           >
             <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
               <div className="space-y-2">
-                <Label>Voucher Type</Label>
+                <Label>{t("voucherType", "Voucher Type")}</Label>
                 <SearchableSelect
                   options={VOUCHER_TYPES.map((v) => ({ value: v.value, label: v.label }))}
                   value={voucherType}
                   onChange={(val) => setVoucherType(val as any)}
-                  placeholder="Select Voucher Type"
+                  placeholder={t("selectVoucherType", "Select Voucher Type")}
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label>
-                    Debit Account (+) <span className="text-destructive">*</span>
+                    {t("debitAccountPlus", "Debit Account (+)")} <span className="text-destructive">*</span>
                   </Label>
                   <div
                     className={vchErrors.debitAccId ? "rounded-md border border-destructive" : ""}
@@ -1095,14 +1109,14 @@ function AccountsPage() {
                         setDebitAccId(val);
                         clearVchError("debitAccId");
                       }}
-                      placeholder="-- Select Debit Head --"
+                      placeholder={t("selectDebitHead", "-- Select Debit Head --")}
                     />
                   </div>
                   <FieldError message={vchErrors.debitAccId} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>
-                    Credit Account (-) <span className="text-destructive">*</span>
+                    {t("creditAccountMinus", "Credit Account (-)")} <span className="text-destructive">*</span>
                   </Label>
                   <div
                     className={vchErrors.creditAccId ? "rounded-md border border-destructive" : ""}
@@ -1117,7 +1131,7 @@ function AccountsPage() {
                         setCreditAccId(val);
                         clearVchError("creditAccId");
                       }}
-                      placeholder="-- Select Credit Head --"
+                      placeholder={t("selectCreditHead", "-- Select Credit Head --")}
                     />
                   </div>
                   <FieldError message={vchErrors.creditAccId} />
@@ -1126,7 +1140,7 @@ function AccountsPage() {
 
               <div className="space-y-1.5">
                 <Label>
-                  Voucher Amount <span className="text-destructive">*</span>
+                  {t("voucherAmount", "Voucher Amount")} <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   type="number"
@@ -1147,11 +1161,11 @@ function AccountsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label>Narration / Journal Reference</Label>
+                <Label>{t("narrationRef", "Narration / Journal Reference")}</Label>
                 <Input
                   value={narration}
                   onChange={(e) => setNarration(e.target.value)}
-                  placeholder="e.g. Monthly facility rent paid via primary bank transfer"
+                  placeholder={t("narrationPlaceholder", "e.g. Monthly facility rent paid via primary bank transfer")}
                 />
               </div>
             </div>
@@ -1165,11 +1179,11 @@ function AccountsPage() {
                   clearVchAll();
                 }}
               >
-                Cancel
+                {t("cancel", "Cancel")}
               </Button>
               <Button type="submit" disabled={isPostingVoucher} className="min-w-[160px] font-bold">
                 {isPostingVoucher && <Loader2 className="size-4 animate-spin mr-2" />}
-                Post Voucher Entry
+                {t("postVoucherEntry", "Post Voucher Entry")}
               </Button>
             </div>
           </form>
@@ -1183,22 +1197,22 @@ function AccountsPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Ledger Account?</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteLedgerAccountQuestion", "Delete Ledger Account?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete account{" "}
+              {t("deleteAccountConfirm", "Are you sure you want to delete account")}{" "}
               <strong>
                 [{deletingAccount?.code}] {deletingAccount?.name}
               </strong>
-              ? This action cannot be undone.
+              ? {t("actionCannotBeUndone", "This action cannot be undone.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel", "Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteAccount}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold"
             >
-              Delete Account
+              {t("deleteAccount", "Delete Account")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

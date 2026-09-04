@@ -55,7 +55,7 @@ export function DataPage({
           size="sm"
           onClick={() => document.getElementById("data-page-import")?.click()}
         >
-          <Upload className="size-4" /> Import
+          <Upload className="size-4" /> {t("import", "Import")}
           <input
             type="file"
             id="data-page-import"
@@ -72,7 +72,7 @@ export function DataPage({
       )}
       {onExport && (
         <Button variant="outline" size="sm" onClick={onExport}>
-          <Download className="size-4" /> Export
+          <Download className="size-4" /> {t("export", "Export")}
         </Button>
       )}
       {primaryAction && (
@@ -108,7 +108,7 @@ export function DataPage({
             {toolbar}
             {activeFilterCount && activeFilterCount > 0 && onResetFilters ? (
               <Button variant="outline" size="sm" onClick={onResetFilters} className="mr-1">
-                <RotateCcw className="size-4" /> Reset
+                <RotateCcw className="size-4" /> {t("reset", "Reset")}
               </Button>
             ) : null}
             {filtersContent ? (

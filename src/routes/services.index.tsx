@@ -49,7 +49,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getServicesListFn, deleteServiceItemFn, getAllServiceVariantsFn } from "@/api/services";
 import { isImageUrl } from "@/lib/upload-service";
-import { getCategoriesFn } from "@/api/categories";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   Table,
   TableBody,
@@ -65,6 +65,7 @@ export const Route = createFileRoute("/services/")({
 });
 
 function ServicesPage() {
+  const { t } = useLanguage();
   const { formatCurrency } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
@@ -178,15 +179,15 @@ function ServicesPage() {
     <div className="page-container space-y-6">
       {/* Standard PageHeader */}
       <PageHeader
-        title="Services & Appointment Items"
-        description="Configure billable services, session durations, multi-tier pricing variants, and staff commission rules."
+        title={t("servicesCatalog", "Services & Appointment Items")}
+        description={t("servicesCatalogDesc", "Configure billable services, session durations, multi-tier pricing variants, and staff commission rules.")}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5">
-              <Download className="size-4" /> Export CSV
+              <Download className="size-4" /> {t("exportCsv", "Export CSV")}
             </Button>
             <Button size="sm" onClick={() => navigate({ to: "/services/new" })} className="gap-1.5">
-              <Plus className="size-4" /> Add Service
+              <Plus className="size-4" /> {t("addService", "Add Service")}
             </Button>
           </div>
         }
@@ -195,30 +196,30 @@ function ServicesPage() {
       {/* Standard StatCard Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Total Services"
+          label={t("totalServices", "Total Services")}
           value={String(totalItems)}
-          hint="Registered billable offerings"
+          hint={t("registeredBillableOfferings", "Registered billable offerings")}
           icon={Wrench}
           accent="primary"
         />
         <StatCard
-          label="Service Categories"
+          label={t("serviceCategories", "Service Categories")}
           value={String(categoriesCount)}
-          hint="Active classifications"
+          hint={t("activeClassifications", "Active classifications")}
           icon={Layers}
           accent="info"
         />
         <StatCard
-          label="Active Offerings"
+          label={t("activeOfferings", "Active Offerings")}
           value={String(activeCount)}
-          hint="Available in POS & Booking"
+          hint={t("availableInPosBooking", "Available in POS & Booking")}
           icon={CheckCircle2}
           accent="success"
         />
         <StatCard
-          label="Multi-Tier Variants"
-          value={`${allVariants.length} Variants`}
-          hint="Tiered pricing options"
+          label={t("multiTierVariants", "Multi-Tier Variants")}
+          value={`${allVariants.length} ${t("variants", "Variants")}`}
+          hint={t("tieredPricingOptions", "Tiered pricing options")}
           icon={DollarSign}
           accent="warning"
         />
@@ -231,7 +232,7 @@ function ServicesPage() {
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search services..."
+              placeholder={t("searchServices", "Search services...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-9 text-sm rounded-lg"
@@ -241,10 +242,10 @@ function ServicesPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="h-9 w-36 text-xs rounded-lg">
-                <SelectValue placeholder="All Categories" />
+                <SelectValue placeholder={t("allCategories", "All Categories")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="all">{t("allCategories", "All Categories")}</SelectItem>
                 {categories.map((c: any) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name}
@@ -255,12 +256,12 @@ function ServicesPage() {
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="h-9 w-32 text-xs rounded-lg">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={t("status", "Status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="all">{t("allStatus", "All Status")}</SelectItem>
+                <SelectItem value="active">{t("active", "Active")}</SelectItem>
+                <SelectItem value="inactive">{t("inactive", "Inactive")}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -273,7 +274,7 @@ function ServicesPage() {
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Table View"
+                title={t("tableView", "Table View")}
               >
                 <TableIcon className="size-4" />
               </button>
@@ -285,7 +286,7 @@ function ServicesPage() {
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Grid View"
+                title={t("gridView", "Grid View")}
               >
                 <LayoutGrid className="size-4" />
               </button>
@@ -305,13 +306,13 @@ function ServicesPage() {
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={Wrench}
-            title="No services found"
+            title={t("noServicesFound", "No services found")}
             description={
               search
-                ? "Try adjusting your search criteria."
-                : "You haven't created any service items yet."
+                ? t("tryAdjustingSearch", "Try adjusting your search criteria.")
+                : t("noServicesCreatedYet", "You haven't created any service items yet.")
             }
-            actionLabel="Add Service"
+            actionLabel={t("addService", "Add Service")}
             onAction={() => navigate({ to: "/services/new" })}
           />
         ) : viewMode === "grid" ? (
@@ -345,7 +346,7 @@ function ServicesPage() {
                             className="bg-background/80 backdrop-blur text-[10px] font-bold"
                           >
                             <Clock className="size-3 mr-1" />
-                            {s.duration || "30"} mins
+                            {s.duration || "30"} {t("mins", "mins")}
                           </Badge>
                         </div>
                       </div>
@@ -353,11 +354,11 @@ function ServicesPage() {
                       <div>
                         <div className="flex items-center justify-between gap-1">
                           <span className="text-[10px] font-bold text-primary truncate">
-                            {catObj?.name || "General Service"}
+                            {catObj?.name || t("generalService", "General Service")}
                           </span>
                           {sVariants.length > 0 && (
                             <span className="text-[10px] text-muted-foreground font-semibold truncate">
-                              {sVariants.length} variants
+                              {sVariants.length} {t("variants", "variants")}
                             </span>
                           )}
                         </div>
@@ -373,7 +374,7 @@ function ServicesPage() {
                     <div className="pt-2.5 border-t border-border/60 flex items-center justify-between">
                       <div>
                         <span className="text-[10px] font-semibold text-muted-foreground uppercase block">
-                          Base Price
+                          {t("basePrice", "Base Price")}
                         </span>
                         <span className="text-base font-bold text-foreground">
                           {formatCurrency(s.price || 0)}
@@ -386,7 +387,7 @@ function ServicesPage() {
                           size="icon"
                           onClick={() => navigate({ to: `/services/${s.id}` })}
                           className="size-7 rounded-lg text-muted-foreground hover:text-foreground"
-                          title="Edit"
+                          title={t("edit", "Edit")}
                         >
                           <Pencil className="size-3.5" />
                         </Button>
@@ -395,7 +396,7 @@ function ServicesPage() {
                           size="icon"
                           onClick={() => setDeleteId(s.id)}
                           className="size-7 rounded-lg text-muted-foreground hover:text-destructive"
-                          title="Delete"
+                          title={t("delete", "Delete")}
                         >
                           <Trash2 className="size-3.5" />
                         </Button>
@@ -425,11 +426,11 @@ function ServicesPage() {
               <Table className="min-w-[700px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Service Name</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead className="text-right">Base Price</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("serviceName", "Service Name")}</TableHead>
+                    <TableHead>{t("category", "Category")}</TableHead>
+                    <TableHead>{t("duration", "Duration")}</TableHead>
+                    <TableHead className="text-right">{t("basePrice", "Base Price")}</TableHead>
+                    <TableHead className="text-right">{t("actions", "Actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -460,11 +461,11 @@ function ServicesPage() {
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-xs">{catObj?.name || "General"}</TableCell>
+                        <TableCell className="text-xs">{catObj?.name || t("general", "General")}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className="text-xs">
                             <Clock className="size-3 mr-1 text-muted-foreground" />
-                            {s.duration || "30"} min
+                            {s.duration || "30"} {t("min", "min")}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right font-bold text-foreground">
@@ -478,7 +479,7 @@ function ServicesPage() {
                               onClick={() => navigate({ to: `/services/${s.id}` })}
                               className="h-8 text-xs font-semibold"
                             >
-                              <Pencil className="size-3.5 mr-1" /> Edit
+                              <Pencil className="size-3.5 mr-1" /> {t("edit", "Edit")}
                             </Button>
                             <Button
                               variant="ghost"
@@ -522,25 +523,24 @@ function ServicesPage() {
               </div>
               <div>
                 <DialogTitle className="text-lg font-bold text-foreground">
-                  Delete Service Offering
+                  {t("deleteServiceOffering", "Delete Service Offering")}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Are you sure you want to delete this service? Historical appointments will retain
-                  their records.
+                  {t("deleteServiceConfirmDesc", "Are you sure you want to delete this service? Historical appointments will retain their records.")}
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button
               type="button"
               variant="destructive"
               onClick={() => deleteId && deleteMutation.mutate(deleteId)}
             >
-              Delete
+              {t("delete", "Delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

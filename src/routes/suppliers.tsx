@@ -93,6 +93,7 @@ import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/suppliers")({
   head: () => ({ meta: [{ title: `Suppliers & Vendor Khata · ${appName}` }] }),
@@ -100,6 +101,7 @@ export const Route = createFileRoute("/suppliers")({
 });
 
 function SuppliersPage() {
+  const { t } = useLanguage();
   const { formatDate } = usePreferences();
   const { formatCurrency, currencySymbol } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
@@ -503,10 +505,10 @@ function SuppliersPage() {
               />
             </Button>
             <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5">
-              <Download className="size-4" /> Export CSV
+              <Download className="size-4" /> {t("exportCSV", "Export CSV")}
             </Button>
             <Button size="sm" onClick={openAddDrawer} className="gap-1.5">
-              <Plus className="size-4" /> Add Supplier
+              <Plus className="size-4" /> {t("addSupplier", "Add Supplier")}
             </Button>
           </div>
         }
@@ -515,30 +517,30 @@ function SuppliersPage() {
       {/* Standard Unified StatCard Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Total Vendors"
+          label={t("suppliers", "Total Vendors")}
           value={String(metrics.totalSuppliers)}
-          hint="Registered procurement partners"
+          hint={t("activeItemsInSystem", "Registered procurement partners")}
           icon={Building2}
           accent="primary"
         />
         <StatCard
-          label="Total Khata Payable"
+          label={t("totalKhataPayable", "Total Khata Payable")}
           value={formatCurrency(metrics.totalPayable)}
-          hint="Outstanding vendor balance"
+          hint={t("outstandingVendorBalance", "Outstanding vendor balance")}
           icon={DollarSign}
           accent="destructive"
         />
         <StatCard
-          label="Accounts With Due"
+          label={t("accountsWithDue", "Accounts With Due")}
           value={String(metrics.withDue)}
-          hint="Vendors awaiting payment"
+          hint={t("vendorsAwaitingPayment", "Vendors awaiting payment")}
           icon={Clock}
           accent="warning"
         />
         <StatCard
-          label="Settled Accounts"
+          label={t("settledAccounts", "Settled Accounts")}
           value={String(metrics.settled)}
-          hint="Zero balance remaining"
+          hint={t("zeroBalanceRemaining", "Zero balance remaining")}
           icon={CheckCircle2}
           accent="success"
         />
@@ -551,7 +553,7 @@ function SuppliersPage() {
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name, contact, phone, GSTIN..."
+              placeholder={t("searchSuppliers", "Search by name, contact, phone, GSTIN...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-9 text-sm rounded-lg"
@@ -561,12 +563,12 @@ function SuppliersPage() {
           <div className="flex items-center gap-2">
             <Select value={balanceFilter} onValueChange={setBalanceFilter}>
               <SelectTrigger className="h-9 w-38 text-xs rounded-lg">
-                <SelectValue placeholder="All Balances" />
+                <SelectValue placeholder={t("allBalances", "All Balances")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Balances</SelectItem>
-                <SelectItem value="has_balance">Outstanding Dues (&gt; 0)</SelectItem>
-                <SelectItem value="settled">Settled (0 Due)</SelectItem>
+                <SelectItem value="all">{t("allBalances", "All Balances")}</SelectItem>
+                <SelectItem value="has_balance">{t("outstandingDues", "Outstanding Dues (> 0)")}</SelectItem>
+                <SelectItem value="settled">{t("settled", "Settled (0 Due)")}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -611,13 +613,13 @@ function SuppliersPage() {
         ) : suppliers.length === 0 ? (
           <EmptyState
             icon={Truck}
-            title="No suppliers found"
+            title={t("noSuppliersFound", "No suppliers found")}
             description={
               search
-                ? "Try adjusting your search criteria."
-                : "You haven't registered any suppliers yet."
+                ? t("adjustSearch", "Try adjusting your search criteria.")
+                : t("noSuppliersYet", "You haven't registered any suppliers yet.")
             }
-            actionLabel="Add Supplier"
+            actionLabel={t("addSupplier", "Add Supplier")}
             onAction={openAddDrawer}
           />
         ) : viewMode === "table" ? (
@@ -627,13 +629,13 @@ function SuppliersPage() {
               <Table className="min-w-[850px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Supplier & Business Name</TableHead>
-                    <TableHead>Contact Person</TableHead>
-                    <TableHead>Phone / Email</TableHead>
-                    <TableHead>GSTIN / Tax ID</TableHead>
-                    <TableHead>Terms</TableHead>
-                    <TableHead className="text-right">Khata Balance</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("supplier", "Supplier & Business Name")}</TableHead>
+                    <TableHead>{t("contact", "Contact Person")}</TableHead>
+                    <TableHead>{t("phone", "Phone")} / {t("email", "Email")}</TableHead>
+                    <TableHead>{t("taxId", "GSTIN / Tax ID")}</TableHead>
+                    <TableHead>{t("terms", "Terms")}</TableHead>
+                    <TableHead className="text-right">{t("khataBalance", "Khata Balance")}</TableHead>
+                    <TableHead className="text-right">{t("actions", "Actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1443,18 +1445,18 @@ function SuppliersPage() {
                   <Table className="text-xs">
                     <TableHeader className="bg-muted/40">
                       <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead className="text-right">Balance After</TableHead>
+                        <TableHead>{t("common.date", "Date")}</TableHead>
+                        <TableHead>{t("common.type", "Type")}</TableHead>
+                        <TableHead>{t("common.description", "Description")}</TableHead>
+                        <TableHead className="text-right">{t("common.amount", "Amount")}</TableHead>
+                        <TableHead className="text-right">{t("suppliers.balanceAfter", "Balance After")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {supplierLedgerEntries.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
-                            No ledger history found for this supplier.
+                            {t("suppliers.noLedgerHistory", "No ledger history found for this supplier.")}
                           </TableCell>
                         </TableRow>
                       ) : (

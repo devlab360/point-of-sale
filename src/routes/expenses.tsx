@@ -297,14 +297,14 @@ function ExpensesPage() {
   return (
     <>
       <DataPage
-        title="Operating Expenses"
-        description="Track store rent, utility bills, employee payroll, and daily miscellaneous costs."
+        title={t("operatingExpenses", "Operating Expenses")}
+        description={t("manageExpensesDesc", "Track store rent, utility bills, employee payroll, and daily miscellaneous costs.")}
         primaryAction={{
-          label: "Add Expense",
+          label: t("addExpense", "Add Expense"),
           onClick: () => handleOpenAdd(),
           icon: Plus,
         }}
-        searchPlaceholder="Search by category or expense note..."
+        searchPlaceholder={t("searchExpenses", "Search by category or expense note...")}
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={false}
@@ -315,27 +315,27 @@ function ExpensesPage() {
           <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
             <div className="flex-1 space-y-4">
               <div className="space-y-2">
-                <Label>Category</Label>
+                <Label>{t("category", "Category")}</Label>
                 <SearchableSelect
                   options={[
-                    { value: "", label: "All Categories" },
+                    { value: "", label: t("allCategoriesCount", "All Categories") },
                     ...uniqueCategories.map((c) => ({ value: String(c), label: String(c) })),
                   ]}
                   value={draftFilters.category}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, category: val }))}
-                  placeholder="Filter by Category"
+                  placeholder={t("filterByCategory", "Filter by Category")}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Status</Label>
+                <Label>{t("status", "Status")}</Label>
                 <SearchableSelect
                   options={[
-                    { value: "", label: "All Statuses" },
+                    { value: "", label: t("allStatuses", "All Statuses") },
                     ...PAYMENT_STATUSES.map((s) => ({ value: s.value, label: s.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder="Filter by Status"
+                  placeholder={t("filterByStatus", "Filter by Status")}
                 />
               </div>
             </div>
@@ -347,7 +347,7 @@ function ExpensesPage() {
                   close();
                 }}
               >
-                Apply Filters
+                {t("applyFilters", "Apply Filters")}
               </Button>
             </div>
           </div>
@@ -356,7 +356,7 @@ function ExpensesPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
             <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
               <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Total Expenses
+                {t("totalExpenses", "Total Expenses")}
               </span>
               <span className="text-xl sm:text-2xl font-black text-foreground">
                 {formatCurrency(metrics.total)}
@@ -365,7 +365,7 @@ function ExpensesPage() {
 
             <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
               <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Paid Out
+                {t("paidOut", "Paid Out")}
               </span>
               <span className="text-xl sm:text-2xl font-black text-success">
                 {formatCurrency(metrics.paid)}
@@ -374,7 +374,7 @@ function ExpensesPage() {
 
             <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
               <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Pending Bills
+                {t("pendingBills", "Pending Bills")}
               </span>
               <span className="text-xl sm:text-2xl font-black text-warning">
                 {formatCurrency(metrics.pending)}
@@ -383,7 +383,7 @@ function ExpensesPage() {
 
             <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
               <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Top Category
+                {t("topCategory", "Top Category")}
               </span>
               <span className="text-lg sm:text-xl font-black text-info truncate">
                 {metrics.maxCat}
@@ -405,22 +405,22 @@ function ExpensesPage() {
                   <TableHeader className="bg-muted/40">
                     <TableRow>
                       <TableHead className="font-bold text-xs uppercase tracking-wider">
-                        Date
+                        {t("date", "Date")}
                       </TableHead>
                       <TableHead className="font-bold text-xs uppercase tracking-wider">
-                        Category
+                        {t("category", "Category")}
                       </TableHead>
                       <TableHead className="font-bold text-xs uppercase tracking-wider">
-                        Expense Description
+                        {t("expenseDescription", "Expense Description")}
                       </TableHead>
                       <TableHead className="font-bold text-xs uppercase tracking-wider">
-                        Payment Status
+                        {t("paymentStatus", "Payment Status")}
                       </TableHead>
                       <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                        Amount
+                        {t("amount", "Amount")}
                       </TableHead>
                       <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                        Actions
+                        {t("actions", "Actions")}
                       </TableHead>
                     </TableRow>
                   </TableHeader>
@@ -430,13 +430,13 @@ function ExpensesPage() {
                         <TableCell colSpan={6} className="h-64 text-center">
                           <EmptyState
                             icon={Receipt}
-                            title="No expenses found"
+                            title={t("noExpensesFound", "No expenses found")}
                             description={
                               search
-                                ? "Try adjusting your search or filters."
-                                : "No business expenses recorded yet. Click below to add one."
+                                ? t("adjustSearch", "Try adjusting your search or filters.")
+                                : t("noExpensesYet", "No business expenses recorded yet. Click below to add one.")
                             }
-                            actionLabel="Add Expense"
+                            actionLabel={t("addExpense", "Add Expense")}
                             onAction={() => handleOpenAdd()}
                             className="border-none bg-transparent my-0 py-8 shadow-none"
                           />
@@ -487,13 +487,13 @@ function ExpensesPage() {
                                   onClick={() => handleOpenAdd(e)}
                                   className="text-xs font-semibold"
                                 >
-                                  <Edit2 className="mr-2 size-3.5 text-primary" /> Edit Expense
+                                  <Edit2 className="mr-2 size-3.5 text-primary" /> {t("edit", "Edit")}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => setDeleteId(e.id)}
                                   className="text-xs font-semibold text-destructive focus:text-destructive"
                                 >
-                                  <Trash2 className="mr-2 size-3.5" /> Delete
+                                  <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -592,10 +592,10 @@ function ExpensesPage() {
         >
           <SheetHeader className="bg-muted/60 p-5 sm:p-6 border-b pr-12 text-left shrink-0">
             <SheetTitle className="text-xl font-black text-foreground">
-              {editItem ? "Edit Operating Expense" : "Record New Business Expense"}
+              {editItem ? t("editExpense", "Edit Operating Expense") : t("addExpense", "Record New Business Expense")}
             </SheetTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Track store rent, electricity, maintenance, logistics, and vendor payouts.
+              {t("manageExpensesDesc", "Track store rent, electricity, maintenance, logistics, and vendor payouts.")}
             </p>
           </SheetHeader>
 
@@ -604,7 +604,7 @@ function ExpensesPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="date">
-                    Expense Date <span className="text-destructive">*</span>
+                    {t("date", "Expense Date")} <span className="text-destructive">*</span>
                   </Label>
                   <DatePicker
                     name="date"
@@ -618,7 +618,7 @@ function ExpensesPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="category">
-                    Category <span className="text-destructive">*</span>
+                    {t("category", "Category")} <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="category"
@@ -636,7 +636,7 @@ function ExpensesPage() {
 
               <div className="space-y-1.5">
                 <Label htmlFor="description">
-                  Expense Description / Purpose <span className="text-destructive">*</span>
+                  {t("expenseDescription", "Expense Description / Purpose")} <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="description"
@@ -654,7 +654,7 @@ function ExpensesPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="amount">
-                    Amount ({currencySymbol}) <span className="text-destructive">*</span>
+                    {t("amount", "Amount")} ({currencySymbol}) <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="amount"
@@ -670,23 +670,23 @@ function ExpensesPage() {
                   <FieldError message={expErrors.amount} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="status">Payment Status</Label>
+                  <Label htmlFor="status">{t("paymentStatus", "Payment Status")}</Label>
                   <SearchableSelect
                     options={PAYMENT_STATUSES.map((s) => ({ value: s.value, label: s.label }))}
                     value={expenseStatus}
                     onChange={setExpenseStatus}
-                    placeholder="Select Status"
+                    placeholder={t("selectStatus", "Select Status")}
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="paymentMethod">Payment Method</Label>
+                <Label htmlFor="paymentMethod">{t("paymentMethod", "Payment Method")}</Label>
                 <SearchableSelect
                   options={PAYMENT_METHOD_OPTIONS.map((m) => ({ value: m.label, label: m.label }))}
                   value={paymentMethod}
                   onChange={setPaymentMethod}
-                  placeholder="Select payment method"
+                  placeholder={t("selectPaymentMethod", "Select payment method")}
                 />
               </div>
             </div>
@@ -701,7 +701,7 @@ function ExpensesPage() {
                   clearExpAll();
                 }}
               >
-                Cancel
+                {t("cancel", "Cancel")}
               </Button>
               <Button
                 type="submit"
@@ -709,7 +709,7 @@ function ExpensesPage() {
                 className="min-w-[140px] font-bold shadow-soft"
               >
                 {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
-                Save Expense
+                {t("saveExpense", "Save Expense")}
               </Button>
             </div>
           </form>
@@ -720,19 +720,19 @@ function ExpensesPage() {
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Expense Record?</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteExpense", "Delete Expense Record?")}</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete this expense entry? This will permanently remove the
               audit record.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel", "Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {t("delete", "Delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

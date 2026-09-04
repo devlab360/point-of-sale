@@ -61,6 +61,7 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/rentals")({
   head: () => ({ meta: [{ title: `Equipment Rentals & Booking · ${appName}` }] }),
@@ -68,6 +69,7 @@ export const Route = createFileRoute("/rentals")({
 });
 
 function RentalsPage() {
+  const { t } = useLanguage();
   const { formatCurrency, currencySymbol } = useCurrency();
   const { formatAppDate } = useAppFormatter();
   const orgId = PersistStore.getOrgId() || "default";
@@ -250,14 +252,14 @@ function RentalsPage() {
         Status: r.status,
       })),
       [
-        { key: "Rental No", label: "Rental No" },
-        { key: "Customer", label: "Customer" },
-        { key: "Item", label: "Rented Equipment" },
-        { key: "Start Date", label: "Start Date" },
-        { key: "Return Date", label: "Expected Return" },
-        { key: "Daily Rate", label: "Daily Rate" },
-        { key: "Deposit", label: "Security Deposit" },
-        { key: "Status", label: "Status" },
+        { key: "Rental No", label: t("rentalNo", "Rental No") },
+        { key: "Customer", label: t("customer", "Customer") },
+        { key: "Item", label: t("rentedEquipment", "Rented Equipment") },
+        { key: "Start Date", label: t("startDate", "Start Date") },
+        { key: "Return Date", label: t("expectedReturn", "Expected Return") },
+        { key: "Daily Rate", label: t("dailyRate", "Daily Rate") },
+        { key: "Deposit", label: t("securityDeposit", "Security Deposit") },
+        { key: "Status", label: t("status", "Status") },
       ],
       "rentals-export",
     );
@@ -266,16 +268,16 @@ function RentalsPage() {
   return (
     <div className="space-y-6">
       <DataPage
-        title="Equipment Rentals & Bookings"
-        description="Track rental equipment, security deposits, daily rental rates, and overdue returns."
+        title={t("rentalsBookings", "Equipment Rentals & Bookings")}
+        description={t("rentalsDesc", "Track rental equipment, security deposits, daily rental rates, and overdue returns.")}
         primaryAction={{
-          label: "New Rental",
+          label: t("newRental", "New Rental"),
           onClick: () => {
             clearRntAll();
             setIsAddOpen(true);
           },
         }}
-        searchPlaceholder="Search by rental #, customer, or equipment..."
+        searchPlaceholder={t("searchRentalsPlaceholder", "Search by rental #, customer, or equipment...")}
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={false}
@@ -287,16 +289,16 @@ function RentalsPage() {
             <div className="flex-1 space-y-4">
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Status
+                  {t("status", "Status")}
                 </Label>
                 <SearchableSelect
                   options={[
-                    { value: "", label: "All Rentals" },
+                    { value: "", label: t("allRentals", "All Rentals") },
                     ...RENTAL_STATUSES.map((s) => ({ value: s.value, label: s.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder="Filter by Status"
+                  placeholder={t("filterByStatus", "Filter by Status")}
                 />
               </div>
             </div>
@@ -308,7 +310,7 @@ function RentalsPage() {
                   close();
                 }}
               >
-                Apply Filters
+                {t("applyFilters", "Apply Filters")}
               </Button>
             </div>
           </div>
@@ -318,7 +320,7 @@ function RentalsPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Total Bookings
+                  {t("totalBookings", "Total Bookings")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
                   <KeyRound className="size-4" />
@@ -332,7 +334,7 @@ function RentalsPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-emerald-500/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Active Rentals
+                  {t("activeRentals", "Active Rentals")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                   <Package className="size-4" />
@@ -346,21 +348,21 @@ function RentalsPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-blue-500/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Daily Rental Revenue
+                  {t("dailyRentalRevenue", "Daily Rental Revenue")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
                   <DollarSign className="size-4" />
                 </div>
               </div>
               <p className="mt-2 text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">
-                {formatCurrency(metrics.totalDailyRevenue)}/day
+                {formatCurrency(metrics.totalDailyRevenue)}/{t("day", "day")}
               </p>
             </div>
 
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-amber-500/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Deposits Held
+                  {t("depositsHeld", "Deposits Held")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
                   <ShieldCheck className="size-4" />
@@ -388,28 +390,28 @@ function RentalsPage() {
                     <TableHeader className="bg-muted/50">
                       <TableRow>
                         <TableHead className="font-bold text-xs uppercase tracking-wider">
-                          Rental #
+                          {t("rentalHash", "Rental #")}
                         </TableHead>
                         <TableHead className="font-bold text-xs uppercase tracking-wider">
-                          Customer
+                          {t("customer", "Customer")}
                         </TableHead>
                         <TableHead className="font-bold text-xs uppercase tracking-wider">
-                          Rented Equipment
+                          {t("rentedEquipment", "Rented Equipment")}
                         </TableHead>
                         <TableHead className="font-bold text-xs uppercase tracking-wider">
-                          Start & Return
+                          {t("startReturn", "Start & Return")}
                         </TableHead>
                         <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                          Rate / Day
+                          {t("rateDay", "Rate / Day")}
                         </TableHead>
                         <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                          Deposit
+                          {t("deposit", "Deposit")}
                         </TableHead>
                         <TableHead className="font-bold text-xs uppercase tracking-wider text-center">
-                          Status
+                          {t("status", "Status")}
                         </TableHead>
                         <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                          Actions
+                          {t("actions", "Actions")}
                         </TableHead>
                       </TableRow>
                     </TableHeader>
@@ -419,13 +421,13 @@ function RentalsPage() {
                           <TableCell colSpan={8} className="h-64 text-center">
                             <EmptyState
                               icon={KeyRound}
-                              title="No rentals found"
+                              title={t("noRentalsFound", "No rentals found")}
                               description={
                                 search
-                                  ? "No rentals matched your search query."
-                                  : "You haven't dispatched any equipment rentals yet."
+                                  ? t("noRentalsMatchQuery", "No rentals matched your search query.")
+                                  : t("noRentalsYet", "You haven't dispatched any equipment rentals yet.")
                               }
-                              actionLabel="New Rental"
+                              actionLabel={t("newRental", "New Rental")}
                               onAction={() => setIsAddOpen(true)}
                               className="border-none bg-transparent my-0 py-8 shadow-none"
                             />
@@ -488,7 +490,7 @@ function RentalsPage() {
                                     className="h-8 text-xs font-semibold text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10"
                                     onClick={() => markReturned(r.id)}
                                   >
-                                    <CheckCircle2 className="size-3.5 mr-1" /> Mark Returned
+                                    <CheckCircle2 className="size-3.5 mr-1" /> {t("markReturned", "Mark Returned")}
                                   </Button>
                                 )}
                                 <DropdownMenu>
@@ -506,7 +508,7 @@ function RentalsPage() {
                                       onClick={() => setDeleteId(r.id)}
                                       className="text-xs font-semibold text-destructive cursor-pointer"
                                     >
-                                      <Trash2 className="mr-2 size-3.5" /> Delete
+                                      <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
@@ -524,9 +526,9 @@ function RentalsPage() {
                   {paginatedRentals.length === 0 ? (
                     <EmptyState
                       icon={KeyRound}
-                      title="No rentals found"
-                      description="You haven't dispatched any equipment rentals yet."
-                      actionLabel="New Rental"
+                      title={t("noRentalsFound", "No rentals found")}
+                      description={t("noRentalsYet", "You haven't dispatched any equipment rentals yet.")}
+                      actionLabel={t("newRental", "New Rental")}
                       onAction={() => setIsAddOpen(true)}
                       className="border-none bg-transparent my-0 py-6 shadow-none"
                     />
@@ -561,7 +563,7 @@ function RentalsPage() {
                         <div className="grid grid-cols-2 gap-2 text-xs border-t border-border/60 pt-2 text-muted-foreground">
                           <div>
                             <span className="text-[10px] uppercase font-bold text-muted-foreground block">
-                              Daily Rate
+                              {t("dailyRate", "Daily Rate")}
                             </span>
                             <span className="font-bold text-foreground">
                               {formatCurrency(Number(r.dailyRate) || 0)}
@@ -569,7 +571,7 @@ function RentalsPage() {
                           </div>
                           <div className="text-right">
                             <span className="text-[10px] uppercase font-bold text-muted-foreground block">
-                              Deposit Held
+                              {t("depositsHeld", "Deposit Held")}
                             </span>
                             <span className="font-bold text-amber-600 dark:text-amber-400">
                               {formatCurrency(Number(r.securityDeposit) || 0)}
@@ -585,7 +587,7 @@ function RentalsPage() {
                               className="h-8 text-xs font-semibold text-emerald-600 border-emerald-500/30"
                               onClick={() => markReturned(r.id)}
                             >
-                              Mark Returned
+                              {t("markReturned", "Mark Returned")}
                             </Button>
                           )}
                           <Button
@@ -629,10 +631,10 @@ function RentalsPage() {
           <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
             <SheetTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
               <KeyRound className="size-5 text-primary" />
-              <span>Dispatch Rental Booking</span>
+              <span>{t("dispatchRentalBooking", "Dispatch Rental Booking")}</span>
             </SheetTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Issue tools, event hardware, media equipment, or vehicles with security deposits.
+              {t("dispatchRentalDesc", "Issue tools, event hardware, media equipment, or vehicles with security deposits.")}
             </p>
           </SheetHeader>
           <form
@@ -642,7 +644,7 @@ function RentalsPage() {
           >
             <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
               <div className="space-y-1.5">
-                <Label>Customer / Client Name *</Label>
+                <Label>{t("customerClientName", "Customer / Client Name")} *</Label>
                 <SearchableSelect
                   options={customers.map((c) => ({
                     value: c.name,
@@ -654,7 +656,7 @@ function RentalsPage() {
                     setCustomerName(val);
                     clearRntError("customerName");
                   }}
-                  placeholder="Select or enter customer name..."
+                  placeholder={t("selectEnterCustomer", "Select or enter customer name...")}
                   onCreate={async (name) => {
                     const res = await createCustomerFn({ data: { customer: { name } } });
                     if (res?.success) {
@@ -667,9 +669,9 @@ function RentalsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label>Rented Equipment / Item *</Label>
+                <Label>{t("rentedEquipmentItem", "Rented Equipment / Item")} *</Label>
                 <Input
-                  placeholder="e.g. Sony FX3 4K Cine Camera, Concrete Mixer, DJ PA System"
+                  placeholder={t("equipmentPlaceholder", "e.g. Sony FX3 4K Cine Camera, Concrete Mixer, DJ PA System")}
                   value={itemName}
                   onChange={(e) => {
                     setItemName(e.target.value);
@@ -684,7 +686,7 @@ function RentalsPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label>Rent Start Date *</Label>
+                  <Label>{t("rentStartDate", "Rent Start Date")} *</Label>
                   <DatePicker
                     date={rentStartDate}
                     onDateChange={(d) => {
@@ -695,7 +697,7 @@ function RentalsPage() {
                   <FieldError message={rntErrors.rentStartDate} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Expected Return Date *</Label>
+                  <Label>{t("expectedReturnDate", "Expected Return Date")} *</Label>
                   <DatePicker
                     date={expectedReturnDate}
                     onDateChange={(d) => {
@@ -709,7 +711,7 @@ function RentalsPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label>Daily Rate ({currencySymbol}) *</Label>
+                  <Label>{t("dailyRate", "Daily Rate")} ({currencySymbol}) *</Label>
                   <Input
                     type="number"
                     min="0"
@@ -727,7 +729,7 @@ function RentalsPage() {
                   <FieldError message={rntErrors.dailyRate} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Security Deposit ({currencySymbol})</Label>
+                  <Label>{t("securityDeposit", "Security Deposit")} ({currencySymbol})</Label>
                   <Input
                     type="number"
                     min="0"
@@ -742,11 +744,11 @@ function RentalsPage() {
 
             <div className="border-t border-border p-4 bg-card/80 backdrop-blur-sm flex items-center justify-end gap-3 shrink-0">
               <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>
-                Cancel
+                {t("cancel", "Cancel")}
               </Button>
               <Button type="submit" disabled={isSubmitting} className="min-w-[160px]">
                 {isSubmitting && <Loader2 className="size-4 animate-spin mr-2" />}
-                Dispatch Booking
+                {t("dispatchBooking", "Dispatch Booking")}
               </Button>
             </div>
           </form>
@@ -757,18 +759,18 @@ function RentalsPage() {
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent className="rounded-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Rental Record?</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteRentalTitle", "Delete Rental Record?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently remove the equipment rental entry.
+              {t("deleteRentalDesc", "This action cannot be undone. This will permanently remove the equipment rental entry.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel", "Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {t("delete", "Delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

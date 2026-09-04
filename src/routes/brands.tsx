@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { PersistStore } from "@/lib/session-store";
 import { appName } from "@/lib/env";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -73,6 +74,7 @@ export const Route = createFileRoute("/brands")({
 });
 
 function BrandsPage() {
+  const { t } = useLanguage();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
 
@@ -164,10 +166,9 @@ function BrandsPage() {
     setModalOpen(true);
   };
 
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const isValid = validateBrand({ name: name.trim() });
-    if (!isValid) return;
+    if (!validateBrand({ name })) return;
 
     setIsSaving(true);
     try {
@@ -179,7 +180,7 @@ function BrandsPage() {
           },
         })) as any;
         if (res?.success) {
-          toast.success("Brand updated successfully");
+          toast.success("Brand updated");
           setModalOpen(false);
           queryClient.invalidateQueries({ queryKey: ["brands", orgId] });
         } else throw new Error(res?.error);
@@ -224,11 +225,11 @@ function BrandsPage() {
     <div className="page-container space-y-6">
       {/* Standard PageHeader */}
       <PageHeader
-        title="Product Brands & Labels"
-        description="Organize your SKU catalog by manufacturers, registered trademarks, and distributor brands."
+        title={t("productBrands", "Product Brands & Labels")}
+        description={t("manageBrandsDesc", "Organize your SKU catalog by manufacturers, registered trademarks, and distributor brands.")}
         actions={
           <Button size="sm" onClick={openNew} className="gap-1.5">
-            <Plus className="size-4" /> Add Brand
+            <Plus className="size-4" /> {t("addBrand", "Add Brand")}
           </Button>
         }
       />
@@ -236,30 +237,30 @@ function BrandsPage() {
       {/* Standard StatCard Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Total Brands"
+          label={t("totalBrands", "Total Brands")}
           value={String(totalBrands)}
-          hint="Registered labels"
+          hint={t("registeredLabels", "Registered labels")}
           icon={Award}
           accent="primary"
         />
         <StatCard
-          label="Active in Catalog"
+          label={t("activeBrands", "Active in Catalog")}
           value={String(inUseCount)}
-          hint="Mapped to inventory"
+          hint={t("mappedToInventory", "Mapped to inventory")}
           icon={CheckCircle2}
           accent="success"
         />
         <StatCard
-          label="Mapped Products"
+          label={t("mappedProducts", "Mapped Products")}
           value={`${totalLinkedItems} SKUs`}
-          hint="Catalog inventory items"
+          hint={t("catalogInventoryItems", "Catalog inventory items")}
           icon={Package}
           accent="info"
         />
         <StatCard
-          label="Brand Diversity"
+          label={t("brandDiversity", "Brand Diversity")}
           value="100% Tracked"
-          hint="Verified manufacturer data"
+          hint={t("verifiedManufacturerData", "Verified manufacturer data")}
           icon={Layers}
           accent="warning"
         />
@@ -272,7 +273,7 @@ function BrandsPage() {
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search brands..."
+              placeholder={t("searchBrands", "Search brands...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-9 text-sm rounded-lg"
@@ -288,12 +289,12 @@ function BrandsPage() {
               }}
             >
               <SelectTrigger className="h-9 w-44 text-xs rounded-lg">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder={t("filterByStatus", "Filter by status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Brands ({totalBrands})</SelectItem>
-                <SelectItem value="in_use">In Use ({inUseCount})</SelectItem>
-                <SelectItem value="unused">Unused ({totalBrands - inUseCount})</SelectItem>
+                <SelectItem value="all">{t("allBrandsCount", "All Brands")} ({totalBrands})</SelectItem>
+                <SelectItem value="in_use">{t("inUse", "In Use")} ({inUseCount})</SelectItem>
+                <SelectItem value="unused">{t("unused", "Unused")} ({totalBrands - inUseCount})</SelectItem>
               </SelectContent>
             </Select>
 
@@ -338,13 +339,13 @@ function BrandsPage() {
         ) : filteredBrands.length === 0 ? (
           <EmptyState
             icon={Tag}
-            title="No brands found"
+            title={t("noBrandsFound", "No brands found")}
             description={
               search
-                ? "Try adjusting your search criteria."
-                : "You haven't created any product brands yet."
+                ? t("adjustSearch", "Try adjusting your search criteria.")
+                : t("noBrandsYet", "You haven't created any product brands yet.")
             }
-            actionLabel="Add Brand"
+            actionLabel={t("addBrand", "Add Brand")}
             onAction={openNew}
           />
         ) : viewMode === "grid" ? (
@@ -363,7 +364,7 @@ function BrandsPage() {
                           {b.name?.slice(0, 2).toUpperCase()}
                         </div>
                         <Badge variant="outline" className="text-xs font-semibold">
-                          {b.products} {b.products === 1 ? "Product" : "Products"}
+                          {b.products} {b.products === 1 ? t("product", "Product") : t("products", "Products")}
                         </Badge>
                       </div>
 
@@ -371,7 +372,7 @@ function BrandsPage() {
                         <h3 className="font-bold text-base text-foreground group-hover:text-primary transition-colors truncate">
                           {b.name}
                         </h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">Trademark & Brand</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{t("trademarkBrand", "Trademark & Brand")}</p>
                       </div>
                     </div>
 
@@ -382,7 +383,7 @@ function BrandsPage() {
                         onClick={() => openEdit(b)}
                         className="h-8 text-xs font-semibold"
                       >
-                        <Pencil className="size-3.5 mr-1" /> Edit
+                        <Pencil className="size-3.5 mr-1" /> {t("edit", "Edit")}
                       </Button>
                       <Button
                         variant="ghost"
@@ -417,9 +418,9 @@ function BrandsPage() {
               <Table className="min-w-[600px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Brand Name</TableHead>
-                    <TableHead>Catalog Items</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("brandName", "Brand Name")}</TableHead>
+                    <TableHead>{t("catalogItems", "Catalog Items")}</TableHead>
+                    <TableHead className="text-right">{t("actions", "Actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -435,7 +436,7 @@ function BrandsPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs font-semibold">
-                          {b.products} products
+                          {b.products} {t("products", "products")}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -446,7 +447,7 @@ function BrandsPage() {
                             onClick={() => openEdit(b)}
                             className="h-8 text-xs font-semibold"
                           >
-                            <Pencil className="size-3.5 mr-1" /> Edit
+                            <Pencil className="size-3.5 mr-1" /> {t("edit", "Edit")}
                           </Button>
                           <Button
                             variant="ghost"
@@ -488,10 +489,10 @@ function BrandsPage() {
           <div className="flex flex-col h-full overflow-hidden">
             <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
               <SheetTitle className="text-xl font-bold text-foreground">
-                {editingBrand ? "Edit Brand" : "Add New Brand"}
+                {editingBrand ? t("editBrand", "Edit Brand") : t("addBrand", "Add Brand")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Manage manufacturer label and product brand identifiers.
+                {t("manageBrandsDesc", "Manage manufacturer label and product brand identifiers.")}
               </SheetDescription>
             </SheetHeader>
 
@@ -502,7 +503,7 @@ function BrandsPage() {
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="brand-name" className="text-xs font-semibold">
-                    Brand Name <span className="text-destructive">*</span>
+                    {t("brandName", "Brand Name")} <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="brand-name"
@@ -520,11 +521,11 @@ function BrandsPage() {
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
                 <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
-                  Cancel
+                  {t("cancel", "Cancel")}
                 </Button>
                 <Button type="submit" disabled={isSaving} className="font-semibold shadow-sm">
                   {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
-                  {editingBrand ? "Update Brand" : "Create Brand"}
+                  {editingBrand ? t("saveBrand", "Update Brand") : t("saveBrand", "Create Brand")}
                 </Button>
               </SheetFooter>
             </form>
@@ -542,7 +543,7 @@ function BrandsPage() {
               </div>
               <div>
                 <DialogTitle className="text-lg font-bold text-foreground">
-                  Delete Brand
+                  {t("deleteBrand", "Delete Brand")}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                   Are you sure you want to delete this brand? Products linked to this brand will
@@ -553,10 +554,10 @@ function BrandsPage() {
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button type="button" variant="destructive" onClick={handleDelete}>
-              Delete
+              {t("delete", "Delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

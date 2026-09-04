@@ -56,13 +56,15 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { exportToCSV } from "@/lib/export-utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/admin/payments")({
-  head: () => ({ meta: [{ title: `Payment Approvals · Super Admin ${appName}` }] }),
+  head: () => ({ meta: [{ title: `Payments & Billing Approvals · Super Admin ${appName}` }] }),
   component: SuperAdminPaymentsPage,
 });
 
 function SuperAdminPaymentsPage() {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"pending" | "approved" | "rejected" | "all">(
     "pending",
@@ -342,13 +344,13 @@ function SuperAdminPaymentsPage() {
               <Table>
                 <TableHeader className="bg-muted/40 border-b text-xs font-bold text-muted-foreground uppercase">
                   <TableRow>
-                    <TableHead className="px-4 py-3.5">Tenant Organization</TableHead>
-                    <TableHead className="px-4 py-3.5">Plan & Billing Cycle</TableHead>
-                    <TableHead className="px-4 py-3.5">Amount</TableHead>
-                    <TableHead className="px-4 py-3.5">Payment Method & UTR</TableHead>
-                    <TableHead className="px-4 py-3.5">Submission Date</TableHead>
-                    <TableHead className="px-4 py-3.5">Status</TableHead>
-                    <TableHead className="px-4 py-3.5 text-right">Actions</TableHead>
+                    <TableHead className="px-4 py-3.5">{t("admin.tenantOrg", "Tenant Organization")}</TableHead>
+                    <TableHead className="px-4 py-3.5">{t("admin.planBillingCycle", "Plan & Billing Cycle")}</TableHead>
+                    <TableHead className="px-4 py-3.5">{t("common.amount", "Amount")}</TableHead>
+                    <TableHead className="px-4 py-3.5">{t("admin.paymentMethodUtr", "Payment Method & UTR")}</TableHead>
+                    <TableHead className="px-4 py-3.5">{t("admin.submissionDate", "Submission Date")}</TableHead>
+                    <TableHead className="px-4 py-3.5">{t("common.status", "Status")}</TableHead>
+                    <TableHead className="px-4 py-3.5 text-right">{t("common.actions", "Actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

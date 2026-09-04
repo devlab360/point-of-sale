@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { appName } from "@/lib/env";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getUnitsFn, createUnitFn, updateUnitFn, deleteUnitFn } from "@/api/units";
@@ -74,6 +75,7 @@ export const Route = createFileRoute("/units")({
 });
 
 function UnitsPage() {
+  const { t } = useLanguage();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
 
@@ -154,7 +156,7 @@ function UnitsPage() {
     clearAll: clearUnitAll,
   } = useFormValidation({
     name: { required: "Unit name is required" },
-    short: { required: "Abbreviation is required" },
+    short: { required: "Abbreviation / Symbol is required" },
   });
 
   const openNew = () => {
@@ -173,10 +175,9 @@ function UnitsPage() {
     setModalOpen(true);
   };
 
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const isValid = validateUnit({ name: name.trim(), short: short.trim() });
-    if (!isValid) return;
+    if (!validateUnit({ name: name.trim(), short: short.trim() })) return;
 
     setIsSaving(true);
     try {
@@ -188,7 +189,7 @@ function UnitsPage() {
           },
         })) as any;
         if (res?.success) {
-          toast.success("Unit updated successfully");
+          toast.success("Unit updated");
           setModalOpen(false);
           queryClient.invalidateQueries({ queryKey: ["units", orgId] });
         } else throw new Error(res?.error);
@@ -234,11 +235,11 @@ function UnitsPage() {
     <div className="page-container space-y-6">
       {/* Standard PageHeader */}
       <PageHeader
-        title="Units of Measurement (UOM)"
-        description="Standardize quantity packaging, bulk measurement scales, and stock unit conversions."
+        title={t("unitsOfMeasurement", "Units of Measurement (UOM)")}
+        description={t("manageUnitsDesc", "Define measuring units (kg, pcs, liters, meter) for precise stock counting.")}
         actions={
           <Button size="sm" onClick={openNew} className="gap-1.5">
-            <Plus className="size-4" /> Add Unit
+            <Plus className="size-4" /> {t("addUnit", "Add Unit")}
           </Button>
         }
       />
@@ -246,30 +247,30 @@ function UnitsPage() {
       {/* Standard StatCard Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Total Units (UOM)"
+          label={t("totalUnits", "Total Units (UOM)")}
           value={String(totalUnits)}
-          hint="Registered units"
+          hint={t("registeredUnits", "Registered units")}
           icon={Scale}
           accent="primary"
         />
         <StatCard
-          label="Active in Use"
+          label={t("inUseDepartments", "Active in Use")}
           value={String(inUseCount)}
-          hint="Has linked SKUs"
+          hint={t("hasLinkedSkus", "Has linked SKUs")}
           icon={CheckCircle2}
           accent="success"
         />
         <StatCard
-          label="Linked Catalog SKUs"
-          value={`${totalLinkedItems} items`}
-          hint="Inventory products"
+          label={t("linkedProducts", "Linked Catalog SKUs")}
+          value={`${totalLinkedItems} ${t("items", "items")}`}
+          hint={t("inventoryProducts", "Inventory products")}
           icon={Package}
           accent="info"
         />
         <StatCard
-          label="Standard Presets"
+          label={t("baseUnits", "Standard Presets")}
           value="9 Available"
-          hint="Common packaging scales"
+          hint={t("packagingScales", "Common packaging scales")}
           icon={Layers}
           accent="warning"
         />
@@ -282,7 +283,7 @@ function UnitsPage() {
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search units or abbreviations..."
+              placeholder={t("searchUnits", "Search units or abbreviations...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-9 text-sm rounded-lg"
@@ -298,12 +299,12 @@ function UnitsPage() {
               }}
             >
               <SelectTrigger className="h-9 w-44 text-xs rounded-lg">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder={t("filterByStatus", "Filter by status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Units ({totalUnits})</SelectItem>
-                <SelectItem value="in_use">In Use ({inUseCount})</SelectItem>
-                <SelectItem value="unused">Unused ({totalUnits - inUseCount})</SelectItem>
+                <SelectItem value="all">{t("allUnitsCount", "All Units")} ({totalUnits})</SelectItem>
+                <SelectItem value="in_use">{t("inUse", "In Use")} ({inUseCount})</SelectItem>
+                <SelectItem value="unused">{t("unused", "Unused")} ({totalUnits - inUseCount})</SelectItem>
               </SelectContent>
             </Select>
 
@@ -348,13 +349,13 @@ function UnitsPage() {
         ) : filteredUnits.length === 0 ? (
           <EmptyState
             icon={Scale}
-            title="No units found"
+            title={t("noUnitsFound", "No units found")}
             description={
               search
-                ? "Try adjusting your search criteria."
-                : "You haven't created any measurement units yet."
+                ? t("adjustSearch", "Try adjusting your search criteria.")
+                : t("noUnitsYet", "You haven't created any measurement units yet.")
             }
-            actionLabel="Add Unit"
+            actionLabel={t("addUnit", "Add Unit")}
             onAction={openNew}
           />
         ) : viewMode === "grid" ? (
@@ -373,7 +374,7 @@ function UnitsPage() {
                           {u.short}
                         </div>
                         <Badge variant="outline" className="text-xs font-semibold">
-                          {u.products} {u.products === 1 ? "Product" : "Products"}
+                          {u.products} {u.products === 1 ? t("product", "Product") : t("products", "Products")}
                         </Badge>
                       </div>
 
@@ -382,7 +383,7 @@ function UnitsPage() {
                           {u.name}
                         </h3>
                         <p className="text-xs font-mono text-muted-foreground mt-0.5">
-                          Symbol: <span className="font-bold text-foreground">{u.short}</span>
+                          {t("symbol", "Symbol")}: <span className="font-bold text-foreground">{u.short}</span>
                         </p>
                       </div>
                     </div>
@@ -394,7 +395,7 @@ function UnitsPage() {
                         onClick={() => openEdit(u)}
                         className="h-8 text-xs font-semibold"
                       >
-                        <Pencil className="size-3.5 mr-1" /> Edit
+                        <Pencil className="size-3.5 mr-1" /> {t("edit", "Edit")}
                       </Button>
                       <Button
                         variant="ghost"
@@ -429,10 +430,10 @@ function UnitsPage() {
               <Table className="min-w-[650px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Unit Name</TableHead>
-                    <TableHead>Symbol / Abbreviation</TableHead>
-                    <TableHead>Catalog Items</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("unitName", "Unit Name")}</TableHead>
+                    <TableHead>{t("unitCode", "Symbol / Abbreviation")}</TableHead>
+                    <TableHead>{t("catalogItems", "Catalog Items")}</TableHead>
+                    <TableHead className="text-right">{t("actions", "Actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -448,7 +449,7 @@ function UnitsPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="text-xs font-semibold">
-                          {u.products} products
+                          {u.products} {t("products", "products")}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -459,7 +460,7 @@ function UnitsPage() {
                             onClick={() => openEdit(u)}
                             className="h-8 text-xs font-semibold"
                           >
-                            <Pencil className="size-3.5 mr-1" /> Edit
+                            <Pencil className="size-3.5 mr-1" /> {t("edit", "Edit")}
                           </Button>
                           <Button
                             variant="ghost"
@@ -501,10 +502,10 @@ function UnitsPage() {
           <div className="flex flex-col h-full overflow-hidden">
             <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
               <SheetTitle className="text-xl font-bold text-foreground">
-                {editingUnit ? "Edit Unit of Measurement" : "Add New Unit"}
+                {editingUnit ? t("editUnit", "Edit Unit of Measurement") : t("addUnit", "Add New Unit")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Define packaging dimensions and retail measurement scales.
+                {t("manageUnitsDesc", "Define packaging dimensions and retail measurement scales.")}
               </SheetDescription>
             </SheetHeader>
 
@@ -516,7 +517,7 @@ function UnitsPage() {
                 {/* Standard Presets */}
                 {!editingUnit && (
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Quick Presets</Label>
+                    <Label className="text-xs font-semibold">{t("quickPresets", "Quick Presets")}</Label>
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {STANDARD_UNIT_PRESETS.map((preset) => (
                         <button
@@ -538,7 +539,7 @@ function UnitsPage() {
 
                 <div className="space-y-1.5">
                   <Label htmlFor="unit-name" className="text-xs font-semibold">
-                    Unit Name <span className="text-destructive">*</span>
+                    {t("unitName", "Unit Name")} <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="unit-name"
@@ -555,7 +556,7 @@ function UnitsPage() {
 
                 <div className="space-y-1.5">
                   <Label htmlFor="unit-short" className="text-xs font-semibold">
-                    Abbreviation / Symbol <span className="text-destructive">*</span>
+                    {t("unitCode", "Abbreviation / Symbol")} <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="unit-short"
@@ -573,11 +574,11 @@ function UnitsPage() {
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
                 <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
-                  Cancel
+                  {t("cancel", "Cancel")}
                 </Button>
                 <Button type="submit" disabled={isSaving} className="font-semibold shadow-sm">
                   {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
-                  {editingUnit ? "Update Unit" : "Create Unit"}
+                  {editingUnit ? t("saveUnit", "Update Unit") : t("saveUnit", "Create Unit")}
                 </Button>
               </SheetFooter>
             </form>
@@ -595,7 +596,7 @@ function UnitsPage() {
               </div>
               <div>
                 <DialogTitle className="text-lg font-bold text-foreground">
-                  Delete Unit of Measurement
+                  {t("deleteUnit", "Delete Unit of Measurement")}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                   Are you sure you want to delete this unit? Linked products will keep their unit
@@ -606,10 +607,10 @@ function UnitsPage() {
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button type="button" variant="destructive" onClick={handleDelete}>
-              Delete
+              {t("delete", "Delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

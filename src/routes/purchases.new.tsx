@@ -44,6 +44,8 @@ import {
 import { DatePicker } from "@/components/ui/date-picker";
 import { PAYMENT_METHOD_OPTIONS } from "@/constants";
 
+import { useLanguage } from "@/contexts/LanguageContext";
+
 export const Route = createFileRoute("/purchases/new")({
   head: () => ({ meta: [{ title: `Purchase Order · ${appName}` }] }),
   validateSearch: (search: Record<string, unknown>): { editId?: string } => ({
@@ -53,6 +55,7 @@ export const Route = createFileRoute("/purchases/new")({
 });
 
 function NewPurchasePage() {
+  const { t } = useLanguage();
   const { formatCurrency, currencySymbol } = useCurrency();
   const navigate = useNavigate();
   const search = useSearch({ from: "/purchases/new" });
@@ -475,16 +478,16 @@ function NewPurchasePage() {
                 <TableHeader className="bg-muted/40">
                   <TableRow>
                     <TableHead className="font-bold text-[11px] uppercase tracking-wider pl-4">
-                      Product SKU / Name
+                      {t("purchases.productSkuName", "Product SKU / Name")}
                     </TableHead>
                     <TableHead className="font-bold text-[11px] uppercase tracking-wider text-right w-24">
-                      Qty
+                      {t("common.qty", "Qty")}
                     </TableHead>
                     <TableHead className="font-bold text-[11px] uppercase tracking-wider text-right w-32">
-                      Unit Cost ({currencySymbol})
+                      {t("purchases.unitCost", "Unit Cost")} ({currencySymbol})
                     </TableHead>
                     <TableHead className="font-bold text-[11px] uppercase tracking-wider text-right w-32">
-                      Line Total
+                      {t("purchases.lineTotal", "Line Total")}
                     </TableHead>
                     <TableHead className="w-10 text-center pr-4"></TableHead>
                   </TableRow>

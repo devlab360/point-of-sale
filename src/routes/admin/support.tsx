@@ -47,6 +47,7 @@ import {
   updateSupportTicketStatusAdminFn,
 } from "@/api/admin/super-admin";
 import { exportToCSV } from "@/lib/export-utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/admin/support")({
   head: () => ({ meta: [{ title: `Support Inbox · Super Admin ${appName}` }] }),
@@ -54,6 +55,7 @@ export const Route = createFileRoute("/admin/support")({
 });
 
 function SuperAdminSupportPage() {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<
     "all" | "open" | "in-progress" | "resolved" | "closed"
@@ -279,11 +281,11 @@ function SuperAdminSupportPage() {
             <Table>
               <TableHeader className="bg-muted/40 border-b text-xs font-bold text-muted-foreground uppercase">
                 <TableRow>
-                  <TableHead className="px-4 py-3.5">Store & Sender</TableHead>
-                  <TableHead className="px-4 py-3.5">Subject & Inquiry</TableHead>
-                  <TableHead className="px-4 py-3.5">Submitted Date</TableHead>
-                  <TableHead className="px-4 py-3.5">Status</TableHead>
-                  <TableHead className="px-4 py-3.5 text-right">Actions</TableHead>
+                  <TableHead className="px-4 py-3.5">{t("admin.storeSender", "Store & Sender")}</TableHead>
+                  <TableHead className="px-4 py-3.5">{t("admin.subjectInquiry", "Subject & Inquiry")}</TableHead>
+                  <TableHead className="px-4 py-3.5">{t("admin.submittedDate", "Submitted Date")}</TableHead>
+                  <TableHead className="px-4 py-3.5">{t("common.status", "Status")}</TableHead>
+                  <TableHead className="px-4 py-3.5 text-right">{t("common.actions", "Actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

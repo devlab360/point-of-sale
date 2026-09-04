@@ -66,6 +66,7 @@ import { PersistStore } from "@/lib/session-store";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
@@ -95,6 +96,7 @@ function generateRandomPromoCode(prefix = "SAVE") {
 }
 
 function CouponsPage() {
+  const { t } = useLanguage();
   const { formatDate } = usePreferences();
   const { formatCurrency, currencySymbol } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
@@ -261,8 +263,8 @@ function CouponsPage() {
     <div className="page-container space-y-6">
       {/* Standard PageHeader */}
       <PageHeader
-        title="Promo Codes & Coupons"
-        description="Create single-use or unlimited voucher codes, set minimum spend barriers, and boost checkout conversions with one-click codes."
+        title={t("promoCodesCoupons", "Promo Codes & Coupons")}
+        description={t("couponsDesc", "Create single-use or unlimited voucher codes, set minimum spend barriers, and boost checkout conversions with one-click codes.")}
         actions={
           <Button
             size="sm"
@@ -272,7 +274,7 @@ function CouponsPage() {
             }}
             className="gap-1.5"
           >
-            <Plus className="size-4" /> Create Promo Code
+            <Plus className="size-4" /> {t("createPromoCode", "Create Promo Code")}
           </Button>
         }
       />
@@ -280,30 +282,30 @@ function CouponsPage() {
       {/* Standard StatCard Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Total Promo Codes"
+          label={t("totalPromoCodes", "Total Promo Codes")}
           value={String(totalCoupons)}
-          hint="Vouchers configured"
+          hint={t("vouchersConfigured", "Vouchers configured")}
           icon={Ticket}
           accent="primary"
         />
         <StatCard
-          label="Active & Redeemable"
+          label={t("activeRedeemable", "Active & Redeemable")}
           value={String(activeCoupons)}
-          hint="Available at POS checkout"
+          hint={t("availableAtPos", "Available at POS checkout")}
           icon={CheckCircle2}
           accent="success"
         />
         <StatCard
-          label="Total Redemptions"
-          value={`${totalRedemptions} uses`}
-          hint="Customer checkouts"
+          label={t("totalRedemptions", "Total Redemptions")}
+          value={`${totalRedemptions} ${t("uses", "uses")}`}
+          hint={t("customerCheckouts", "Customer checkouts")}
           icon={TrendingUp}
           accent="info"
         />
         <StatCard
-          label="Average Discount"
+          label={t("averageDiscount", "Average Discount")}
           value={`${avgDiscountValue}%`}
-          hint="Average promo benefit"
+          hint={t("averagePromoBenefit", "Average promo benefit")}
           icon={Percent}
           accent="warning"
         />
@@ -316,7 +318,7 @@ function CouponsPage() {
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search by promo code..."
+              placeholder={t("searchCouponsPlaceholder", "Search by promo code...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-9 text-sm rounded-lg"
@@ -326,10 +328,10 @@ function CouponsPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="h-9 w-36 text-xs rounded-lg">
-                <SelectValue placeholder="All Types" />
+                <SelectValue placeholder={t("allTypes", "All Types")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="all">{t("allTypes", "All Types")}</SelectItem>
                 {DISCOUNT_TYPES.map((d) => (
                   <SelectItem key={d.value} value={d.value}>
                     {d.label}
@@ -340,10 +342,10 @@ function CouponsPage() {
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="h-9 w-32 text-xs rounded-lg">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={t("status", "Status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="all">{t("allStatus", "All Status")}</SelectItem>
                 {STATUS_OPTIONS.slice(0, 3).map((s) => (
                   <SelectItem key={s.value} value={s.value}>
                     {s.label}
@@ -361,7 +363,7 @@ function CouponsPage() {
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Table View"
+                title={t("tableView", "Table View")}
               >
                 <TableIcon className="size-4" />
               </button>
@@ -373,7 +375,7 @@ function CouponsPage() {
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Grid View"
+                title={t("gridView", "Grid View")}
               >
                 <LayoutGrid className="size-4" />
               </button>
@@ -393,13 +395,13 @@ function CouponsPage() {
         ) : filteredCoupons.length === 0 ? (
           <EmptyState
             icon={Ticket}
-            title="No promo codes found"
+            title={t("noCouponsFound", "No promo codes found")}
             description={
               search
-                ? "Try adjusting your search criteria."
-                : "You haven't generated any discount promo codes yet."
+                ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
+                : t("noCouponsYet", "You haven't generated any discount promo codes yet.")
             }
-            actionLabel="Create Promo Code"
+            actionLabel={t("createPromoCode", "Create Promo Code")}
             onAction={() => {
               clearCouponAll();
               setIsAddOpen(true);
@@ -429,7 +431,7 @@ function CouponsPage() {
                             type="button"
                             onClick={() => copyCouponCode(c.code)}
                             className="p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors"
-                            title="Copy Code"
+                            title={t("copyCode", "Copy Code")}
                           >
                             {copiedCode === c.code ? (
                               <Check className="size-3.5 text-success" />
@@ -447,20 +449,20 @@ function CouponsPage() {
                               : "bg-muted text-muted-foreground border-border"
                           }`}
                         >
-                          {isActive ? "Active" : c.status || "Inactive"}
+                          {isActive ? t("activeStatus", "Active") : c.status || t("inactive", "Inactive")}
                         </Badge>
                       </div>
 
                       <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">Benefit</span>
+                          <span className="text-xs text-muted-foreground">{t("benefit", "Benefit")}</span>
                           <span className="text-base font-bold text-foreground">
-                            {isPercent ? `${c.value}% OFF` : `${formatCurrency(c.value)} FLAT`}
+                            {isPercent ? `${c.value}% ${t("off", "OFF")}` : `${formatCurrency(c.value)} ${t("flat", "FLAT")}`}
                           </span>
                         </div>
                         {Number(c.minSpend) > 0 && (
                           <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <span>Min. Order</span>
+                            <span>{t("minOrder", "Min. Order")}</span>
                             <span className="font-semibold text-foreground">
                               {formatCurrency(c.minSpend)}
                             </span>
@@ -470,14 +472,14 @@ function CouponsPage() {
 
                       <div className="space-y-1 text-xs text-muted-foreground">
                         <div className="flex items-center justify-between">
-                          <span>Redemptions</span>
+                          <span>{t("redemptions", "Redemptions")}</span>
                           <span className="font-bold text-foreground">
                             {c.usageCount || 0} / {c.usageLimit || "∞"}
                           </span>
                         </div>
                         {c.expiresAt && (
                           <div className="flex items-center justify-between">
-                            <span>Expires</span>
+                            <span>{t("expires", "Expires")}</span>
                             <span>{formatDate(c.expiresAt)}</span>
                           </div>
                         )}
@@ -493,7 +495,7 @@ function CouponsPage() {
                         }
                         className="h-8 text-xs font-semibold"
                       >
-                        {c.status === "active" ? "Pause" : "Activate"}
+                        {c.status === "active" ? t("pause", "Pause") : t("activate", "Activate")}
                       </Button>
 
                       <Button
@@ -529,13 +531,13 @@ function CouponsPage() {
               <Table className="min-w-[750px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Promo Code</TableHead>
-                    <TableHead>Benefit</TableHead>
-                    <TableHead>Min. Order</TableHead>
-                    <TableHead>Redemptions</TableHead>
-                    <TableHead>Expiry Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("promoCode", "Promo Code")}</TableHead>
+                    <TableHead>{t("benefit", "Benefit")}</TableHead>
+                    <TableHead>{t("minOrder", "Min. Order")}</TableHead>
+                    <TableHead>{t("redemptions", "Redemptions")}</TableHead>
+                    <TableHead>{t("expiryDate", "Expiry Date")}</TableHead>
+                    <TableHead>{t("status", "Status")}</TableHead>
+                    <TableHead className="text-right">{t("actions", "Actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -561,16 +563,16 @@ function CouponsPage() {
                           </div>
                         </TableCell>
                         <TableCell className="font-bold text-foreground">
-                          {isPercent ? `${c.value}% OFF` : `${formatCurrency(c.value)} FLAT`}
+                          {isPercent ? `${c.value}% ${t("off", "OFF")}` : `${formatCurrency(c.value)} ${t("flat", "FLAT")}`}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
-                          {Number(c.minSpend) > 0 ? formatCurrency(c.minSpend) : "No min"}
+                          {Number(c.minSpend) > 0 ? formatCurrency(c.minSpend) : t("noMin", "No min")}
                         </TableCell>
                         <TableCell className="text-xs font-semibold">
                           {c.usageCount || 0} / {c.usageLimit || "∞"}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
-                          {c.expiresAt ? formatDate(c.expiresAt) : "Never"}
+                          {c.expiresAt ? formatDate(c.expiresAt) : t("never", "Never")}
                         </TableCell>
                         <TableCell>
                           <Badge
@@ -581,7 +583,7 @@ function CouponsPage() {
                                 : "bg-muted text-muted-foreground border-border"
                             }`}
                           >
-                            {isActive ? "Active" : c.status || "Inactive"}
+                            {isActive ? t("activeStatus", "Active") : c.status || t("inactive", "Inactive")}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -594,7 +596,7 @@ function CouponsPage() {
                               }
                               className="h-8 text-xs font-semibold"
                             >
-                              {c.status === "active" ? "Pause" : "Activate"}
+                              {c.status === "active" ? t("pause", "Pause") : t("activate", "Activate")}
                             </Button>
                             <Button
                               variant="ghost"
@@ -637,10 +639,10 @@ function CouponsPage() {
           <div className="flex flex-col h-full overflow-hidden">
             <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
               <SheetTitle className="text-xl font-bold text-foreground">
-                Create Promo Coupon
+                {t("createPromoCoupon", "Create Promo Coupon")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Generate instant discount voucher codes for POS and booking checkout.
+                {t("createPromoCouponDesc", "Generate instant discount voucher codes for POS and booking checkout.")}
               </SheetDescription>
             </SheetHeader>
 
@@ -652,7 +654,7 @@ function CouponsPage() {
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="coupon-code" className="text-xs font-semibold">
-                      Coupon Code <span className="text-destructive">*</span>
+                      {t("couponCode", "Coupon Code")} <span className="text-destructive">*</span>
                     </Label>
                     <button
                       type="button"
@@ -663,7 +665,7 @@ function CouponsPage() {
                       }}
                       className="text-[11px] font-bold text-primary hover:underline inline-flex items-center gap-1"
                     >
-                      <Dices className="size-3" /> Randomize
+                      <Dices className="size-3" /> {t("randomize", "Randomize")}
                     </button>
                   </div>
                   <Input
@@ -673,14 +675,14 @@ function CouponsPage() {
                       setCode(e.target.value.toUpperCase());
                       clearCouponError("code");
                     }}
-                    placeholder="e.g. SUMMER25, VIP50"
+                    placeholder={t("couponCodePlaceholder", "e.g. SUMMER25, VIP50")}
                     className={`font-mono uppercase font-bold text-sm ${couponErrors.code ? "border-destructive" : ""}`}
                   />
                   <FieldError message={couponErrors.code} />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Discount Calculation Mode</Label>
+                  <Label className="text-xs font-semibold">{t("discountCalculationMode", "Discount Calculation Mode")}</Label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
@@ -691,7 +693,7 @@ function CouponsPage() {
                           : "border-border/60 hover:bg-muted/50 text-muted-foreground"
                       }`}
                     >
-                      Percentage (% OFF)
+                      {t("percentageOff", "Percentage (% OFF)")}
                     </button>
                     <button
                       type="button"
@@ -702,14 +704,14 @@ function CouponsPage() {
                           : "border-border/60 hover:bg-muted/50 text-muted-foreground"
                       }`}
                     >
-                      Fixed Amount ({currencySymbol} OFF)
+                      {t("fixedAmountOff", "Fixed Amount ({sym} OFF)").replace("{sym}", currencySymbol)}
                     </button>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
                   <Label htmlFor="coupon-value" className="text-xs font-semibold">
-                    Discount Value {type === "percentage" ? "(%)" : `(${currencySymbol})`} *
+                    {t("discountValue", "Discount Value")} {type === "percentage" ? "(%)" : `(${currencySymbol})`} *
                   </Label>
                   <Input
                     id="coupon-value"
@@ -731,7 +733,7 @@ function CouponsPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="coupon-min" className="text-xs font-semibold">
-                      Minimum Order ({currencySymbol})
+                      {t("minimumOrder", "Minimum Order")} ({currencySymbol})
                     </Label>
                     <Input
                       id="coupon-min"
@@ -744,7 +746,7 @@ function CouponsPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="coupon-limit" className="text-xs font-semibold">
-                      Total Usage Limit
+                      {t("totalUsageLimit", "Total Usage Limit")}
                     </Label>
                     <Input
                       id="coupon-limit"
@@ -758,22 +760,22 @@ function CouponsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Expiry Date (Optional)</Label>
+                  <Label className="text-xs font-semibold">{t("expiryDateOptional", "Expiry Date (Optional)")}</Label>
                   <DatePicker
                     date={expiresDate}
                     onDateChange={(d) => setExpiresDate(d ? d.toISOString().split("T")[0] : "")}
-                    placeholder="Select expiration date"
+                    placeholder={t("selectExpirationDate", "Select expiration date")}
                   />
                 </div>
               </div>
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
                 <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>
-                  Cancel
+                  {t("cancel", "Cancel")}
                 </Button>
                 <Button type="submit" disabled={isSaving} className="font-semibold shadow-sm">
                   {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
-                  Publish Coupon
+                  {t("publishCoupon", "Publish Coupon")}
                 </Button>
               </SheetFooter>
             </form>
@@ -791,25 +793,24 @@ function CouponsPage() {
               </div>
               <div>
                 <DialogTitle className="text-lg font-bold text-foreground">
-                  Delete Promo Code
+                  {t("deletePromoCode", "Delete Promo Code")}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Are you sure you want to permanently delete this coupon code? Customers will no
-                  longer be able to redeem it.
+                  {t("deletePromoCodeDesc", "Are you sure you want to permanently delete this coupon code? Customers will no longer be able to redeem it.")}
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button
               type="button"
               variant="destructive"
               onClick={() => deleteId && deleteCoupon(deleteId)}
             >
-              Delete
+              {t("delete", "Delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

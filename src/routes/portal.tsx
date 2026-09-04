@@ -34,6 +34,7 @@ import {
   Layers,
 } from "lucide-react";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/portal")({
   head: () => ({ meta: [{ title: `Customer Statement & Warranty Portal · ${appName}` }] }),
@@ -41,6 +42,7 @@ export const Route = createFileRoute("/portal")({
 });
 
 function CustomerPortalPage() {
+  const { t } = useLanguage();
   const { formatDate } = usePreferences();
   const { formatCurrency } = useCurrency();
   const [searchQuery, setSearchQuery] = useState("");
@@ -112,14 +114,13 @@ function CustomerPortalPage() {
       {/* Header Banner */}
       <div className="text-center space-y-2 py-6 max-w-2xl mx-auto">
         <Badge className="bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-wider text-[11px] px-3 py-1">
-          Self-Service Customer Portal
+          {t("selfServiceCustomerPortal", "Self-Service Customer Portal")}
         </Badge>
         <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
-          Customer Statement & Warranty Lookup
+          {t("customerStatementWarrantyLookup", "Customer Statement & Warranty Lookup")}
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground">
-          Enter customer phone number, client name, or select below to view Khata due balance,
-          invoices, and verified IMEI warranty records.
+          {t("customerStatementWarrantyDesc", "Enter customer phone number, client name, or select below to view Khata due balance, invoices, and verified IMEI warranty records.")}
         </p>
       </div>
 
@@ -129,7 +130,7 @@ function CustomerPortalPage() {
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search by customer phone (e.g. +1 555...) or client name"
+              placeholder={t("searchCustomerPhonePlaceholder", "Search by customer phone (e.g. +1 555...) or client name")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 h-11 text-sm rounded-xl font-medium"
@@ -141,7 +142,7 @@ function CustomerPortalPage() {
             className="h-11 px-6 font-bold rounded-xl shadow-soft"
           >
             {isSearching && <Loader2 className="mr-2 size-4 animate-spin" />}
-            Lookup Statement
+            {t("lookupStatement", "Lookup Statement")}
           </Button>
         </form>
 
@@ -154,17 +155,17 @@ function CustomerPortalPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="rounded-xl border border-border/80 bg-card p-5 text-center shadow-soft">
               <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider block">
-                Customer Name & Phone
+                {t("customerNamePhone", "Customer Name & Phone")}
               </span>
               <p className="text-lg font-black mt-1 text-primary">{foundCustomer.name}</p>
               <p className="text-xs text-muted-foreground font-medium mt-0.5">
-                {foundCustomer.phone || "No phone recorded"}
+                {foundCustomer.phone || t("noPhoneRecorded", "No phone recorded")}
               </p>
             </div>
 
             <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-5 text-center shadow-soft">
               <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider block">
-                Outstanding Khata Due
+                {t("outstandingKhataDue", "Outstanding Khata Due")}
               </span>
               <p className="text-2xl font-black text-destructive mt-1">
                 {formatCurrency(Number(foundCustomer.credit) || 0)}
@@ -173,7 +174,7 @@ function CustomerPortalPage() {
 
             <div className="rounded-xl border border-success/30 bg-success/5 p-5 text-center shadow-soft">
               <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider block">
-                Available Credit Limit
+                {t("availableCreditLimit", "Available Credit Limit")}
               </span>
               <p className="text-2xl font-black text-success mt-1">
                 {formatCurrency(
@@ -194,7 +195,7 @@ function CustomerPortalPage() {
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="size-5 text-primary" />
                   <h3 className="font-bold text-sm text-foreground">
-                    Active Product Warranties & Serial Numbers ({warrantyItems.length})
+                    {t("activeProductWarrantiesSerials", "Active Product Warranties & Serial Numbers")} ({warrantyItems.length})
                   </h3>
                 </div>
               </div>
@@ -202,16 +203,16 @@ function CustomerPortalPage() {
                 <TableHeader className="bg-muted/30">
                   <TableRow>
                     <TableHead className="font-bold text-xs uppercase tracking-wider">
-                      Product Name
+                      {t("productName", "Product Name")}
                     </TableHead>
                     <TableHead className="font-bold text-xs uppercase tracking-wider">
-                      Serial / IMEI Number
+                      {t("serialImeiNumber", "Serial / IMEI Number")}
                     </TableHead>
                     <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                      Purchase Date
+                      {t("purchaseDate", "Purchase Date")}
                     </TableHead>
                     <TableHead className="font-bold text-xs uppercase tracking-wider text-center">
-                      Warranty Status
+                      {t("warrantyStatus", "Warranty Status")}
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -232,7 +233,7 @@ function CustomerPortalPage() {
                           variant="outline"
                           className="bg-success/15 text-success border-success/25 text-[10px] font-black uppercase tracking-wider"
                         >
-                          Active Warranty
+                          {t("activeWarranty", "Active Warranty")}
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -248,7 +249,7 @@ function CustomerPortalPage() {
               <div className="flex items-center gap-2">
                 <FileText className="size-5 text-primary" />
                 <h3 className="font-bold text-sm text-foreground">
-                  Purchase Invoice History ({customerSales.length})
+                  {t("purchaseInvoiceHistory", "Purchase Invoice History")} ({customerSales.length})
                 </h3>
               </div>
               <Button
@@ -257,29 +258,29 @@ function CustomerPortalPage() {
                 onClick={() => window.print()}
                 className="font-semibold text-xs"
               >
-                <Printer className="mr-1.5 size-3.5" /> Print Statement
+                <Printer className="mr-1.5 size-3.5" /> {t("printStatement", "Print Statement")}
               </Button>
             </div>
 
             {customerSales.length === 0 ? (
               <div className="p-8 text-center text-xs text-muted-foreground">
-                No past purchase invoices found for this customer.
+                {t("noPastInvoicesFound", "No past purchase invoices found for this customer.")}
               </div>
             ) : (
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow>
                     <TableHead className="font-bold text-xs uppercase tracking-wider">
-                      Invoice #
+                      {t("invoiceHash", "Invoice #")}
                     </TableHead>
                     <TableHead className="font-bold text-xs uppercase tracking-wider">
-                      Date
+                      {t("date", "Date")}
                     </TableHead>
                     <TableHead className="font-bold text-xs uppercase tracking-wider">
-                      Payment Method
+                      {t("paymentMethod", "Payment Method")}
                     </TableHead>
                     <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                      Total Amount
+                      {t("totalAmount", "Total Amount")}
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -307,9 +308,8 @@ function CustomerPortalPage() {
         </div>
       ) : activeLookup ? (
         <div className="rounded-xl border border-border bg-card p-12 text-center text-sm text-muted-foreground shadow-soft max-w-3xl mx-auto">
-          No customer found matching &ldquo;
-          <strong className="text-foreground">{activeLookup}</strong>&rdquo;. Please verify the
-          phone number or customer name entered.
+          {t("noCustomerFoundMatching", "No customer found matching")} &ldquo;
+          <strong className="text-foreground">{activeLookup}</strong>&rdquo;. {t("pleaseVerifyPhoneName", "Please verify the phone number or customer name entered.")}
         </div>
       ) : null}
     </div>

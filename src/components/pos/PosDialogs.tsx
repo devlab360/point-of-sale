@@ -97,6 +97,7 @@ import { printReceiptIframe } from "@/lib/printIframe";
 import { SplitCheckModal } from "./SplitCheckModal";
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function PosDialogs({
   state,
@@ -107,6 +108,7 @@ export function PosDialogs({
   onCheckout: () => void;
   onResumeInvoice: (h: any) => void;
 }) {
+  const { t } = useLanguage();
   const [splittingInvoice, setSplittingInvoice] = useState<any>(null);
   const [isSplitting, setIsSplitting] = useState(false);
   const [pendingPrint, setPendingPrint] = useState<null | "thermal" | "a4">(null);
@@ -490,10 +492,10 @@ export function PosDialogs({
               </div>
               <div>
                 <DialogTitle className="text-base font-bold text-foreground">
-                  Select Customer
+                  {t("selectCustomer", "Select Customer")}
                 </DialogTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Choose a customer for billing, pricing tiers, and loyalty points
+                  {t("chooseCustomerDesc", "Choose a customer for billing, pricing tiers, and loyalty points")}
                 </p>
               </div>
             </div>
@@ -505,7 +507,7 @@ export function PosDialogs({
               className="h-9 gap-1.5 text-xs font-semibold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
             >
               <Plus className="size-3.5 stroke-[2.5]" />
-              <span>Add Customer</span>
+              <span>{t("addCustomer", "Add Customer")}</span>
               <kbd className="hidden sm:inline-block ml-1 rounded bg-primary-foreground/20 px-1.5 py-0.5 text-[9px] font-mono font-bold">
                 F2
               </kbd>
@@ -519,7 +521,7 @@ export function PosDialogs({
               <Input
                 value={customerQuery}
                 onChange={(e) => setCustomerQuery(e.target.value)}
-                placeholder="Search by name, phone, email, or city..."
+                placeholder={t("searchCustomerPlaceholder", "Search by name, phone, email, or city...")}
                 className="h-10 pl-9.5 pr-8 rounded-xl border-border/80 bg-card text-xs sm:text-sm font-medium focus-visible:ring-primary/20"
                 autoFocus
               />
@@ -538,11 +540,11 @@ export function PosDialogs({
             {/* Quick Type Filter Pills */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
               {[
-                { id: "all", label: "All Customers" },
-                { id: "retail", label: "Retail" },
-                { id: "wholesale", label: "Wholesale" },
-                { id: "dealer", label: "Dealer" },
-                { id: "credit", label: "Udhaar / Due" },
+                { id: "all", label: t("allCustomers", "All Customers") },
+                { id: "retail", label: t("retail", "Retail") },
+                { id: "wholesale", label: t("wholesale", "Wholesale") },
+                { id: "dealer", label: t("dealer", "Dealer") },
+                { id: "credit", label: t("hasCredit", "Udhaar / Due") },
               ].map((tab) => {
                 const isActive = customerTypeFilter === tab.id;
                 return (
@@ -596,13 +598,13 @@ export function PosDialogs({
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-foreground">Walk-in Customer</span>
+                        <span className="font-bold text-sm text-foreground">{t("walkInCustomer", "Walk-in Customer")}</span>
                         <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                          Default
+                          {t("default", "Default")}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Direct POS billing without customer account
+                        {t("directPosBilling", "Direct POS billing without customer account")}
                       </p>
                     </div>
                   </div>
@@ -761,11 +763,11 @@ export function PosDialogs({
                   <User className="size-6" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-sm text-foreground">No customers found</h4>
+                  <h4 className="font-bold text-sm text-foreground">{t("noCustomersFound", "No customers found")}</h4>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {customerQuery
-                      ? `No customer matching "${customerQuery}"`
-                      : "No customers in this category yet"}
+                      ? `${t("noCustomersFound", "No customer matching")} "${customerQuery}"`
+                      : t("noCustomersCategory", "No customers in this category yet")}
                   </p>
                 </div>
                 <Button
@@ -776,7 +778,7 @@ export function PosDialogs({
                   className="gap-1.5 text-xs font-bold rounded-xl"
                 >
                   <Plus className="size-3.5 stroke-[2.5]" />
-                  <span>Create New Customer</span>
+                  <span>{t("createCustomer", "Create New Customer")}</span>
                 </Button>
               </div>
             )}
@@ -786,11 +788,7 @@ export function PosDialogs({
           <div className="p-3.5 sm:p-4 border-t border-border/80 bg-muted/20 flex items-center justify-between text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <span className="size-2 rounded-full bg-primary" />
-              Press{" "}
-              <kbd className="font-mono bg-background border px-1.5 py-0.5 rounded text-[10px] font-bold">
-                F2
-              </kbd>{" "}
-              to add a new customer quickly.
+              {t("pressF2ToAddCustomer", "Press F2 to add a new customer quickly.")}
             </span>
             <Button
               variant="outline"
@@ -798,7 +796,7 @@ export function PosDialogs({
               onClick={() => setShowCustomerSearch(false)}
               className="h-8 rounded-xl text-xs font-bold"
             >
-              Close
+              {t("close", "Close")}
             </Button>
           </div>
         </DialogContent>
@@ -813,16 +811,16 @@ export function PosDialogs({
             </div>
             <div>
               <DialogTitle className="text-base font-bold text-foreground">
-                Quick Add Customer
+                {t("quickAddCustomer", "Quick Add Customer")}
               </DialogTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Register a new customer profile for immediate billing
+                {t("quickAddCustomerDesc", "Register a new customer profile for immediate billing")}
               </p>
             </div>
           </div>
           <form onSubmit={handleQuickAddCustomer} className="p-4 sm:p-5 space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Full Name *</Label>
+              <Label className="text-xs font-bold text-foreground">{t("fullName", "Full Name")} *</Label>
               <Input
                 name="name"
                 placeholder="e.g. Rajesh Kumar"
@@ -834,7 +832,7 @@ export function PosDialogs({
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Phone Number *</Label>
+                <Label className="text-xs font-bold text-foreground">{t("phoneNumber", "Phone Number")} *</Label>
                 <PhoneInput
                   name="phone"
                   required
@@ -842,23 +840,23 @@ export function PosDialogs({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Customer Type</Label>
+                <Label className="text-xs font-bold text-foreground">{t("customerType", "Customer Type")}</Label>
                 <Select name="type" defaultValue="retail">
                   <SelectTrigger className="h-10 rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="retail">Retail</SelectItem>
-                    <SelectItem value="wholesale">Wholesale</SelectItem>
-                    <SelectItem value="dealer">Dealer</SelectItem>
-                    <SelectItem value="corporate">Corporate</SelectItem>
+                    <SelectItem value="retail">{t("retail", "Retail")}</SelectItem>
+                    <SelectItem value="wholesale">{t("wholesale", "Wholesale")}</SelectItem>
+                    <SelectItem value="dealer">{t("dealer", "Dealer")}</SelectItem>
+                    <SelectItem value="corporate">{t("corporate", "Corporate")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Email (Optional)</Label>
+                <Label className="text-xs font-bold text-foreground">{t("emailOptional", "Email (Optional)")}</Label>
                 <Input
                   name="email"
                   type="email"
@@ -867,7 +865,7 @@ export function PosDialogs({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Address</Label>
+                <Label className="text-xs font-bold text-foreground">{t("address", "Address")}</Label>
                 <Input
                   name="address"
                   placeholder="Shop / House No, Street name"
@@ -877,11 +875,11 @@ export function PosDialogs({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">City</Label>
+                <Label className="text-xs font-bold text-foreground">{t("city", "City")}</Label>
                 <Input name="city" placeholder="City" className="h-10 rounded-xl" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">Zip Code</Label>
+                <Label className="text-xs font-bold text-foreground">{t("zipCode", "Zip Code")}</Label>
                 <Input name="zipCode" placeholder="Postal Code" className="h-10 rounded-xl" />
               </div>
             </div>
@@ -892,7 +890,7 @@ export function PosDialogs({
                 onClick={() => setShowAddCustomer(false)}
                 className="rounded-xl h-10 text-xs font-semibold"
               >
-                Cancel
+                {t("cancel", "Cancel")}
               </Button>
               <Button
                 type="submit"
@@ -900,7 +898,7 @@ export function PosDialogs({
                 className="rounded-xl h-10 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
               >
                 {isAddingCustomer && <Loader2 className="mr-2 size-4 animate-spin" />}
-                Save & Select Customer
+                {t("saveSelectCustomer", "Save & Select Customer")}
               </Button>
             </div>
           </form>
@@ -918,10 +916,10 @@ export function PosDialogs({
               </div>
               <div>
                 <DialogTitle className="text-base sm:text-lg font-bold text-foreground">
-                  Quick Add Item
+                  {t("quickAddItem", "Quick Add Item")}
                 </DialogTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Create a new product or service to sell immediately from POS
+                  {t("quickAddItemDesc", "Create a new product or service to sell immediately from POS")}
                 </p>
               </div>
             </div>
@@ -934,13 +932,13 @@ export function PosDialogs({
                   value="product"
                   className="rounded-lg text-xs font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
                 >
-                  Product
+                  {t("product", "Product")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="service"
                   className="rounded-lg text-xs font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
                 >
-                  Service
+                  {t("service", "Service")}
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -949,7 +947,7 @@ export function PosDialogs({
               <form onSubmit={handleQuickAddProduct} className="flex h-full flex-col">
                 <div className="p-5 space-y-4 min-h-0 flex-1 overflow-y-auto">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Product Image</Label>
+                    <Label className="text-xs font-bold text-foreground">{t("productImage", "Product Image")}</Label>
                     <FileUpload
                       value={newProductImage}
                       onChange={setNewProductImage}
@@ -962,7 +960,7 @@ export function PosDialogs({
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Product Name *</Label>
+                    <Label className="text-xs font-bold text-foreground">{t("productName", "Product Name")} *</Label>
                     <Input
                       name="name"
                       placeholder="e.g. Wireless Ergonomic Mouse"
@@ -975,7 +973,7 @@ export function PosDialogs({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-xs font-bold text-foreground">
-                        Selling Price ({currencySymbol}) *
+                        {t("sellingPrice", "Selling Price")} ({currencySymbol}) *
                       </Label>
                       <Input
                         name="price"
@@ -989,7 +987,7 @@ export function PosDialogs({
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs font-bold text-foreground">
-                        Cost Price ({currencySymbol}) *
+                        {t("costPrice", "Cost Price")} ({currencySymbol}) *
                       </Label>
                       <Input
                         name="cost"
@@ -1005,7 +1003,7 @@ export function PosDialogs({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-foreground">Opening Stock</Label>
+                      <Label className="text-xs font-bold text-foreground">{t("openingStock", "Opening Stock")}</Label>
                       <Input
                         name="stock"
                         type="number"
@@ -1017,13 +1015,13 @@ export function PosDialogs({
                     </div>
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <Label className="text-xs font-bold text-foreground">Barcode / SKU</Label>
+                        <Label className="text-xs font-bold text-foreground">{t("barcodeSku", "Barcode / SKU")}</Label>
                         <button
                           type="button"
                           onClick={generateBarcode}
                           className="text-[11px] font-bold text-primary hover:underline focus:outline-none"
                         >
-                          Generate Code
+                          {t("generateCode", "Generate Code")}
                         </button>
                       </div>
                       <Input
@@ -1038,13 +1036,13 @@ export function PosDialogs({
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-foreground">Unit *</Label>
+                      <Label className="text-xs font-bold text-foreground">{t("unit", "Unit")} *</Label>
                       <input type="hidden" name="unit" value={newProductUnit} />
                       <SearchableSelect
                         value={newProductUnit}
                         onChange={setNewProductUnit}
                         options={units.map((u: any) => ({ value: u.id, label: u.name }))}
-                        placeholder="Select Unit"
+                        placeholder={t("selectUnit", "Select Unit")}
                         onCreate={async (name) => {
                           const res = await createUnitFn({
                             data: { unit: { name, shortName: name } },
@@ -1057,13 +1055,13 @@ export function PosDialogs({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-foreground">Category</Label>
+                      <Label className="text-xs font-bold text-foreground">{t("category", "Category")}</Label>
                       <input type="hidden" name="category" value={newProductCategory} />
                       <SearchableSelect
                         value={newProductCategory}
                         onChange={setNewProductCategory}
                         options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
-                        placeholder="Select Category"
+                        placeholder={t("selectCategory", "Select Category")}
                         onCreate={async (name) => {
                           const res = await createCategoryFn({ data: { category: { name } } });
                           if (res?.success) {
@@ -1074,13 +1072,13 @@ export function PosDialogs({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-foreground">Brand</Label>
+                      <Label className="text-xs font-bold text-foreground">{t("brand", "Brand")}</Label>
                       <input type="hidden" name="brand" value={newProductBrand} />
                       <SearchableSelect
                         value={newProductBrand}
                         onChange={setNewProductBrand}
                         options={brands.map((b: any) => ({ value: b.id, label: b.name }))}
-                        placeholder="Select Brand"
+                        placeholder={t("selectBrand", "Select Brand")}
                         onCreate={async (name) => {
                           const res = await createBrandFn({ data: { brand: { name } } });
                           if (res?.success) {
@@ -1100,7 +1098,7 @@ export function PosDialogs({
                     onClick={() => setShowAddProduct(false)}
                     className="h-10 px-4 text-xs font-bold rounded-xl"
                   >
-                    Cancel
+                    {t("cancel", "Cancel")}
                   </Button>
                   <Button
                     type="submit"
@@ -1108,7 +1106,7 @@ export function PosDialogs({
                     className="h-10 px-5 text-xs font-bold rounded-xl bg-primary text-primary-foreground shadow-md"
                   >
                     {isAddingProduct && <Loader2 className="mr-2 size-4 animate-spin" />}
-                    Save & Add to POS
+                    {t("saveAddToPos", "Save & Add to POS")}
                   </Button>
                 </div>
               </form>
@@ -1118,7 +1116,7 @@ export function PosDialogs({
               <form onSubmit={handleQuickAddService} className="flex h-full flex-col">
                 <div className="p-5 space-y-4 min-h-0 flex-1 overflow-y-auto">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Service Image</Label>
+                    <Label className="text-xs font-bold text-foreground">{t("serviceImage", "Service Image")}</Label>
                     <FileUpload
                       value={newServiceImage}
                       onChange={setNewServiceImage}
@@ -1130,7 +1128,7 @@ export function PosDialogs({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Service Name *</Label>
+                    <Label className="text-xs font-bold text-foreground">{t("serviceName", "Service Name")} *</Label>
                     <Input
                       name="name"
                       placeholder="e.g. Express Laptop Screen Replacement"
@@ -1142,7 +1140,7 @@ export function PosDialogs({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-xs font-bold text-foreground">
-                        Price ({currencySymbol}) *
+                        {t("price", "Price")} ({currencySymbol}) *
                       </Label>
                       <Input
                         name="price"
@@ -1155,7 +1153,7 @@ export function PosDialogs({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-foreground">Duration</Label>
+                      <Label className="text-xs font-bold text-foreground">{t("duration", "Duration")}</Label>
                       <div className="flex gap-2">
                         <Input
                           name="duration"
@@ -1169,9 +1167,9 @@ export function PosDialogs({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="mins">Minutes</SelectItem>
-                            <SelectItem value="hours">Hours</SelectItem>
-                            <SelectItem value="days">Days</SelectItem>
+                            <SelectItem value="mins">{t("minutes", "Minutes")}</SelectItem>
+                            <SelectItem value="hours">{t("hours", "Hours")}</SelectItem>
+                            <SelectItem value="days">{t("days", "Days")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -1179,13 +1177,13 @@ export function PosDialogs({
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-foreground">Unit *</Label>
+                      <Label className="text-xs font-bold text-foreground">{t("unit", "Unit")} *</Label>
                       <input type="hidden" name="unit" value={newServiceUnit} />
                       <SearchableSelect
                         value={newServiceUnit}
                         onChange={setNewServiceUnit}
                         options={units.map((u: any) => ({ value: u.id, label: u.name }))}
-                        placeholder="Select Unit"
+                        placeholder={t("selectUnit", "Select Unit")}
                         onCreate={async (name) => {
                           const res = await createUnitFn({
                             data: { unit: { name, shortName: name } },
@@ -1198,13 +1196,13 @@ export function PosDialogs({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-foreground">Category</Label>
+                      <Label className="text-xs font-bold text-foreground">{t("category", "Category")}</Label>
                       <input type="hidden" name="category" value={newServiceCategory} />
                       <SearchableSelect
                         value={newServiceCategory}
                         onChange={setNewServiceCategory}
                         options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
-                        placeholder="Select Category"
+                        placeholder={t("selectCategory", "Select Category")}
                         onCreate={async (name) => {
                           const res = await createCategoryFn({ data: { category: { name } } });
                           if (res?.success) {
@@ -1224,7 +1222,7 @@ export function PosDialogs({
                     onClick={() => setShowAddProduct(false)}
                     className="h-10 px-4 text-xs font-bold rounded-xl"
                   >
-                    Cancel
+                    {t("cancel", "Cancel")}
                   </Button>
                   <Button
                     type="submit"
@@ -1232,7 +1230,7 @@ export function PosDialogs({
                     className="h-10 px-5 text-xs font-bold rounded-xl bg-primary text-primary-foreground shadow-md"
                   >
                     {isAddingService && <Loader2 className="mr-2 size-4 animate-spin" />}
-                    Save Service
+                    {t("saveService", "Save Service")}
                   </Button>
                 </div>
               </form>
@@ -1252,10 +1250,10 @@ export function PosDialogs({
               </div>
               <div>
                 <DialogTitle className="text-base sm:text-lg font-bold text-foreground">
-                  POS Keyboard Shortcuts
+                  {t("posShortcuts", "POS Keyboard Shortcuts")}
                 </DialogTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  High-speed cashier shortcuts for instant queue-busting
+                  {t("posShortcutsDesc", "High-speed cashier shortcuts for instant queue-busting")}
                 </p>
               </div>
             </div>
@@ -1268,14 +1266,14 @@ export function PosDialogs({
             {/* Column 1: Cart & Catalog */}
             <div className="space-y-2">
               <div className="text-[11px] font-black uppercase tracking-wider text-muted-foreground px-1 pb-1">
-                Catalog & Cart Operations
+                {t("catalogCartOperations", "Catalog & Cart Operations")}
               </div>
               {[
-                { key: "F1", desc: "Focus Product Search", badge: "Catalog" },
-                { key: "F2", desc: "Select / Add Customer", badge: "Customer" },
-                { key: "F3", desc: "Manual Discount Input", badge: "Pricing" },
-                { key: "F4", desc: "Hold / Park Active Cart", badge: "Queue" },
-                { key: "F6", desc: "Focus Barcode Scanner", badge: "Scanner" },
+                { key: "F1", desc: t("focusProductSearch", "Focus Product Search"), badge: "Catalog" },
+                { key: "F2", desc: t("selectCustomer", "Select / Add Customer"), badge: "Customer" },
+                { key: "F3", desc: t("manualDiscountInput", "Manual Discount Input"), badge: "Pricing" },
+                { key: "F4", desc: t("holdParkCart", "Hold / Park Active Cart"), badge: "Queue" },
+                { key: "F6", desc: t("focusBarcodeScanner", "Focus Barcode Scanner"), badge: "Scanner" },
               ].map((s) => (
                 <div
                   key={s.key}
@@ -1292,14 +1290,14 @@ export function PosDialogs({
             {/* Column 2: Tendering & Navigation */}
             <div className="space-y-2">
               <div className="text-[11px] font-black uppercase tracking-wider text-muted-foreground px-1 pb-1">
-                Tender, Held & Settlement
+                {t("tenderHeldSettlement", "Tender, Held & Settlement")}
               </div>
               {[
-                { key: "Ctrl + ↵", desc: "Fast Checkout & Settle", badge: "Checkout" },
-                { key: "F5", desc: "Switch Card / UPI Tender", badge: "Payment" },
-                { key: "Alt + H", desc: "View Parked / Held Bills", badge: "Parked" },
-                { key: "Esc", desc: "Close Dialog / Reset Input", badge: "Nav" },
-                { key: "?", desc: "Show Shortcuts Guide", badge: "Help" },
+                { key: "Ctrl + ↵", desc: t("fastCheckoutSettle", "Fast Checkout & Settle"), badge: "Checkout" },
+                { key: "F5", desc: t("switchPaymentMethod", "Switch Card / UPI Tender"), badge: "Payment" },
+                { key: "Alt + H", desc: t("viewParkedBills", "View Parked / Held Bills"), badge: "Parked" },
+                { key: "Esc", desc: t("closeDialogReset", "Close Dialog / Reset Input"), badge: "Nav" },
+                { key: "?", desc: t("showShortcutsGuide", "Show Shortcuts Guide"), badge: "Help" },
               ].map((s) => (
                 <div
                   key={s.key}
@@ -1315,19 +1313,20 @@ export function PosDialogs({
           </div>
 
           <div className="p-3.5 sm:p-4 border-t border-border/80 bg-muted/30 flex items-center justify-between text-xs text-muted-foreground">
-            <span>💡 All shortcuts are active globally across the terminal.</span>
+            <span>💡 {t("allShortcutsActive", "All shortcuts are active globally across the terminal.")}</span>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowShortcutsHelp(false)}
               className="h-8 rounded-xl text-xs font-bold"
             >
-              Got It
+              {t("gotIt", "Got It")}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
+      {/* Parked / Held Invoices Modal */}
       {/* Parked / Held Invoices Modal */}
       <Dialog open={showHeld} onOpenChange={setShowHeld}>
         <DialogContent className="sm:max-w-3xl p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
@@ -1342,14 +1341,14 @@ export function PosDialogs({
                 <div>
                   <div className="flex items-center gap-2">
                     <DialogTitle className="text-base sm:text-lg font-bold text-foreground">
-                      Parked / Held Invoices
+                      {t("parkedHeldInvoices", "Parked / Held Invoices")}
                     </DialogTitle>
                     <span className="rounded-full bg-warning/15 text-warning font-extrabold text-[11px] px-2.5 py-0.5 border border-warning/25">
-                      {heldInvoices.length} Parked
+                      {heldInvoices.length} {t("parked", "Parked")}
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Resume any parked customer cart instantly for zero-queue fast checkout
+                    {t("resumeParkedDesc", "Resume any parked customer cart instantly for zero-queue fast checkout")}
                   </p>
                 </div>
               </div>
@@ -1362,7 +1361,7 @@ export function PosDialogs({
                 <Input
                   value={heldSearch}
                   onChange={(e) => setHeldSearch(e.target.value)}
-                  placeholder="Search by customer name or mobile number..."
+                  placeholder={t("searchHeldPlaceholder", "Search by customer name or mobile number...")}
                   className="h-9 pl-9 text-xs rounded-xl bg-background border-border/80"
                 />
               </div>
@@ -1373,10 +1372,10 @@ export function PosDialogs({
                   variant="outline"
                   onClick={() => setShowClearAllHeldConfirm(true)}
                   className="h-9 px-3.5 text-xs font-bold text-destructive border-destructive/30 hover:bg-destructive/10 hover:border-destructive rounded-xl shrink-0 gap-1.5"
-                  title="Clear all held invoices"
+                  title={t("clearAllHeldInvoices", "Clear all held invoices")}
                 >
                   <Trash2 className="size-3.5" />
-                  <span>Clear All ({heldInvoices.length})</span>
+                  <span>{t("clearAll", "Clear All")} ({heldInvoices.length})</span>
                 </Button>
               )}
             </div>
@@ -1389,12 +1388,9 @@ export function PosDialogs({
                 <div className="size-14 rounded-2xl bg-warning/10 border border-warning/20 grid place-items-center text-warning mx-auto mb-3">
                   <Clock className="size-7" />
                 </div>
-                <h4 className="font-bold text-base text-foreground">No Parked Invoices in Queue</h4>
+                <h4 className="font-bold text-base text-foreground">{t("noParkedInvoices", "No Parked Invoices in Queue")}</h4>
                 <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
-                  When a customer takes time or needs to grab another item, click{" "}
-                  <span className="font-bold text-foreground">[Hold]</span> or press{" "}
-                  <span className="font-bold text-foreground">F4</span> during checkout to park
-                  their cart and immediately serve the next customer.
+                  {t("parkCartHelp", "When a customer takes time or needs to grab another item, click [Hold] or press F4 during checkout to park their cart and immediately serve the next customer.")}
                 </p>
               </div>
             ) : (
@@ -1444,7 +1440,7 @@ export function PosDialogs({
                         hour: "2-digit",
                         minute: "2-digit",
                       })
-                    : "Recently";
+                    : t("recently", "Recently");
 
                   return (
                     <div
@@ -1458,7 +1454,7 @@ export function PosDialogs({
                             {(h.customerName || "W")[0].toUpperCase()}
                           </div>
                           <span className="font-bold text-base text-foreground truncate">
-                            {h.customerName || "Walk-in Customer"}
+                            {h.customerName || t("walkInCustomer", "Walk-in Customer")}
                           </span>
 
                           {/* Customer Mobile Phone */}
@@ -1469,7 +1465,7 @@ export function PosDialogs({
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/60">
-                              <User className="size-3" /> Walk-in
+                              <User className="size-3" /> {t("walkIn", "Walk-in")}
                             </span>
                           )}
 
@@ -1483,7 +1479,7 @@ export function PosDialogs({
                         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                           <span className="inline-flex items-center gap-1 text-xs font-bold text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md border border-border/50">
                             <ShoppingBag className="size-3 text-primary" /> {cartCount}{" "}
-                            {cartCount === 1 ? "item" : "items"}
+                            {cartCount === 1 ? t("item", "item") : t("items", "items")}
                           </span>
 
                           {cartItems.slice(0, 3).map((item: any, idx: number) => (
@@ -1491,13 +1487,13 @@ export function PosDialogs({
                               key={idx}
                               className="text-[11px] text-foreground bg-muted/30 px-2 py-0.5 rounded-md border border-border/40 truncate max-w-[150px]"
                             >
-                              {item.qty}x {item.name || item.product?.name || "Item"}
+                              {item.qty}x {item.name || item.product?.name || t("item", "Item")}
                             </span>
                           ))}
 
                           {cartItems.length > 3 && (
                             <span className="text-[11px] font-bold text-muted-foreground">
-                              +{cartItems.length - 3} more
+                              +{cartItems.length - 3} {t("more", "more")}
                             </span>
                           )}
 
@@ -1514,7 +1510,7 @@ export function PosDialogs({
                         {cartTotal > 0 && (
                           <div className="text-right mr-1">
                             <div className="text-[10px] uppercase tracking-wider font-extrabold text-muted-foreground">
-                              Est. Total
+                              {t("estTotal", "Est. Total")}
                             </div>
                             <div className="font-extrabold text-base text-foreground number">
                               {formatCurrency(finalEstimatedTotal)}
@@ -1529,7 +1525,7 @@ export function PosDialogs({
                             className="h-9 px-3.5 text-xs font-bold gap-1.5 shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl"
                           >
                             <Play className="size-3.5 fill-current" />
-                            Resume Cart
+                            {t("resumeCart", "Resume Cart")}
                           </Button>
 
                           <Button
@@ -1540,9 +1536,9 @@ export function PosDialogs({
                               setSplittingInvoice(h);
                             }}
                             className="h-9 px-2.5 text-xs font-semibold rounded-xl"
-                            title="Split Bill"
+                            title={t("splitBill", "Split Bill")}
                           >
-                            Split
+                            {t("split", "Split")}
                           </Button>
 
                           <Button
@@ -1550,7 +1546,7 @@ export function PosDialogs({
                             variant="outline"
                             onClick={() => setVoidingInvoice(h)}
                             className="h-9 px-2.5 text-xs font-semibold text-destructive border-destructive/30 hover:bg-destructive/10 rounded-xl"
-                            title="Void held bill"
+                            title={t("voidHeldBill", "Void held bill")}
                           >
                             <Ban className="size-3.5" />
                           </Button>
@@ -1570,7 +1566,7 @@ export function PosDialogs({
               <kbd className="font-mono bg-background border px-1.5 py-0.5 rounded text-[10px] font-bold">
                 F4
               </kbd>{" "}
-              during billing to park any basket in 0.0s.
+              {t("parkBasketTip", "during billing to park any basket in 0.0s.")}
             </span>
             <Button
               variant="outline"
@@ -1578,7 +1574,7 @@ export function PosDialogs({
               onClick={() => setShowHeld(false)}
               className="h-8 rounded-xl text-xs font-bold"
             >
-              Close
+              {t("close", "Close")}
             </Button>
           </div>
         </DialogContent>
@@ -1592,18 +1588,15 @@ export function PosDialogs({
               <Trash2 className="size-6" />
             </div>
             <AlertDialogTitle className="text-lg font-bold text-foreground">
-              Clear All Parked Invoices?
+              {t("clearAllParkedTitle", "Clear All Parked Invoices?")}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed">
-              This will permanently delete all{" "}
-              <strong className="text-foreground font-bold">{heldInvoices.length}</strong> parked
-              customer invoices from your queue. All unbilled carts will be removed. This action
-              cannot be undone.
+              {t("clearAllParkedDesc", "This will permanently delete all parked customer invoices from your queue. All unbilled carts will be removed. This action cannot be undone.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:gap-2 mt-3">
             <AlertDialogCancel className="rounded-xl text-xs font-semibold">
-              Cancel
+              {t("cancel", "Cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={async () => {
@@ -1611,7 +1604,7 @@ export function PosDialogs({
                   await clearAllHeldInvoicesFn();
                   queryClient.invalidateQueries({ queryKey: ["heldInvoices"] });
                   setShowHeld(false);
-                  toast.success("All parked invoices cleared successfully");
+                  toast.success(t("allParkedClearedSuccess", "All parked invoices cleared successfully"));
                 } catch (e: any) {
                   toast.error(e.message || "Failed to clear parked invoices");
                 }
@@ -1619,7 +1612,7 @@ export function PosDialogs({
               className="rounded-xl text-xs font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-1.5"
             >
               <Trash2 className="size-3.5" />
-              Yes, Clear All Orders
+              {t("yesClearAllOrders", "Yes, Clear All Orders")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1636,19 +1629,19 @@ export function PosDialogs({
               <Ban className="size-6" />
             </div>
             <AlertDialogTitle className="text-lg font-bold text-foreground">
-              Void Held Invoice?
+              {t("voidHeldTitle", "Void Held Invoice?")}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed">
-              Are you sure you want to void the parked order for{" "}
+              {t("voidHeldConfirmDesc", "Are you sure you want to void the parked order for")} {" "}
               <strong className="text-foreground font-bold">
-                {voidingInvoice?.customerName || "Walk-in Customer"}
+                {voidingInvoice?.customerName || t("walkInCustomer", "Walk-in Customer")}
               </strong>
-              ? The basket items will be permanently removed.
+              ? {t("basketPermanentlyRemoved", "The basket items will be permanently removed.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:gap-2 mt-3">
             <AlertDialogCancel className="rounded-xl text-xs font-semibold">
-              Cancel
+              {t("cancel", "Cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={async () => {
@@ -1657,7 +1650,7 @@ export function PosDialogs({
                   await deleteHeldInvoiceFn({ data: { id: voidingInvoice.id } });
                   queryClient.invalidateQueries({ queryKey: ["heldInvoices"] });
                   setVoidingInvoice(null);
-                  toast.success("Held invoice voided");
+                  toast.success(t("heldInvoiceVoided", "Held invoice voided"));
                 } catch (e: any) {
                   toast.error(e.message || "Failed to void held invoice");
                 }
@@ -1665,7 +1658,7 @@ export function PosDialogs({
               className="rounded-xl text-xs font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-1.5"
             >
               <Trash2 className="size-3.5" />
-              Void Invoice
+              {t("voidInvoice", "Void Invoice")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1682,10 +1675,10 @@ export function PosDialogs({
               </div>
               <div>
                 <DialogTitle className="text-base font-bold text-foreground">
-                  Coupons & Offers
+                  {t("couponsOffers", "Coupons & Offers")}
                 </DialogTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Select an available coupon or enter a promotional voucher
+                  {t("selectCouponDesc", "Select an available coupon or enter a promotional voucher")}
                 </p>
               </div>
             </div>
@@ -1694,7 +1687,7 @@ export function PosDialogs({
               <div className="flex items-center gap-2">
                 <span className="hidden sm:inline-flex items-center gap-1 rounded-lg bg-success/15 border border-success/30 px-2.5 py-1 text-[11px] font-bold text-success">
                   <Check className="size-3 stroke-[3]" />
-                  {appliedCoupon.code} Applied
+                  {appliedCoupon.code} {t("applied", "Applied")}
                 </span>
                 <Button
                   size="sm"
@@ -1702,7 +1695,7 @@ export function PosDialogs({
                   onClick={() => removeCoupon()}
                   className="h-8 text-xs font-semibold text-destructive border-destructive/30 hover:bg-destructive/10"
                 >
-                  Remove
+                  {t("remove", "Remove")}
                 </Button>
               </div>
             )}
@@ -1718,7 +1711,7 @@ export function PosDialogs({
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                   onKeyDown={(e) => e.key === "Enter" && applyCoupon(couponCode)}
-                  placeholder="Enter coupon or promo code..."
+                  placeholder={t("enterCouponPlaceholder", "Enter coupon or promo code...")}
                   className="h-10 pl-9.5 pr-8 rounded-xl border-border/80 bg-card text-xs sm:text-sm font-mono font-bold tracking-wider uppercase focus-visible:ring-primary/20"
                   autoFocus
                 />
@@ -1727,7 +1720,7 @@ export function PosDialogs({
                     type="button"
                     onClick={() => setCouponCode("")}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 size-5 rounded-full bg-muted text-muted-foreground hover:text-foreground grid place-items-center text-xs"
-                    title="Clear"
+                    title={t("clear", "Clear")}
                   >
                     <X className="size-3" />
                   </button>
@@ -1738,19 +1731,19 @@ export function PosDialogs({
                 disabled={!couponCode.trim()}
                 className="h-10 px-4 rounded-xl font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs shrink-0"
               >
-                Apply Code
+                {t("applyCode", "Apply Code")}
               </Button>
             </div>
 
             {/* Quick Filter Tabs */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
               {[
-                { id: "all", label: `All Offers (${availableCoupons.length})` },
-                { id: "percent", label: "Percentage %" },
-                { id: "flat", label: "Flat OFF" },
+                { id: "all", label: `${t("allOffers", "All Offers")} (${availableCoupons.length})` },
+                { id: "percent", label: t("percentage", "Percentage %") },
+                { id: "flat", label: t("flatOff", "Flat OFF") },
                 {
                   id: "eligible",
-                  label: `Eligible for Cart (${currencySymbol}${subtotal.toFixed(2)})`,
+                  label: `${t("eligibleForCart", "Eligible for Cart")} (${currencySymbol}${subtotal.toFixed(2)})`,
                 },
               ].map((tab) => {
                 const isActive = couponFilterTab === tab.id;
@@ -1788,7 +1781,7 @@ export function PosDialogs({
                     month: "short",
                     year: "numeric",
                   })
-                : "No expiry";
+                : t("noExpiry", "No expiry");
 
               return (
                 <div
@@ -1828,7 +1821,7 @@ export function PosDialogs({
                         </span>
                         {isApplied && (
                           <span className="rounded-md bg-success/15 border border-success/30 px-1.5 py-0.5 text-[10px] font-bold text-success inline-flex items-center gap-1">
-                            <Check className="size-3 stroke-[3]" /> Applied
+                            <Check className="size-3 stroke-[3]" /> {t("applied", "Applied")}
                           </span>
                         )}
                       </div>
@@ -1842,7 +1835,7 @@ export function PosDialogs({
                       <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-1.5 flex-wrap">
                         {minOrder > 0 && (
                           <span className="font-semibold text-foreground/70">
-                            Min Order: {currencySymbol}
+                            {t("minOrder", "Min Order:")} {currencySymbol}
                             {minOrder}
                           </span>
                         )}
@@ -1856,12 +1849,11 @@ export function PosDialogs({
                       <div className="mt-1.5">
                         {minOrder > 0 && !isEligible ? (
                           <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md inline-block">
-                            Add {currencySymbol}
-                            {shortAmount.toFixed(2)} more to unlock
+                            {t("addMoreToUnlock", "Add {amount} more to unlock").replace("{amount}", `${currencySymbol}${shortAmount.toFixed(2)}`)}
                           </span>
                         ) : (
                           <span className="text-[10px] font-semibold text-success bg-success/10 border border-success/20 px-2 py-0.5 rounded-md inline-block">
-                            ✓ Eligible on current cart ({currencySymbol}
+                            ✓ {t("eligibleCurrentCart", "Eligible on current cart")} ({currencySymbol}
                             {subtotal.toFixed(2)})
                           </span>
                         )}
@@ -1878,7 +1870,7 @@ export function PosDialogs({
                         onClick={() => removeCoupon()}
                         className="h-8.5 px-3 text-xs font-semibold text-destructive border-destructive/30 hover:bg-destructive/10 rounded-xl"
                       >
-                        Remove
+                        {t("remove", "Remove")}
                       </Button>
                     ) : (
                       <Button
@@ -1892,7 +1884,7 @@ export function PosDialogs({
                             : "opacity-50 cursor-not-allowed",
                         )}
                       >
-                        {isEligible ? "Apply Coupon" : "Min Order Not Met"}
+                        {isEligible ? t("applyCoupon", "Apply Coupon") : t("minOrderNotMet", "Min Order Not Met")}
                       </Button>
                     )}
                   </div>
@@ -1907,11 +1899,11 @@ export function PosDialogs({
                   <Ticket className="size-6" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-sm text-foreground">No coupons available</h4>
+                  <h4 className="font-bold text-sm text-foreground">{t("noCouponsAvailable", "No coupons available")}</h4>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {couponSearch
-                      ? `No coupon matching "${couponSearch}"`
-                      : "No active offers found. You can still type a promotional code above."}
+                      ? `${t("noCouponMatching", "No coupon matching")} "${couponSearch}"`
+                      : t("noActiveOffers", "No active offers found. You can still type a promotional code above.")}
                   </p>
                 </div>
               </div>
@@ -1922,7 +1914,7 @@ export function PosDialogs({
           <div className="p-3.5 sm:p-4 border-t border-border/80 bg-muted/20 flex items-center justify-between text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <span className="size-2 rounded-full bg-primary" />
-              Enter custom voucher or select from verified store offers.
+              {t("enterVoucherTip", "Enter custom voucher or select from verified store offers.")}
             </span>
             <Button
               variant="outline"
@@ -1930,7 +1922,7 @@ export function PosDialogs({
               onClick={() => setShowCoupon(false)}
               className="h-8 rounded-xl text-xs font-bold"
             >
-              Close
+              {t("close", "Close")}
             </Button>
           </div>
         </DialogContent>
@@ -1951,10 +1943,10 @@ export function PosDialogs({
             </div>
             <div>
               <AlertDialogTitle className="text-base font-bold text-foreground">
-                Confirm & Settle Sale
+                {t("confirmSettleSale", "Confirm & Settle Sale")}
               </AlertDialogTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Verify transaction amount before issuing receipt
+                {t("verifyAmountDesc", "Verify transaction amount before issuing receipt")}
               </p>
             </div>
           </div>
@@ -1963,7 +1955,7 @@ export function PosDialogs({
           <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
             <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 text-center">
               <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
-                Total Bill Amount
+                {t("totalBillAmount", "Total Bill Amount")}
               </span>
               <span className="number text-3xl font-black text-primary block mt-0.5">
                 {formatCurrency(total)}
@@ -1975,7 +1967,7 @@ export function PosDialogs({
                 {payment === "credit" && <Receipt className="size-3.5 text-warning" />}
                 {payment === "split" && <Users className="size-3.5 text-secondary" />}
                 <span>
-                  Payment: {payment === "credit" ? "Udhaar / Khata" : payment.toUpperCase()}
+                  {t("payment", "Payment")}: {payment === "credit" ? t("creditKhata", "Udhaar / Khata") : payment.toUpperCase()}
                 </span>
               </div>
             </div>
@@ -1983,7 +1975,7 @@ export function PosDialogs({
             {payment === "cash" && changeDue > 0 && (
               <div className="bg-success/15 border border-success/30 rounded-xl p-3 text-center">
                 <span className="text-xs font-bold text-success block">
-                  Wapas / Return Change to Customer:
+                  {t("returnChangeCustomer", "Wapas / Return Change to Customer:")}
                 </span>
                 <span className="number text-2xl font-black text-success block mt-0.5">
                   {formatCurrency(changeDue)}
@@ -1994,7 +1986,7 @@ export function PosDialogs({
             {payment === "credit" && (parseFloat(cashTendered) || 0) > 0 && (
               <div className="bg-warning/15 border border-warning/30 rounded-xl p-2.5 text-center">
                 <span className="text-xs font-bold text-warning-foreground block">
-                  Remaining Udhaar:
+                  {t("remainingUdhaar", "Remaining Udhaar:")}
                 </span>
                 <span className="number text-lg font-black text-warning-foreground block mt-0.5">
                   {formatCurrency(Math.max(0, total - (parseFloat(cashTendered) || 0)))}
@@ -2006,7 +1998,7 @@ export function PosDialogs({
               state.lines.some((l: any) => l.product.metadata?.prescriptionRequired)) && (
               <div className="pt-2 border-t space-y-1.5">
                 <Label className="text-xs font-bold text-foreground">
-                  Prescription Reference (Optional)
+                  {t("prescriptionRefOptional", "Prescription Reference (Optional)")}
                 </Label>
                 <Input
                   placeholder="e.g. Rx-12345"
@@ -2024,7 +2016,7 @@ export function PosDialogs({
               disabled={isCompletingSale}
               className="rounded-xl text-xs font-semibold h-11"
             >
-              Cancel
+              {t("cancel", "Cancel")}
             </AlertDialogCancel>
             <Button
               onClick={() => onCheckout()}
@@ -2034,10 +2026,10 @@ export function PosDialogs({
               {isCompletingSale ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />
-                  Printing...
+                  {t("printing", "Printing...")}
                 </>
               ) : (
-                "Print Bill ✓"
+                t("printBill", "Print Bill ✓")
               )}
             </Button>
           </div>
@@ -2061,10 +2053,10 @@ export function PosDialogs({
               <Check className="size-8 stroke-[3]" />
             </div>
             <DialogTitle className="text-xl font-black text-foreground tracking-tight">
-              Sale Completed Successfully!
+              {t("saleCompletedSuccess", "Sale Completed Successfully!")}
             </DialogTitle>
             <p className="text-xs text-muted-foreground mt-1 flex items-center justify-center gap-1.5 font-medium">
-              <span>{saleComplete?.storeName || "Store"}</span>
+              <span>{saleComplete?.storeName || t("store", "Store")}</span>
               <span>•</span>
               <span className="font-mono font-bold text-foreground">
                 #
@@ -2078,7 +2070,7 @@ export function PosDialogs({
             <div className="mt-4 p-3.5 rounded-2xl bg-card border border-border/80 shadow-sm flex items-center justify-between">
               <div className="text-left">
                 <div className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">
-                  Total Paid
+                  {t("totalPaid", "Total Paid")}
                 </div>
                 <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 number">
                   {currencySymbol}
@@ -2088,10 +2080,10 @@ export function PosDialogs({
 
               <div className="text-right space-y-1">
                 <span className="inline-flex items-center gap-1 text-xs font-bold text-foreground bg-muted/60 px-2.5 py-1 rounded-lg border border-border/60">
-                  <User className="size-3" /> {saleComplete?.customer || "Walk-in Customer"}
+                  <User className="size-3" /> {saleComplete?.customer || t("walkInCustomer", "Walk-in Customer")}
                 </span>
                 <div className="text-[11px] font-semibold text-muted-foreground uppercase">
-                  via {saleComplete?.payment || "Cash"}
+                  {t("via", "via")} {saleComplete?.payment || t("cash", "Cash")}
                 </div>
               </div>
             </div>
@@ -2107,7 +2099,7 @@ export function PosDialogs({
                 }}
                 className="h-11 rounded-xl text-xs font-bold gap-2 bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
               >
-                <Printer className="size-4" /> Thermal Print
+                <Printer className="size-4" /> {t("thermalPrint", "Thermal Print")}
               </Button>
 
               <Button
@@ -2118,7 +2110,7 @@ export function PosDialogs({
                 variant="outline"
                 className="h-11 rounded-xl text-xs font-bold gap-2 border-border/80 hover:border-primary/50"
               >
-                <FileText className="size-4 text-primary" /> A4 Tax Invoice
+                <FileText className="size-4 text-primary" /> {t("a4Invoice", "A4 Tax Invoice")}
               </Button>
             </div>
 
@@ -2127,7 +2119,7 @@ export function PosDialogs({
                 onClick={sendWhatsApp}
                 className="w-full h-11 rounded-xl text-xs font-bold gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white shadow-xs"
               >
-                <MessageCircle className="size-4 fill-current" /> Send WhatsApp Receipt
+                <MessageCircle className="size-4 fill-current" /> {t("sendWhatsAppReceipt", "Send WhatsApp Receipt")}
               </Button>
             )}
 
@@ -2150,7 +2142,7 @@ export function PosDialogs({
                       },
                     });
                     if (res?.success) {
-                      toast.success("Bill voided and inventory restored.");
+                      toast.success(t("billVoidedStockRestored", "Bill voided and inventory restored."));
                       setSaleComplete(null);
                       setPrintData(null);
                       queryClient.invalidateQueries({ queryKey: ["posBootstrap"] });
@@ -2165,7 +2157,7 @@ export function PosDialogs({
                 }}
                 className="h-9 text-xs font-semibold text-destructive hover:bg-destructive/10 rounded-xl"
               >
-                <Ban className="size-3.5 mr-1" /> Void Sale
+                <Ban className="size-3.5 mr-1" /> {t("voidSale", "Void Sale")}
               </Button>
 
               <Button
@@ -2175,7 +2167,7 @@ export function PosDialogs({
                 }}
                 className="h-9 px-5 rounded-xl text-xs font-extrabold"
               >
-                Next Customer (Esc)
+                {t("nextCustomer", "Next Customer (Esc)")}
               </Button>
             </div>
           </div>
@@ -2191,10 +2183,10 @@ export function PosDialogs({
             </div>
             <div>
               <DialogTitle className="text-base font-bold text-foreground">
-                Open Shift Register
+                {t("openShiftRegister", "Open Shift Register")}
               </DialogTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Enter initial cash float balance in drawer to begin billing
+                {t("openRegisterDesc", "Enter initial cash float balance in drawer to begin billing")}
               </p>
             </div>
           </div>
@@ -2202,7 +2194,7 @@ export function PosDialogs({
           <div className="p-5 space-y-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-bold text-foreground">
-                Starting Cash Float ({currencySymbol})
+                {t("startingCashFloat", "Starting Cash Float")} ({currencySymbol})
               </Label>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-extrabold text-muted-foreground">
@@ -2224,7 +2216,7 @@ export function PosDialogs({
             {/* Quick Preset Chips */}
             <div className="space-y-1.5">
               <span className="text-[11px] font-bold text-muted-foreground">
-                Quick Float Amounts:
+                {t("quickFloatAmounts", "Quick Float Amounts:")}
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {[100, 200, 500, 1000, 2000].map((amt) => (
@@ -2249,7 +2241,7 @@ export function PosDialogs({
               onClick={handleOpenRegister}
               className="w-full h-11 rounded-xl text-xs font-bold bg-primary text-primary-foreground shadow-md"
             >
-              Open Register & Start Shift
+              {t("openRegisterStart", "Open Register & Start Shift")}
             </Button>
           </div>
         </DialogContent>

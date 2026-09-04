@@ -29,6 +29,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { ErrorState } from "@/components/ui/error-state";
 import { NOTIFICATION_TYPE_OPTIONS } from "@/constants";
 
@@ -38,6 +39,7 @@ export const Route = createFileRoute("/notifications")({
 });
 
 function NotificationsPage() {
+  const { t } = useLanguage();
   const { formatDateTime } = usePreferences();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
@@ -121,7 +123,7 @@ function NotificationsPage() {
     const unreadIds = rawNotifications.filter((n: any) => !n.read).map((n: any) => n.id);
     await markAllNotificationsReadFn({ data: { ids: unreadIds } });
     queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    toast.success("All notifications marked as read");
+    toast.success(t("allNotificationsMarkedRead", "All notifications marked as read"));
   };
 
   const handleNotificationClick = async (n: any) => {
@@ -143,9 +145,9 @@ function NotificationsPage() {
   return (
     <div className="space-y-6">
       <DataPage
-        title="Notifications & Alerts"
-        description="Real-time alerts for stock levels, payment updates, customer dues, and team transactions."
-        searchPlaceholder="Search notifications..."
+        title={t("notificationsAlertsTitle", "Notifications & Alerts")}
+        description={t("notificationsAlertsDesc", "Real-time alerts for stock levels, payment updates, customer dues, and team transactions.")}
+        searchPlaceholder={t("searchNotificationsPlaceholder", "Search notifications...")}
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={false}
@@ -160,7 +162,7 @@ function NotificationsPage() {
             className="font-bold text-xs"
           >
             <CheckCircle2 className="size-3.5 mr-1.5 text-primary" />
-            Mark all as read
+            {t("markAllAsRead", "Mark all as read")}
           </Button>
         }
         filtersContent={({ close }) => (
@@ -168,16 +170,16 @@ function NotificationsPage() {
             <div className="flex-1 space-y-4">
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Alert Category
+                  {t("alertCategory", "Alert Category")}
                 </Label>
                 <SearchableSelect
                   options={[
-                    { value: "", label: "All Notifications" },
+                    { value: "", label: t("allNotifications", "All Notifications") },
                     ...NOTIFICATION_TYPE_OPTIONS.map((n) => ({ value: n.value, label: n.label })),
                   ]}
                   value={draftFilters.type}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, type: val }))}
-                  placeholder="Filter by Category"
+                  placeholder={t("filterByCategory", "Filter by Category")}
                 />
               </div>
             </div>
@@ -189,7 +191,7 @@ function NotificationsPage() {
                   close();
                 }}
               >
-                Apply Filters
+                {t("applyFilters", "Apply Filters")}
               </Button>
             </div>
           </div>
@@ -199,7 +201,7 @@ function NotificationsPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Total Alerts
+                  {t("totalAlerts", "Total Alerts")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
                   <Bell className="size-4" />
@@ -211,7 +213,7 @@ function NotificationsPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-blue-500/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Unread
+                  {t("unread", "Unread")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
                   <Sparkles className="size-4" />
@@ -225,7 +227,7 @@ function NotificationsPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-amber-500/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Stock Warnings
+                  {t("stockWarnings", "Stock Warnings")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
                   <AlertTriangle className="size-4" />
@@ -239,7 +241,7 @@ function NotificationsPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-emerald-500/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Payments & Collections
+                  {t("paymentsCollections", "Payments & Collections")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                   <CreditCard className="size-4" />
@@ -256,18 +258,18 @@ function NotificationsPage() {
           {/* Notifications List Container */}
           <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
             {isLoading ? (
-              <div className="p-8 text-center text-muted-foreground text-sm">Loading alerts...</div>
+              <div className="p-8 text-center text-muted-foreground text-sm">{t("loadingAlerts", "Loading alerts...")}</div>
             ) : isError ? (
               <ErrorState onRetry={refetch} />
             ) : paginatedNotifications.length === 0 ? (
               <div className="p-12 text-center">
                 <EmptyState
                   icon={Bell}
-                  title="No notifications found"
+                  title={t("noNotificationsFound", "No notifications found")}
                   description={
                     search
-                      ? "No notifications matched your search query."
-                      : "You're all caught up! System alerts and stock thresholds will appear here."
+                      ? t("noNotificationsSearchDesc", "No notifications matched your search query.")
+                      : t("noNotificationsDefaultDesc", "You're all caught up! System alerts and stock thresholds will appear here.")
                   }
                   className="border-none bg-transparent my-0 py-4 shadow-none"
                 />

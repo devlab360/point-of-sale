@@ -4,6 +4,7 @@ export interface AccountingPrintData {
   periodLabel?: string;
   currencySymbol?: string;
   data: any;
+  t?: (key: string, fallback: string) => string;
 }
 import { appName } from "@/lib/env";
 
@@ -16,6 +17,7 @@ export function printAccountingStatement(params: AccountingPrintData) {
     periodLabel = "All Time",
     currencySymbol = "$",
     data,
+    t = (_key: string, fallback: string) => fallback,
   } = params;
 
   const formatCurr = (val: number | string) => {
@@ -53,11 +55,11 @@ export function printAccountingStatement(params: AccountingPrintData) {
       <table class="report-table">
         <thead>
           <tr>
-            <th style="width: 15%;">Account Code</th>
-            <th style="width: 40%;">Account Title</th>
-            <th style="width: 15%;">Category</th>
-            <th style="width: 15%; text-align: right;">Debit (+)</th>
-            <th style="width: 15%; text-align: right;">Credit (-)</th>
+            <th style="width: 15%;">${t("accounting.accountCode", "Account Code")}</th>
+            <th style="width: 40%;">${t("accounting.accountTitle", "Account Title")}</th>
+            <th style="width: 15%;">${t("accounting.category", "Category")}</th>
+            <th style="width: 15%; text-align: right;">${t("accounting.debitPlus", "Debit (+)")}</th>
+            <th style="width: 15%; text-align: right;">${t("accounting.creditMinus", "Credit (-)")}</th>
           </tr>
         </thead>
         <tbody>
@@ -116,8 +118,8 @@ export function printAccountingStatement(params: AccountingPrintData) {
           <table class="report-table">
             <thead>
               <tr>
-                <th>Account</th>
-                <th class="text-right">Balance</th>
+                <th>${t("accounting.account", "Account")}</th>
+                <th class="text-right">${t("accounting.balance", "Balance")}</th>
               </tr>
             </thead>
             <tbody>
@@ -148,8 +150,8 @@ export function printAccountingStatement(params: AccountingPrintData) {
           <table class="report-table">
             <thead>
               <tr>
-                <th>Account</th>
-                <th class="text-right">Balance</th>
+                <th>${t("accounting.account", "Account")}</th>
+                <th class="text-right">${t("accounting.balance", "Balance")}</th>
               </tr>
             </thead>
             <tbody>
@@ -177,8 +179,8 @@ export function printAccountingStatement(params: AccountingPrintData) {
           <table class="report-table">
             <thead>
               <tr>
-                <th>Account</th>
-                <th class="text-right">Balance</th>
+                <th>${t("accounting.account", "Account")}</th>
+                <th class="text-right">${t("accounting.balance", "Balance")}</th>
               </tr>
             </thead>
             <tbody>
@@ -310,12 +312,12 @@ export function printAccountingStatement(params: AccountingPrintData) {
       <table class="report-table">
         <thead>
           <tr>
-            <th style="width: 12%;">Voucher #</th>
-            <th style="width: 18%;">Date & Time</th>
-            <th style="width: 10%;">Type</th>
-            <th style="width: 20%;">Debit (+)</th>
-            <th style="width: 20%;">Credit (-)</th>
-            <th style="width: 20%; text-align: right;">Amount</th>
+            <th style="width: 12%;">${t("accounting.voucherNo", "Voucher #")}</th>
+            <th style="width: 18%;">${t("accounting.dateTime", "Date & Time")}</th>
+            <th style="width: 10%;">${t("accounting.type", "Type")}</th>
+            <th style="width: 20%;">${t("accounting.debitPlus", "Debit (+)")}</th>
+            <th style="width: 20%;">${t("accounting.creditMinus", "Credit (-)")}</th>
+            <th style="width: 20%; text-align: right;">${t("accounting.amount", "Amount")}</th>
           </tr>
         </thead>
         <tbody>

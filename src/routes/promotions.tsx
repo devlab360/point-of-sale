@@ -82,6 +82,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PaginationControls } from "@/components/ui/pagination-controls";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/promotions")({
   head: () => ({ meta: [{ title: `Promotions & Discounts · ${appName}` }] }),
@@ -89,6 +90,7 @@ export const Route = createFileRoute("/promotions")({
 });
 
 function PromotionsPage() {
+  const { t } = useLanguage();
   const { formatDate } = usePreferences();
   const { formatCurrency, currencySymbol } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
@@ -203,11 +205,11 @@ function PromotionsPage() {
     clearError: clearPromoError,
     clearAll: clearPromoAll,
   } = useFormValidation({
-    title: { required: "Promotion title is required" },
-    value: { required: "Discount value is required" },
-    conditions: { required: "Conditions are required" },
-    startDate: { required: "Start date is required" },
-    endDate: { required: "End date is required" },
+    title: { required: t("promoTitleRequired", "Promotion title is required") },
+    value: { required: t("discountValueRequired", "Discount value is required") },
+    conditions: { required: t("conditionsRequired", "Conditions are required") },
+    startDate: { required: t("startDateRequired", "Start date is required") },
+    endDate: { required: t("endDateRequired", "End date is required") },
   });
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -233,10 +235,10 @@ function PromotionsPage() {
           },
         })) as any;
         if (res?.success) {
-          toast.success("Promotion updated successfully");
+          toast.success(t("promotionUpdatedSuccess", "Promotion updated successfully"));
           setEditItem(null);
           queryClient.invalidateQueries({ queryKey: ["promotions", orgId] });
-        } else throw new Error(res?.error || "Failed to update promotion");
+        } else throw new Error(res?.error || t("failedToUpdatePromotion", "Failed to update promotion"));
       } else {
         const res = (await createPromotionFn({
           data: {
@@ -244,14 +246,14 @@ function PromotionsPage() {
           },
         })) as any;
         if (res?.success) {
-          toast.success("Promotion campaign published successfully");
+          toast.success(t("promotionCreatedSuccess", "Promotion campaign published successfully"));
           setIsAddOpen(false);
           queryClient.invalidateQueries({ queryKey: ["promotions", orgId] });
-        } else throw new Error(res?.error || "Failed to create promotion");
+        } else throw new Error(res?.error || t("failedToCreatePromotion", "Failed to create promotion"));
       }
       clearPromoAll();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An error occurred");
+      toast.error(error instanceof Error ? error.message : t("unexpectedError", "An error occurred"));
     } finally {
       setIsSaving(false);
     }
@@ -262,12 +264,12 @@ function PromotionsPage() {
       try {
         const res = (await deletePromotionFn({ data: { id: deleteId } })) as any;
         if (res?.success) {
-          toast.success("Promotion deleted");
+          toast.success(t("promotionDeleted", "Promotion deleted"));
           setDeleteId(null);
           queryClient.invalidateQueries({ queryKey: ["promotions", orgId] });
         } else throw new Error(res?.error);
       } catch (error) {
-        toast.error("Failed to delete promotion");
+        toast.error(t("failedToDeletePromotion", "Failed to delete promotion"));
       }
     }
   };
@@ -276,8 +278,11 @@ function PromotionsPage() {
     <div className="page-container space-y-6">
       {/* Standard PageHeader */}
       <PageHeader
-        title="Promotions & Discount Rules"
-        description="Launch seasonal campaigns, automated discount rules, BOGO bundles, and cart checkout incentives."
+        title={t("promotionsAndDiscountRules", "Promotions & Discount Rules")}
+        description={t(
+          "promotionsSubtitle",
+          "Launch seasonal campaigns, automated discount rules, BOGO bundles, and cart checkout incentives.",
+        )}
         actions={
           <Button
             size="sm"
@@ -288,7 +293,7 @@ function PromotionsPage() {
             }}
             className="gap-1.5"
           >
-            <Plus className="size-4" /> Create Promotion
+            <Plus className="size-4" /> {t("createPromotion", "Create Promotion")}
           </Button>
         }
       />
@@ -296,30 +301,30 @@ function PromotionsPage() {
       {/* Standard StatCard Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Total Campaigns"
+          label={t("totalCampaigns", "Total Campaigns")}
           value={String(totalCampaigns)}
-          hint="All configured promo rules"
+          hint={t("allConfiguredPromoRules", "All configured promo rules")}
           icon={Megaphone}
           accent="primary"
         />
         <StatCard
-          label="Live & Active Deals"
+          label={t("liveActiveDeals", "Live & Active Deals")}
           value={String(activeCampaigns)}
-          hint="Auto-applied at POS register"
+          hint={t("autoAppliedPosRegister", "Auto-applied at POS register")}
           icon={Zap}
           accent="success"
         />
         <StatCard
-          label="Scheduled Upcoming"
+          label={t("scheduledUpcoming", "Scheduled Upcoming")}
           value={String(scheduledCampaigns)}
-          hint="Future launch dates"
+          hint={t("futureLaunchDates", "Future launch dates")}
           icon={Clock}
           accent="info"
         />
         <StatCard
-          label="Storewide Rules"
+          label={t("storewideRules", "Storewide Rules")}
           value={String(storewideCount)}
-          hint="Cart-wide percentage benefits"
+          hint={t("cartWidePercentageBenefits", "Cart-wide percentage benefits")}
           icon={Percent}
           accent="warning"
         />
@@ -332,7 +337,7 @@ function PromotionsPage() {
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search promotions by title or terms..."
+              placeholder={t("searchPromotionsPlaceholder", "Search promotions by title or terms...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-9 text-sm rounded-lg"
@@ -342,26 +347,28 @@ function PromotionsPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="h-9 w-36 text-xs rounded-lg">
-                <SelectValue placeholder="All Scopes" />
+                <SelectValue placeholder={t("allScopes", "All Scopes")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Scopes</SelectItem>
-                <SelectItem value="percentage">Percentage (%)</SelectItem>
-                <SelectItem value="fixed">Fixed Flat ({currencySymbol})</SelectItem>
-                <SelectItem value="bogo">BOGO Offer</SelectItem>
-                <SelectItem value="storewide">Storewide</SelectItem>
+                <SelectItem value="all">{t("allScopes", "All Scopes")}</SelectItem>
+                <SelectItem value="percentage">{t("percentageScope", "Percentage (%)")}</SelectItem>
+                <SelectItem value="fixed">
+                  {t("fixedFlatScope", `Fixed Flat (${currencySymbol})`)}
+                </SelectItem>
+                <SelectItem value="bogo">{t("bogoOffer", "BOGO Offer")}</SelectItem>
+                <SelectItem value="storewide">{t("storewide", "Storewide")}</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="h-9 w-32 text-xs rounded-lg">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={t("status", "Status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="scheduled">Scheduled</SelectItem>
-                <SelectItem value="expired">Expired</SelectItem>
+                <SelectItem value="all">{t("allStatus", "All Status")}</SelectItem>
+                <SelectItem value="active">{t("active", "Active")}</SelectItem>
+                <SelectItem value="scheduled">{t("scheduled", "Scheduled")}</SelectItem>
+                <SelectItem value="expired">{t("expired", "Expired")}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -374,7 +381,7 @@ function PromotionsPage() {
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Table View"
+                title={t("tableView", "Table View")}
               >
                 <TableIcon className="size-4" />
               </button>
@@ -386,7 +393,7 @@ function PromotionsPage() {
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Grid View"
+                title={t("gridView", "Grid View")}
               >
                 <LayoutGrid className="size-4" />
               </button>
@@ -406,13 +413,13 @@ function PromotionsPage() {
         ) : filteredPromotions.length === 0 ? (
           <EmptyState
             icon={Megaphone}
-            title="No promotions found"
+            title={t("noPromotionsFound", "No promotions found")}
             description={
               search
-                ? "Try adjusting your search criteria."
-                : "You haven't launched any promotional campaigns yet."
+                ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
+                : t("noCampaignsYet", "You haven't launched any promotional campaigns yet.")
             }
-            actionLabel="Create Promotion"
+            actionLabel={t("createPromotion", "Create Promotion")}
             onAction={() => {
               setEditItem(null);
               clearPromoAll();
@@ -462,13 +469,13 @@ function PromotionsPage() {
                       </div>
 
                       <div className="p-3 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Benefit</span>
+                        <span className="text-xs text-muted-foreground">{t("benefit", "Benefit")}</span>
                         <span className="text-base font-bold text-foreground">
                           {p.type === "bogo"
-                            ? "Buy 1 Get 1 Free"
+                            ? t("buy1Get1Free", "Buy 1 Get 1 Free")
                             : isPercent
-                              ? `${p.value}% OFF`
-                              : `${formatCurrency(p.value)} FLAT`}
+                              ? `${p.value}% ${t("off", "OFF")}`
+                              : `${formatCurrency(p.value)} ${t("flat", "FLAT")}`}
                         </span>
                       </div>
 
@@ -491,7 +498,7 @@ function PromotionsPage() {
                         }}
                         className="h-8 text-xs font-semibold"
                       >
-                        <Edit2 className="size-3.5 mr-1" /> Edit
+                        <Edit2 className="size-3.5 mr-1" /> {t("edit", "Edit")}
                       </Button>
                       <Button
                         variant="ghost"
@@ -526,12 +533,12 @@ function PromotionsPage() {
               <Table className="min-w-[750px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Campaign Title</TableHead>
-                    <TableHead>Scope</TableHead>
-                    <TableHead>Benefit</TableHead>
-                    <TableHead>Validity Period</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("campaignTitle", "Campaign Title")}</TableHead>
+                    <TableHead>{t("scope", "Scope")}</TableHead>
+                    <TableHead>{t("benefit", "Benefit")}</TableHead>
+                    <TableHead>{t("validityPeriod", "Validity Period")}</TableHead>
+                    <TableHead>{t("status", "Status")}</TableHead>
+                    <TableHead className="text-right">{t("actions", "Actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -552,8 +559,8 @@ function PromotionsPage() {
                           {p.type === "bogo"
                             ? "BOGO"
                             : isPercent
-                              ? `${p.value}% OFF`
-                              : `${formatCurrency(p.value)} FLAT`}
+                              ? `${p.value}% ${t("off", "OFF")}`
+                              : `${formatCurrency(p.value)} ${t("flat", "FLAT")}`}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {formatDate(p.startDate)} – {formatDate(p.endDate)}
@@ -582,7 +589,7 @@ function PromotionsPage() {
                               }}
                               className="h-8 text-xs font-semibold"
                             >
-                              <Edit2 className="size-3.5 mr-1" /> Edit
+                              <Edit2 className="size-3.5 mr-1" /> {t("edit", "Edit")}
                             </Button>
                             <Button
                               variant="ghost"
@@ -625,10 +632,13 @@ function PromotionsPage() {
           <div className="flex flex-col h-full overflow-hidden">
             <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
               <SheetTitle className="text-xl font-bold text-foreground">
-                {editItem ? "Edit Promotion Campaign" : "Create New Promotion"}
+                {editItem ? t("editPromotionCampaign", "Edit Promotion Campaign") : t("createNewPromotion", "Create New Promotion")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Define automatic discount calculations, coupon terms, and seasonal schedules.
+                {t(
+                  "promotionDrawerDesc",
+                  "Define automatic discount calculations, coupon terms, and seasonal schedules.",
+                )}
               </SheetDescription>
             </SheetHeader>
 
@@ -639,7 +649,7 @@ function PromotionsPage() {
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="promo-title" className="text-xs font-semibold">
-                    Promotion Title <span className="text-destructive">*</span>
+                    {t("promotionTitle", "Promotion Title")} <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="promo-title"
@@ -648,7 +658,7 @@ function PromotionsPage() {
                       setFormTitle(e.target.value);
                       clearPromoError("title");
                     }}
-                    placeholder="e.g. Flash Summer Sale 2026"
+                    placeholder={t("promoTitlePlaceholder", "e.g. Flash Summer Sale 2026")}
                     className={promoErrors.title ? "border-destructive" : ""}
                   />
                   <FieldError message={promoErrors.title} />
@@ -656,23 +666,25 @@ function PromotionsPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Promotion Type</Label>
+                    <Label className="text-xs font-semibold">{t("promotionType", "Promotion Type")}</Label>
                     <Select value={formType} onValueChange={(val: any) => setFormType(val)}>
                       <SelectTrigger className="h-9 text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="percentage">Percentage (%)</SelectItem>
-                        <SelectItem value="fixed">Fixed Amount ({currencySymbol})</SelectItem>
-                        <SelectItem value="bogo">Buy 1 Get 1 (BOGO)</SelectItem>
-                        <SelectItem value="storewide">Storewide Sale</SelectItem>
+                        <SelectItem value="percentage">{t("percentageType", "Percentage (%)")}</SelectItem>
+                        <SelectItem value="fixed">
+                          {t("fixedAmountType", `Fixed Amount (${currencySymbol})`)}
+                        </SelectItem>
+                        <SelectItem value="bogo">{t("buy1Get1Bogo", "Buy 1 Get 1 (BOGO)")}</SelectItem>
+                        <SelectItem value="storewide">{t("storewideSale", "Storewide Sale")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-1.5">
                     <Label htmlFor="promo-value" className="text-xs font-semibold">
-                      Discount Value {formType === "percentage" ? "(%)" : `(${currencySymbol})`} *
+                      {t("discountValue", "Discount Value")} {formType === "percentage" ? "(%)" : `(${currencySymbol})`} *
                     </Label>
                     <Input
                       id="promo-value"
@@ -693,7 +705,7 @@ function PromotionsPage() {
 
                 <div className="space-y-1.5">
                   <Label htmlFor="promo-conditions" className="text-xs font-semibold">
-                    Conditions & Thresholds <span className="text-destructive">*</span>
+                    {t("conditionsAndThresholds", "Conditions & Thresholds")} <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="promo-conditions"
@@ -702,7 +714,7 @@ function PromotionsPage() {
                       setFormConditions(e.target.value);
                       clearPromoError("conditions");
                     }}
-                    placeholder={`e.g. Min spend ${currencySymbol}50 across all clothing items`}
+                    placeholder={t("conditionsPlaceholder", `e.g. Min spend ${currencySymbol}50 across all clothing items`)}
                     className={promoErrors.conditions ? "border-destructive" : ""}
                   />
                   <FieldError message={promoErrors.conditions} />
@@ -710,7 +722,7 @@ function PromotionsPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Start Date *</Label>
+                    <Label className="text-xs font-semibold">{t("startDate", "Start Date")} *</Label>
                     <DatePicker
                       date={startDate}
                       onDateChange={(d) => {
@@ -718,13 +730,13 @@ function PromotionsPage() {
                         setStartDate(val);
                         clearPromoError("startDate");
                       }}
-                      placeholder="Start date"
+                      placeholder={t("startDate", "Start date")}
                     />
                     <FieldError message={promoErrors.startDate} />
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">End Date *</Label>
+                    <Label className="text-xs font-semibold">{t("endDate", "End Date")} *</Label>
                     <DatePicker
                       date={endDate}
                       onDateChange={(d) => {
@@ -732,23 +744,23 @@ function PromotionsPage() {
                         setEndDate(val);
                         clearPromoError("endDate");
                       }}
-                      placeholder="End date"
+                      placeholder={t("endDate", "End date")}
                     />
                     <FieldError message={promoErrors.endDate} />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Campaign Status</Label>
+                  <Label className="text-xs font-semibold">{t("campaignStatus", "Campaign Status")}</Label>
                   <Select value={formStatus} onValueChange={(val: any) => setFormStatus(val)}>
                     <SelectTrigger className="h-9 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="active">Active (Live in Register)</SelectItem>
-                      <SelectItem value="scheduled">Scheduled (Future)</SelectItem>
-                      <SelectItem value="expired">Expired / Ended</SelectItem>
-                      <SelectItem value="inactive">Draft / Paused</SelectItem>
+                      <SelectItem value="active">{t("activeLiveRegister", "Active (Live in Register)")}</SelectItem>
+                      <SelectItem value="scheduled">{t("scheduledFuture", "Scheduled (Future)")}</SelectItem>
+                      <SelectItem value="expired">{t("expiredEnded", "Expired / Ended")}</SelectItem>
+                      <SelectItem value="inactive">{t("draftPaused", "Draft / Paused")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -756,11 +768,11 @@ function PromotionsPage() {
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
                 <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>
-                  Cancel
+                  {t("cancel", "Cancel")}
                 </Button>
                 <Button type="submit" disabled={isSaving} className="font-semibold shadow-sm">
                   {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
-                  {editItem ? "Update Promotion" : "Publish Promotion"}
+                  {editItem ? t("updatePromotion", "Update Promotion") : t("publishPromotion", "Publish Promotion")}
                 </Button>
               </SheetFooter>
             </form>
@@ -778,20 +790,20 @@ function PromotionsPage() {
               </div>
               <div>
                 <DialogTitle className="text-lg font-bold text-foreground">
-                  Delete Promotion
+                  {t("deletePromotion", "Delete Promotion")}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Are you sure you want to permanently delete this promotion campaign?
+                  {t("deletePromotionConfirm", "Are you sure you want to permanently delete this promotion campaign?")}
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button type="button" variant="destructive" onClick={handleDelete}>
-              Delete
+              {t("delete", "Delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

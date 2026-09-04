@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SuperAdminLayout } from "@/components/admin/SuperAdminLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { appName } from "@/lib/env";
 import { StatCard } from "@/components/layout/StatCard";
 import { Badge } from "@/components/ui/badge";
@@ -115,6 +116,7 @@ const monthlyGrowthData = [
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4"];
 
 function SuperAdminDashboardPage() {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [chartMetric, setChartMetric] = useState<"revenue" | "growth">("revenue");
   const [activeTab, setActiveTab] = useState<"pending" | "recent" | "expiring" | "support">(
@@ -734,12 +736,12 @@ function SuperAdminDashboardPage() {
                 <Table>
                   <TableHeader className="bg-muted/40 border-b border-border/60 text-xs font-bold text-muted-foreground uppercase">
                     <TableRow>
-                      <TableHead>Tenant Store</TableHead>
-                      <TableHead>Plan Upgrade</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>UTR / Reference</TableHead>
-                      <TableHead>Submitted Date</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead>{t("admin.tenantStore", "Tenant Store")}</TableHead>
+                      <TableHead>{t("admin.planUpgrade", "Plan Upgrade")}</TableHead>
+                      <TableHead>{t("admin.amount", "Amount")}</TableHead>
+                      <TableHead>{t("admin.utrReference", "UTR / Reference")}</TableHead>
+                      <TableHead>{t("admin.submittedDate", "Submitted Date")}</TableHead>
+                      <TableHead className="text-right">{t("common.actions", "Actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -799,12 +801,12 @@ function SuperAdminDashboardPage() {
             <Table>
               <TableHeader className="bg-muted/40 border-b border-border/60 text-xs font-bold text-muted-foreground uppercase">
                 <TableRow>
-                  <TableHead>Store Name</TableHead>
-                  <TableHead>Owner Email</TableHead>
-                  <TableHead>Assigned Plan</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Expires On</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
+                  <TableHead>{t("admin.storeName", "Store Name")}</TableHead>
+                  <TableHead>{t("admin.ownerEmail", "Owner Email")}</TableHead>
+                  <TableHead>{t("admin.assignedPlan", "Assigned Plan")}</TableHead>
+                  <TableHead>{t("common.status", "Status")}</TableHead>
+                  <TableHead>{t("admin.expiresOn", "Expires On")}</TableHead>
+                  <TableHead className="text-right">{t("common.action", "Action")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -875,11 +877,11 @@ function SuperAdminDashboardPage() {
                 <Table>
                   <TableHeader className="bg-muted/40 border-b border-border/60 text-xs font-bold text-muted-foreground uppercase">
                     <TableRow>
-                      <TableHead>Store Name</TableHead>
-                      <TableHead>Owner Email</TableHead>
-                      <TableHead>Current Tier</TableHead>
-                      <TableHead>Expiration Date</TableHead>
-                      <TableHead className="text-right">Quick Extend Action</TableHead>
+                      <TableHead>{t("admin.storeName", "Store Name")}</TableHead>
+                      <TableHead>{t("admin.ownerEmail", "Owner Email")}</TableHead>
+                      <TableHead>{t("admin.currentTier", "Current Tier")}</TableHead>
+                      <TableHead>{t("admin.expirationDate", "Expiration Date")}</TableHead>
+                      <TableHead className="text-right">{t("admin.quickExtendAction", "Quick Extend Action")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -935,11 +937,11 @@ function SuperAdminDashboardPage() {
                 <Table>
                   <TableHeader className="bg-muted/40 border-b border-border/60 text-xs font-bold text-muted-foreground uppercase">
                     <TableRow>
-                      <TableHead>Store Org</TableHead>
-                      <TableHead>Subject</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Created Date</TableHead>
-                      <TableHead className="text-right">Action</TableHead>
+                      <TableHead>{t("admin.storeOrg", "Store Org")}</TableHead>
+                      <TableHead>{t("admin.subject", "Subject")}</TableHead>
+                      <TableHead>{t("common.status", "Status")}</TableHead>
+                      <TableHead>{t("admin.createdDate", "Created Date")}</TableHead>
+                      <TableHead className="text-right">{t("common.action", "Action")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

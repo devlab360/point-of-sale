@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { exportToCSV } from "@/lib/csv";
 import { ErrorState } from "@/components/ui/error-state";
 import { AUDIT_EVENT_TYPES } from "@/constants";
@@ -34,6 +35,7 @@ export const Route = createFileRoute("/activity")({
 });
 
 function ActivityPage() {
+  const { t } = useLanguage();
   const { formatDateTime, formatDate } = usePreferences();
   const orgId = PersistStore.getOrgId() || "default";
 
@@ -122,10 +124,10 @@ function ActivityPage() {
         Timestamp: a.timestamp ? formatDateTime(a.timestamp) : "-",
       })),
       [
-        { key: "Operator", label: "User / Operator" },
-        { key: "Action", label: "Action Description" },
-        { key: "Details", label: "Payload / Metadata" },
-        { key: "Timestamp", label: "Timestamp" },
+        { key: "Operator", label: t("userOperator", "User / Operator") },
+        { key: "Action", label: t("actionDescription", "Action Description") },
+        { key: "Details", label: t("payloadMetadata", "Payload / Metadata") },
+        { key: "Timestamp", label: t("timestamp", "Timestamp") },
       ],
       "audit-log-export",
     );
@@ -140,7 +142,7 @@ function ActivityPage() {
       } catch (e) {}
       return (
         <span className="text-muted-foreground">
-          deleted a <strong className="font-semibold text-destructive">{type}</strong> record.
+          {t("deletedA", "deleted a")} <strong className="font-semibold text-destructive">{type}</strong> {t("record", "record")}.
         </span>
       );
     }
@@ -159,9 +161,9 @@ function ActivityPage() {
   return (
     <div className="space-y-6">
       <DataPage
-        title="Store Activity & Audit Log"
-        description="A complete forensic timeline of every transaction, edit, user login, and deletion across your business."
-        searchPlaceholder="Search audit log by user, action, or payload..."
+        title={t("storeActivityTitle", "Store Activity & Audit Log")}
+        description={t("storeActivityDesc", "A complete forensic timeline of every transaction, edit, user login, and deletion across your business.")}
+        searchPlaceholder={t("searchAuditLogPlaceholder", "Search audit log by user, action, or payload...")}
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={false}
@@ -173,16 +175,16 @@ function ActivityPage() {
             <div className="flex-1 space-y-4">
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Event Category
+                  {t("eventCategory", "Event Category")}
                 </Label>
                 <SearchableSelect
                   options={[
-                    { value: "", label: "All Audit Events" },
+                    { value: "", label: t("allAuditEvents", "All Audit Events") },
                     ...AUDIT_EVENT_TYPES.map((a) => ({ value: a.value, label: a.label })),
                   ]}
                   value={draftFilters.type}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, type: val }))}
-                  placeholder="Filter by Category"
+                  placeholder={t("filterByCategory", "Filter by Category")}
                 />
               </div>
             </div>
@@ -194,7 +196,7 @@ function ActivityPage() {
                   close();
                 }}
               >
-                Apply Filters
+                {t("applyFilters", "Apply Filters")}
               </Button>
             </div>
           </div>
@@ -204,7 +206,7 @@ function ActivityPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Total Logged Events
+                  {t("totalLoggedEvents", "Total Logged Events")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
                   <Activity className="size-4" />
@@ -216,7 +218,7 @@ function ActivityPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-blue-500/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Today's Events
+                  {t("todaysEvents", "Today's Events")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
                   <Clock className="size-4" />
@@ -230,7 +232,7 @@ function ActivityPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-amber-500/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Active Operators
+                  {t("activeOperators", "Active Operators")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
                   <User className="size-4" />
@@ -244,7 +246,7 @@ function ActivityPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-destructive/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Deletions / Purges
+                  {t("deletionsPurges", "Deletions / Purges")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-destructive/10 text-destructive">
                   <Trash2 className="size-4" />
@@ -262,7 +264,7 @@ function ActivityPage() {
           <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
             {isLoading ? (
               <div className="p-8 text-center text-muted-foreground text-sm">
-                Loading activity logs...
+                {t("loadingActivityLogs", "Loading activity logs...")}
               </div>
             ) : isError ? (
               <ErrorState onRetry={refetch} />
@@ -270,11 +272,11 @@ function ActivityPage() {
               <div className="p-12 text-center">
                 <EmptyState
                   icon={Activity}
-                  title="No activity recorded"
+                  title={t("noActivityRecorded", "No activity recorded")}
                   description={
                     search
-                      ? "No events matched your search query."
-                      : "Actions taken across the terminal and catalog will appear here."
+                      ? t("noActivitySearchDesc", "No events matched your search query.")
+                      : t("noActivityDefaultDesc", "Actions taken across the terminal and catalog will appear here.")
                   }
                   className="border-none bg-transparent my-0 py-4 shadow-none"
                 />

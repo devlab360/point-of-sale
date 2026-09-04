@@ -66,6 +66,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { getLocationsFn } from "@/api/locations";
 import { getCategoriesFn } from "@/api/categories";
 import {
@@ -80,6 +81,7 @@ import {
 } from "@/api/price-books";
 
 function PriceBooksComponent() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const { formatCurrency } = useCurrency();
   const queryClient = useQueryClient();
@@ -375,8 +377,8 @@ function PriceBooksComponent() {
     <div className="space-y-6 animate-in fade-in duration-300 pb-12 max-w-[1600px] mx-auto">
       {/* Premium Header */}
       <PageHeader
-        title="Price Books & Multi-Branch Rate Charts"
-        description="Unified pricing zones and tier schedules across store branches, transit hubs, and regional outlets without product duplication."
+        title={t("priceBooksTitle", "Price Books & Multi-Branch Rate Charts")}
+        description={t("priceBooksDesc", "Unified pricing zones and tier schedules across store branches, transit hubs, and regional outlets without product duplication.")}
         actions={
           <div className="flex items-center gap-2">
             <Button
@@ -386,14 +388,14 @@ function PriceBooksComponent() {
               className="rounded-xl h-9 text-xs font-semibold gap-1.5 cursor-pointer shadow-xs border-border/80"
             >
               <RefreshCw className="size-3.5 text-muted-foreground" />
-              <span>Refresh</span>
+              <span>{t("refresh", "Refresh")}</span>
             </Button>
             <Button
               onClick={handleOpenCreate}
               className="rounded-xl h-9 text-xs font-bold shadow-soft gap-1.5 bg-[#B58D4C] hover:bg-[#A07B3F] text-white cursor-pointer"
             >
               <Plus className="size-4" />
-              <span>New Rate Chart</span>
+              <span>{t("newRateChart", "New Rate Chart")}</span>
             </Button>
           </div>
         }
@@ -402,30 +404,30 @@ function PriceBooksComponent() {
       {/* KPI Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Price Books / Rate Charts"
+          label={t("priceBooksRateCharts", "Price Books / Rate Charts")}
           value={String(priceBooks.length)}
-          hint="Active pricing tiers & zones"
+          hint={t("activePricingTiersZones", "Active pricing tiers & zones")}
           icon={BookOpen}
           accent="primary"
         />
         <StatCard
-          label="Assigned Outlets"
+          label={t("assignedOutlets", "Assigned Outlets")}
           value={`${assignedCount} / ${locations.length}`}
-          hint={`${locations.length - assignedCount} branches using standard catalog`}
+          hint={`${locations.length - assignedCount} ${t("branchesUsingCatalog", "branches using standard catalog")}`}
           icon={Building2}
           accent="info"
         />
         <StatCard
-          label="Default Fallback Book"
-          value={priceBooks.find((p) => p.isDefault)?.code || "Catalog Price"}
-          hint="System fallback for unlisted products"
+          label={t("defaultFallbackBook", "Default Fallback Book")}
+          value={priceBooks.find((p) => p.isDefault)?.code || t("catalogPrice", "Catalog Price")}
+          hint={t("systemFallbackUnlisted", "System fallback for unlisted products")}
           icon={CheckCircle2}
           accent="success"
         />
         <StatCard
-          label="Active Tiers"
+          label={t("activeTiers", "Active Tiers")}
           value={String(priceBooks.filter((p) => p.status === "active").length)}
-          hint="Outlets overriding standard catalog rates"
+          hint={t("outletsOverridingRates", "Outlets overriding standard catalog rates")}
           icon={Layers}
           accent="warning"
         />
@@ -440,7 +442,7 @@ function PriceBooksComponent() {
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#B58D4C] data-[state=active]:text-[#B58D4C] data-[state=active]:bg-transparent px-3 py-2.5 font-bold text-xs gap-2 transition-all"
             >
               <BookOpen className="size-4" />
-              <span>Rate Chart Tiers</span>
+              <span>{t("rateChartTiers", "Rate Chart Tiers")}</span>
               <Badge variant="secondary" className="text-[10px] font-bold px-1.5 py-0.2">
                 {priceBooks.length}
               </Badge>
@@ -450,7 +452,7 @@ function PriceBooksComponent() {
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#B58D4C] data-[state=active]:text-[#B58D4C] data-[state=active]:bg-transparent px-3 py-2.5 font-bold text-xs gap-2 transition-all"
             >
               <Store className="size-4" />
-              <span>Outlet Mapping Matrix</span>
+              <span>{t("outletMappingMatrix", "Outlet Mapping Matrix")}</span>
               <Badge variant="secondary" className="text-[10px] font-bold px-1.5 py-0.2">
                 {locations.length}
               </Badge>
@@ -460,7 +462,7 @@ function PriceBooksComponent() {
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#B58D4C] data-[state=active]:text-[#B58D4C] data-[state=active]:bg-transparent px-3 py-2.5 font-bold text-xs gap-2 transition-all"
             >
               <Percent className="size-4" />
-              <span>Rate Matrix & Bulk Adjuster</span>
+              <span>{t("rateMatrixAndBulkAdjuster", "Rate Matrix & Bulk Adjuster")}</span>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -471,12 +473,12 @@ function PriceBooksComponent() {
             <Table>
               <TableHeader className="bg-muted/40">
                 <TableRow>
-                  <TableHead className="font-bold text-xs py-3.5">Tier Name & Code</TableHead>
-                  <TableHead className="font-bold text-xs">Description</TableHead>
-                  <TableHead className="font-bold text-xs">Status</TableHead>
-                  <TableHead className="font-bold text-xs">Assigned Outlets</TableHead>
-                  <TableHead className="font-bold text-xs text-right">Items Configured</TableHead>
-                  <TableHead className="w-[80px] text-right font-bold text-xs">Actions</TableHead>
+                  <TableHead className="font-bold text-xs py-3.5">{t("tierNameAndCode", "Tier Name & Code")}</TableHead>
+                  <TableHead className="font-bold text-xs">{t("description", "Description")}</TableHead>
+                  <TableHead className="font-bold text-xs">{t("status", "Status")}</TableHead>
+                  <TableHead className="font-bold text-xs">{t("assignedOutlets", "Assigned Outlets")}</TableHead>
+                  <TableHead className="font-bold text-xs text-right">{t("itemsConfigured", "Items Configured")}</TableHead>
+                  <TableHead className="w-[80px] text-right font-bold text-xs">{t("actions", "Actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -484,7 +486,7 @@ function PriceBooksComponent() {
                   <TableRow>
                     <TableCell colSpan={6} className="h-40 text-center text-muted-foreground">
                       <Loader2 className="size-6 animate-spin mx-auto mb-2 text-[#B58D4C]" />
-                      <span>Loading rate chart tiers...</span>
+                      <span>{t("loadingRateCharts", "Loading rate chart tiers...")}</span>
                     </TableCell>
                   </TableRow>
                 ) : priceBooks.length === 0 ? (
@@ -494,10 +496,9 @@ function PriceBooksComponent() {
                         <div className="size-12 rounded-2xl bg-muted/50 grid place-items-center text-muted-foreground">
                           <BookOpen className="size-6 text-[#B58D4C]" />
                         </div>
-                        <p className="text-sm font-bold text-foreground">No rate charts created yet</p>
+                        <p className="text-sm font-bold text-foreground">{t("noRateChartsYet", "No rate charts created yet")}</p>
                         <p className="text-xs text-muted-foreground">
-                          Create pricing tiers (e.g. Airport Outlets, Franchise Outlets, Metro Stores)
-                          to govern rates across locations.
+                          {t("noRateChartsDesc", "Create pricing tiers (e.g. Airport Outlets, Franchise Outlets, Metro Stores) to govern rates across locations.")}
                         </p>
                         <Button
                           onClick={handleOpenCreate}
@@ -505,7 +506,7 @@ function PriceBooksComponent() {
                           className="mt-2 rounded-xl text-xs font-bold gap-1 bg-[#B58D4C] text-white hover:bg-[#A07B3F]"
                         >
                           <Plus className="size-3.5" />
-                          <span>Create First Rate Chart</span>
+                          <span>{t("createFirstRateChart", "Create First Rate Chart")}</span>
                         </Button>
                       </div>
                     </TableCell>
@@ -523,7 +524,7 @@ function PriceBooksComponent() {
                               <span>{book.name}</span>
                               {book.isDefault && (
                                 <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[10px] font-bold">
-                                  Default Fallback
+                                  {t("defaultFallback", "Default Fallback")}
                                 </Badge>
                               )}
                             </div>
@@ -545,7 +546,7 @@ function PriceBooksComponent() {
                               : ""
                           }`}
                         >
-                          {book.status}
+                          {t(book.status, book.status)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -562,13 +563,13 @@ function PriceBooksComponent() {
                             ))
                           ) : (
                             <span className="text-xs text-muted-foreground italic">
-                              No outlets mapped (unassigned)
+                              {t("noOutletsMapped", "No outlets mapped (unassigned)")}
                             </span>
                           )}
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-bold text-sm text-[#B58D4C]">
-                        {book.itemCount} items
+                        {book.itemCount} {t("items", "items")}
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
@@ -587,7 +588,7 @@ function PriceBooksComponent() {
                               className="gap-2 cursor-pointer text-xs font-medium"
                             >
                               <Edit2 className="size-3.5 text-muted-foreground" />
-                              <span>Edit Tier Details</span>
+                              <span>{t("editTierDetails", "Edit Tier Details")}</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => {
@@ -597,7 +598,7 @@ function PriceBooksComponent() {
                               className="gap-2 cursor-pointer text-xs font-medium text-[#B58D4C]"
                             >
                               <Percent className="size-3.5" />
-                              <span>Manage Rates & Matrix</span>
+                              <span>{t("manageRatesAndMatrix", "Manage Rates & Matrix")}</span>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -609,7 +610,7 @@ function PriceBooksComponent() {
                               className="gap-2 cursor-pointer text-xs font-medium text-destructive focus:text-destructive"
                             >
                               <Trash2 className="size-3.5" />
-                              <span>Delete Rate Chart</span>
+                              <span>{t("deleteRateChart", "Delete Rate Chart")}</span>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -630,7 +631,7 @@ function PriceBooksComponent() {
               <div className="relative flex-1 max-w-sm">
                 <Search className="size-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
                 <Input
-                  placeholder="Search outlets by name or city..."
+                  placeholder={t("searchOutletsPlaceholder", "Search outlets by name or city...")}
                   value={branchSearch}
                   onChange={(e) => setBranchSearch(e.target.value)}
                   className="pl-9 rounded-xl h-10 text-xs bg-background"
@@ -648,7 +649,7 @@ function PriceBooksComponent() {
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  All ({locations.length})
+                  {t("all", "All")} ({locations.length})
                 </button>
                 <button
                   type="button"
@@ -659,7 +660,7 @@ function PriceBooksComponent() {
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  Assigned ({assignedCount})
+                  {t("assigned", "Assigned")} ({assignedCount})
                 </button>
                 <button
                   type="button"
@@ -670,7 +671,7 @@ function PriceBooksComponent() {
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  Unassigned ({locations.length - assignedCount})
+                  {t("unassigned", "Unassigned")} ({locations.length - assignedCount})
                 </button>
               </div>
             </div>
@@ -685,7 +686,7 @@ function PriceBooksComponent() {
               ) : (
                 <Save className="size-4" />
               )}
-              <span>Save All Mappings</span>
+              <span>{t("saveAllMappings", "Save All Mappings")}</span>
             </Button>
           </div>
 
@@ -693,13 +694,13 @@ function PriceBooksComponent() {
             <Table>
               <TableHeader className="bg-muted/40">
                 <TableRow>
-                  <TableHead className="font-bold text-xs py-3.5">Branch / Outlet Name</TableHead>
-                  <TableHead className="font-bold text-xs">Outlet Type</TableHead>
-                  <TableHead className="font-bold text-xs">Location / City</TableHead>
+                  <TableHead className="font-bold text-xs py-3.5">{t("branchOutletName", "Branch / Outlet Name")}</TableHead>
+                  <TableHead className="font-bold text-xs">{t("outletType", "Outlet Type")}</TableHead>
+                  <TableHead className="font-bold text-xs">{t("locationCity", "Location / City")}</TableHead>
                   <TableHead className="font-bold text-xs w-[320px]">
-                    Assigned Price Book (Rate Chart)
+                    {t("assignedPriceBookRateChart", "Assigned Price Book (Rate Chart)")}
                   </TableHead>
-                  <TableHead className="font-bold text-xs text-right">Pricing Mode</TableHead>
+                  <TableHead className="font-bold text-xs text-right">{t("pricingMode", "Pricing Mode")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -707,13 +708,13 @@ function PriceBooksComponent() {
                   <TableRow>
                     <TableCell colSpan={5} className="h-40 text-center text-muted-foreground">
                       <Loader2 className="size-6 animate-spin mx-auto mb-2 text-[#B58D4C]" />
-                      <span>Loading outlets...</span>
+                      <span>{t("loadingOutlets", "Loading outlets...")}</span>
                     </TableCell>
                   </TableRow>
                 ) : filteredLocations.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="h-32 text-center text-muted-foreground text-xs">
-                      No branches matched search criteria.
+                      {t("noBranchesMatched", "No branches matched search criteria.")}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -743,7 +744,7 @@ function PriceBooksComponent() {
                           </div>
                         </TableCell>
                         <TableCell className="capitalize text-xs text-muted-foreground">
-                          {loc.type || "Store Outlet"}
+                          {loc.type || t("storeOutlet", "Store Outlet")}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {loc.city || loc.address || <span className="italic">—</span>}
@@ -759,11 +760,11 @@ function PriceBooksComponent() {
                             }
                           >
                             <SelectTrigger className="h-9 rounded-xl text-xs font-semibold bg-background border-border/80 shadow-2xs">
-                              <SelectValue placeholder="Standard Catalog Base Price" />
+                              <SelectValue placeholder={t("standardCatalogBasePrice", "Standard Catalog Base Price")} />
                             </SelectTrigger>
                             <SelectContent className="rounded-xl shadow-soft">
                               <SelectItem value="default" className="text-xs font-medium">
-                                Standard Catalog Base Price (No Tier Override)
+                                {t("standardCatalogBasePriceNoOverride", "Standard Catalog Base Price (No Tier Override)")}
                               </SelectItem>
                               {priceBooks.map((pb) => (
                                 <SelectItem
@@ -780,11 +781,11 @@ function PriceBooksComponent() {
                         <TableCell className="text-right">
                           {assignedPb ? (
                             <Badge className="bg-[#B58D4C]/15 text-[#B58D4C] border-[#B58D4C]/30 text-[10px] font-bold">
-                              {assignedPb.code} Active
+                              {assignedPb.code} {t("active", "Active")}
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                              Default Catalog
+                              {t("defaultCatalog", "Default Catalog")}
                             </Badge>
                           )}
                         </TableCell>
@@ -798,20 +799,21 @@ function PriceBooksComponent() {
         </TabsContent>
 
         {/* ── TAB 3: RATE MATRIX & BULK ADJUSTER ── */}
+        {/* ── TAB 3: RATE MATRIX & BULK ADJUSTER ── */}
         <TabsContent value="matrix" className="space-y-4 pt-1">
           {/* Controls Bar */}
           <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-card p-4 rounded-2xl border border-border/80 shadow-soft">
             <div className="flex flex-wrap items-center gap-3 flex-1">
               <div className="w-[240px]">
                 <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1 block">
-                  Select Rate Chart Tier
+                  {t("selectRateChartTier", "Select Rate Chart Tier")}
                 </Label>
                 <Select
                   value={selectedMatrixBookId}
                   onValueChange={(val) => setSelectedMatrixBookId(val)}
                 >
                   <SelectTrigger className="h-10 rounded-xl text-xs font-bold bg-background shadow-2xs">
-                    <SelectValue placeholder="Choose Price Book..." />
+                    <SelectValue placeholder={t("choosePriceBook", "Choose Price Book...")} />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl shadow-soft">
                     {priceBooks.map((pb) => (
@@ -825,14 +827,14 @@ function PriceBooksComponent() {
 
               <div className="w-[190px]">
                 <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1 block">
-                  Category Filter
+                  {t("categoryFilter", "Category Filter")}
                 </Label>
                 <Select value={selectedCategory} onValueChange={(val) => setSelectedCategory(val)}>
                   <SelectTrigger className="h-10 rounded-xl text-xs font-semibold bg-background shadow-2xs">
-                    <SelectValue placeholder="All Categories" />
+                    <SelectValue placeholder={t("allCategories", "All Categories")} />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl shadow-soft">
-                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="all">{t("allCategories", "All Categories")}</SelectItem>
                     {categories.map((c) => (
                       <SelectItem key={c.id} value={c.id || c.name} className="text-xs">
                         {c.name}
@@ -844,12 +846,12 @@ function PriceBooksComponent() {
 
               <div className="w-[220px]">
                 <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-1 block">
-                  Search SKU / Item
+                  {t("searchSkuItem", "Search SKU / Item")}
                 </Label>
                 <div className="relative">
                   <Search className="size-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
                   <Input
-                    placeholder="Search name or barcode..."
+                    placeholder={t("searchNameOrBarcode", "Search name or barcode...")}
                     value={matrixSearch}
                     onChange={(e) => setMatrixSearch(e.target.value)}
                     className="pl-8 rounded-xl h-10 text-xs bg-background"
@@ -868,7 +870,7 @@ function PriceBooksComponent() {
               ) : (
                 <Save className="size-4" />
               )}
-              <span>Save Rate Chart Rules</span>
+              <span>{t("saveRateChartRules", "Save Rate Chart Rules")}</span>
             </Button>
           </div>
 
@@ -880,7 +882,7 @@ function PriceBooksComponent() {
               </div>
               <div>
                 <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <span>Bulk Tier Rule Adjuster</span>
+                  <span>{t("bulkTierRuleAdjuster", "Bulk Tier Rule Adjuster")}</span>
                   {currentSelectedBook && (
                     <Badge variant="outline" className="text-[10px] font-mono font-bold">
                       {currentSelectedBook.code}
@@ -888,9 +890,9 @@ function PriceBooksComponent() {
                   )}
                 </h4>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Apply a blanket percentage markup or discount to all items in{" "}
+                  {t("applyBlanketPercentageDesc", "Apply a blanket percentage markup or discount to all items in")}{" "}
                   <span className="font-bold text-foreground">
-                    {selectedCategory === "all" ? "the entire catalog" : "the selected category"}
+                    {selectedCategory === "all" ? t("theEntireCatalog", "the entire catalog") : t("theSelectedCategory", "the selected category")}
                   </span>
                   .
                 </p>
@@ -907,10 +909,10 @@ function PriceBooksComponent() {
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
                   <SelectItem value="percentage_markup" className="text-xs font-bold text-emerald-600">
-                    + % Markup
+                    + % {t("markup", "Markup")}
                   </SelectItem>
                   <SelectItem value="percentage_discount" className="text-xs font-bold text-rose-600">
-                    - % Discount
+                    - % {t("discount", "Discount")}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -936,7 +938,7 @@ function PriceBooksComponent() {
                 className="rounded-xl font-bold h-10 text-xs shadow-2xs gap-1.5 cursor-pointer shrink-0 border border-border/80"
               >
                 {bulkAdjustMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1" />}
-                <span>Apply Rule</span>
+                <span>{t("applyRule", "Apply Rule")}</span>
               </Button>
             </div>
           </div>
@@ -946,13 +948,13 @@ function PriceBooksComponent() {
             <Table>
               <TableHeader className="bg-muted/40">
                 <TableRow>
-                  <TableHead className="font-bold text-xs py-3.5">Product & Variant</TableHead>
-                  <TableHead className="font-bold text-xs">SKU / Barcode</TableHead>
-                  <TableHead className="font-bold text-xs text-right">Base Catalog Price</TableHead>
-                  <TableHead className="font-bold text-xs">Pricing Rule</TableHead>
-                  <TableHead className="font-bold text-xs w-[170px]">Custom Input</TableHead>
-                  <TableHead className="font-bold text-xs text-right">Effective Outlet Price</TableHead>
-                  <TableHead className="font-bold text-xs text-right">Price Difference</TableHead>
+                  <TableHead className="font-bold text-xs py-3.5">{t("productAndVariant", "Product & Variant")}</TableHead>
+                  <TableHead className="font-bold text-xs">{t("skuBarcode", "SKU / Barcode")}</TableHead>
+                  <TableHead className="font-bold text-xs text-right">{t("baseCatalogPrice", "Base Catalog Price")}</TableHead>
+                  <TableHead className="font-bold text-xs">{t("pricingRule", "Pricing Rule")}</TableHead>
+                  <TableHead className="font-bold text-xs w-[170px]">{t("customInput", "Custom Input")}</TableHead>
+                  <TableHead className="font-bold text-xs text-right">{t("effectiveOutletPrice", "Effective Outlet Price")}</TableHead>
+                  <TableHead className="font-bold text-xs text-right">{t("priceDifference", "Price Difference")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -960,13 +962,13 @@ function PriceBooksComponent() {
                   <TableRow>
                     <TableCell colSpan={7} className="h-40 text-center text-muted-foreground">
                       <Loader2 className="size-6 animate-spin mx-auto mb-2 text-[#B58D4C]" />
-                      <span>Loading rate matrix...</span>
+                      <span>{t("loadingRateMatrix", "Loading rate matrix...")}</span>
                     </TableCell>
                   </TableRow>
                 ) : matrixItems.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="h-36 text-center text-muted-foreground text-xs">
-                      No products found in this category.
+                      {t("noProductsFoundInCategory", "No products found in this category.")}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -998,7 +1000,7 @@ function PriceBooksComponent() {
                           <div className="font-bold text-sm text-foreground">{item.productName}</div>
                           {item.variantName && (
                             <Badge variant="outline" className="text-[10px] font-semibold mt-0.5">
-                              Variant: {item.variantName}
+                              {t("variant", "Variant")}: {item.variantName}
                             </Badge>
                           )}
                         </TableCell>
@@ -1023,19 +1025,19 @@ function PriceBooksComponent() {
                             </SelectTrigger>
                             <SelectContent className="rounded-xl">
                               <SelectItem value="fixed" className="text-xs font-semibold">
-                                Fixed Price
+                                {t("fixedPrice", "Fixed Price")}
                               </SelectItem>
                               <SelectItem
                                 value="percentage_markup"
                                 className="text-xs font-semibold text-emerald-600"
                               >
-                                + % Markup
+                                + % {t("markup", "Markup")}
                               </SelectItem>
                               <SelectItem
                                 value="percentage_discount"
                                 className="text-xs font-semibold text-rose-600"
                               >
-                                - % Discount
+                                - % {t("discount", "Discount")}
                               </SelectItem>
                             </SelectContent>
                           </Select>
@@ -1120,10 +1122,10 @@ function PriceBooksComponent() {
           <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left shrink-0">
             <SheetTitle className="text-lg font-bold flex items-center gap-2 text-foreground">
               <BookOpen className="size-5 text-[#B58D4C]" />
-              <span>{editingBook ? "Edit Rate Chart Tier" : "New Rate Chart Tier"}</span>
+              <span>{editingBook ? t("editRateChartTier", "Edit Rate Chart Tier") : t("newRateChartTier", "New Rate Chart Tier")}</span>
             </SheetTitle>
             <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-              Define pricing tier parameters, fallback behavior, and multi-branch assignment.
+              {t("rateChartDrawerDesc", "Define pricing tier parameters, fallback behavior, and multi-branch assignment.")}
             </SheetDescription>
           </SheetHeader>
 
@@ -1131,18 +1133,18 @@ function PriceBooksComponent() {
           <div className="flex-1 overflow-y-auto p-6 space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold">Tier Name *</Label>
+                <Label className="text-xs font-bold">{t("tierName", "Tier Name")} *</Label>
                 <Input
-                  placeholder="e.g. Airport & Transit Terminals"
+                  placeholder={t("tierNamePlaceholder", "e.g. Airport & Transit Terminals")}
                   value={formData.name}
                   onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
                   className="rounded-xl text-xs h-10 bg-background"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold">Code Identifier *</Label>
+                <Label className="text-xs font-bold">{t("codeIdentifier", "Code Identifier")} *</Label>
                 <Input
-                  placeholder="e.g. PB-AIRPORT"
+                  placeholder={t("codePlaceholder", "e.g. PB-AIRPORT")}
                   value={formData.code}
                   onChange={(e) =>
                     setFormData((p) => ({ ...p, code: e.target.value.toUpperCase() }))
@@ -1153,9 +1155,9 @@ function PriceBooksComponent() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold">Description</Label>
+              <Label className="text-xs font-bold">{t("description", "Description")}</Label>
               <Input
-                placeholder="e.g. 15% margin surcharge applied to premium transit terminals"
+                placeholder={t("tierDescriptionPlaceholder", "e.g. 15% margin surcharge applied to premium transit terminals")}
                 value={formData.description}
                 onChange={(e) => setFormData((p) => ({ ...p, description: e.target.value }))}
                 className="rounded-xl text-xs h-10 bg-background"
@@ -1164,7 +1166,7 @@ function PriceBooksComponent() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold">Status</Label>
+                <Label className="text-xs font-bold">{t("status", "Status")}</Label>
                 <Select
                   value={formData.status}
                   onValueChange={(val: any) => setFormData((p) => ({ ...p, status: val }))}
@@ -1174,13 +1176,13 @@ function PriceBooksComponent() {
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
                     <SelectItem value="active" className="text-xs font-medium">
-                      Active
+                      {t("active", "Active")}
                     </SelectItem>
                     <SelectItem value="draft" className="text-xs font-medium">
-                      Draft (Inactive)
+                      {t("draftInactive", "Draft (Inactive)")}
                     </SelectItem>
                     <SelectItem value="archived" className="text-xs font-medium">
-                      Archived
+                      {t("archived", "Archived")}
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -1195,9 +1197,9 @@ function PriceBooksComponent() {
                     className="size-4 rounded text-[#B58D4C] accent-[#B58D4C]"
                   />
                   <div className="flex flex-col">
-                    <span className="text-xs font-bold">Default Fallback Book</span>
+                    <span className="text-xs font-bold">{t("defaultFallbackBook", "Default Fallback Book")}</span>
                     <span className="text-[10px] text-muted-foreground">
-                      Auto-applies to unassigned branches
+                      {t("autoAppliesUnassigned", "Auto-applies to unassigned branches")}
                     </span>
                   </div>
                 </label>
@@ -1208,20 +1210,20 @@ function PriceBooksComponent() {
             <div className="space-y-2.5 pt-2 border-t border-border/60">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label className="text-xs font-bold">Assign Outlets to this Tier</Label>
+                  <Label className="text-xs font-bold">{t("assignOutletsToTier", "Assign Outlets to this Tier")}</Label>
                   <p className="text-[11px] text-muted-foreground">
-                    Selected outlets will automatically adopt this rate chart in POS.
+                    {t("assignOutletsDesc", "Selected outlets will automatically adopt this rate chart in POS.")}
                   </p>
                 </div>
                 <Badge variant="secondary" className="text-[10px] font-bold">
-                  {formData.assignedLocationIds.length} Selected
+                  {formData.assignedLocationIds.length} {t("selected", "Selected")}
                 </Badge>
               </div>
 
               <div className="relative">
                 <Search className="size-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
                 <Input
-                  placeholder="Filter outlets..."
+                  placeholder={t("filterOutlets", "Filter outlets...")}
                   value={drawerSearchBranch}
                   onChange={(e) => setDrawerSearchBranch(e.target.value)}
                   className="pl-8 rounded-xl h-8 text-xs bg-background"
@@ -1280,7 +1282,7 @@ function PriceBooksComponent() {
               onClick={() => setIsDrawerOpen(false)}
               className="rounded-xl h-10 text-xs font-semibold cursor-pointer"
             >
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button
               type="button"
@@ -1295,7 +1297,7 @@ function PriceBooksComponent() {
               {createOrUpdateMutation.isPending && (
                 <Loader2 className="size-4 mr-1 animate-spin" />
               )}
-              <span>{editingBook ? "Save Changes" : "Create Rate Chart"}</span>
+              <span>{editingBook ? t("saveChanges", "Save Changes") : t("createRateChart", "Create Rate Chart")}</span>
             </Button>
           </SheetFooter>
         </SheetContent>

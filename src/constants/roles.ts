@@ -35,6 +35,7 @@ export const ROLE_OPTIONS: RoleOption[] = [
 export const ALL_SELECTABLE_ROUTES = [
   "/pos",
   "/products",
+  "/price-books",
   "/services",
   "/categories",
   "/brands",
@@ -76,7 +77,7 @@ export const ALL_SELECTABLE_ROUTES = [
 export const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
   admin: ALL_SELECTABLE_ROUTES,
   manager: ALL_SELECTABLE_ROUTES.filter((r) => !["/users", "/settings"].includes(r)),
-  cashier: ["/pos", "/customers", "/sales", "/tables", "/kitchen", "/appointments"],
+  cashier: ["/pos", "/customers", "/sales", "/sales/returns", "/tables", "/kitchen", "/appointments"],
 };
 
 export function getRoleVisuals(role: string): { label: string; badge: string } {

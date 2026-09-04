@@ -81,6 +81,7 @@ import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   Table,
   TableBody,
@@ -97,6 +98,7 @@ export const Route = createFileRoute("/subscriptions")({
 });
 
 function SubscriptionsPage() {
+  const { t } = useLanguage();
   const { formatDate } = usePreferences();
   const { formatCurrency, currencySymbol } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
@@ -276,8 +278,8 @@ function SubscriptionsPage() {
     <div className="page-container space-y-6">
       {/* Standard PageHeader */}
       <PageHeader
-        title="Subscriptions & Recurring Billing"
-        description="Manage recurring membership plans, auto-renewing cycles, MRR cash flow, and automated customer dues."
+        title={t("subscriptionsBilling", "Subscriptions & Recurring Billing")}
+        description={t("subscriptionsDesc", "Manage recurring membership plans, auto-renewing cycles, MRR cash flow, and automated customer dues.")}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -290,7 +292,7 @@ function SubscriptionsPage() {
               className="gap-1.5 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 font-bold"
             >
               <ScanBarcode className="size-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Member Check-In</span>
+              <span>{t("memberCheckIn", "Member Check-In")}</span>
             </Button>
             <Button
               size="sm"
@@ -300,7 +302,7 @@ function SubscriptionsPage() {
               }}
               className="gap-1.5"
             >
-              <Plus className="size-4" /> Add Subscription
+              <Plus className="size-4" /> {t("addSubscription", "Add Subscription")}
             </Button>
           </div>
         }
@@ -309,30 +311,30 @@ function SubscriptionsPage() {
       {/* Standard StatCard Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Total Subscribers"
+          label={t("totalSubscribers", "Total Subscribers")}
           value={String(totalMembers)}
-          hint="Recurring accounts"
+          hint={t("recurringAccounts", "Recurring accounts")}
           icon={Repeat}
           accent="primary"
         />
         <StatCard
-          label="Monthly Run Rate (MRR)"
+          label={t("mrr", "Monthly Run Rate (MRR)")}
           value={formatCurrency(mrrValue)}
-          hint="Estimated monthly billing"
+          hint={t("estMonthlyBilling", "Estimated monthly billing")}
           icon={DollarSign}
           accent="success"
         />
         <StatCard
-          label="Active & Billing"
+          label={t("activeBilling", "Active & Billing")}
           value={String(activeSubs)}
-          hint="Active renewals"
+          hint={t("activeRenewals", "Active renewals")}
           icon={CheckCircle2}
           accent="info"
         />
         <StatCard
-          label="Paused / Suspended"
+          label={t("pausedSuspended", "Paused / Suspended")}
           value={String(pausedSubs)}
-          hint="Temporary on hold"
+          hint={t("temporaryOnHold", "Temporary on hold")}
           icon={PauseCircle}
           accent="warning"
         />
@@ -345,7 +347,7 @@ function SubscriptionsPage() {
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search customer, plan, or phone..."
+              placeholder={t("searchSubscriptionsPlaceholder", "Search customer, plan, or phone...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-9 text-sm rounded-lg"
@@ -355,10 +357,10 @@ function SubscriptionsPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Select value={cycleFilter} onValueChange={setCycleFilter}>
               <SelectTrigger className="h-9 w-36 text-xs rounded-lg">
-                <SelectValue placeholder="All Cycles" />
+                <SelectValue placeholder={t("allCycles", "All Cycles")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Cycles</SelectItem>
+                <SelectItem value="all">{t("allCycles", "All Cycles")}</SelectItem>
                 {BILLING_CYCLE_OPTIONS.map((c) => (
                   <SelectItem key={c.value} value={c.value}>
                     {c.label}
@@ -369,10 +371,10 @@ function SubscriptionsPage() {
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="h-9 w-32 text-xs rounded-lg">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={t("status", "Status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="all">{t("allStatus", "All Status")}</SelectItem>
                 {SUBSCRIPTION_STATUSES.map((s) => (
                   <SelectItem key={s.value} value={s.value}>
                     {s.label}
@@ -390,7 +392,7 @@ function SubscriptionsPage() {
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Table View"
+                title={t("tableView", "Table View")}
               >
                 <TableIcon className="size-4" />
               </button>
@@ -402,7 +404,7 @@ function SubscriptionsPage() {
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Grid View"
+                title={t("gridView", "Grid View")}
               >
                 <LayoutGrid className="size-4" />
               </button>
@@ -422,13 +424,13 @@ function SubscriptionsPage() {
         ) : filteredSubs.length === 0 ? (
           <EmptyState
             icon={Repeat}
-            title="No subscriptions found"
+            title={t("noSubscriptionsFound", "No subscriptions found")}
             description={
               search
-                ? "Try adjusting your search criteria."
-                : "You haven't enrolled any recurring customer subscriptions yet."
+                ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
+                : t("noSubscriptionsYet", "You haven't enrolled any recurring customer subscriptions yet.")
             }
-            actionLabel="Add Subscription"
+            actionLabel={t("addSubscription", "Add Subscription")}
             onAction={() => {
               clearSubAll();
               setIsAddOpen(true);
@@ -452,7 +454,7 @@ function SubscriptionsPage() {
                           variant="outline"
                           className="font-bold text-xs capitalize bg-primary/10 text-primary border-primary/20"
                         >
-                          {s.billingCycle} Plan
+                          {s.billingCycle} {t("plan", "Plan")}
                         </Badge>
                         <Badge
                           variant="outline"
@@ -476,7 +478,7 @@ function SubscriptionsPage() {
                       </div>
 
                       <div className="p-3 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Rate</span>
+                        <span className="text-xs text-muted-foreground">{t("rate", "Rate")}</span>
                         <span className="text-base font-bold text-foreground">
                           {formatCurrency(s.amount)} / {s.billingCycle}
                         </span>
@@ -484,7 +486,7 @@ function SubscriptionsPage() {
 
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <Calendar className="size-3.5 shrink-0" />
-                        <span>Next renewal: {formatDate(s.nextBillingDate)}</span>
+                        <span>{t("nextRenewal", "Next renewal")}: {formatDate(s.nextBillingDate)}</span>
                       </div>
                     </div>
 
@@ -497,7 +499,7 @@ function SubscriptionsPage() {
                         }
                         className="h-8 text-xs font-semibold"
                       >
-                        {s.status === "active" ? "Pause" : "Resume"}
+                        {s.status === "active" ? t("pause", "Pause") : t("resume", "Resume")}
                       </Button>
 
                       <Button
@@ -533,13 +535,13 @@ function SubscriptionsPage() {
               <Table className="min-w-[750px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Membership Plan</TableHead>
-                    <TableHead>Billing Cycle</TableHead>
-                    <TableHead>Rate</TableHead>
-                    <TableHead>Next Billing Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("customer", "Customer")}</TableHead>
+                    <TableHead>{t("membershipPlan", "Membership Plan")}</TableHead>
+                    <TableHead>{t("billingCycle", "Billing Cycle")}</TableHead>
+                    <TableHead>{t("rate", "Rate")}</TableHead>
+                    <TableHead>{t("nextBillingDate", "Next Billing Date")}</TableHead>
+                    <TableHead>{t("status", "Status")}</TableHead>
+                    <TableHead className="text-right">{t("actions", "Actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -584,7 +586,7 @@ function SubscriptionsPage() {
                               }
                               className="h-8 text-xs font-semibold"
                             >
-                              {s.status === "active" ? "Pause" : "Resume"}
+                              {s.status === "active" ? t("pause", "Pause") : t("resume", "Resume")}
                             </Button>
                             <Button
                               variant="ghost"
@@ -627,10 +629,10 @@ function SubscriptionsPage() {
           <div className="flex flex-col h-full overflow-hidden">
             <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
               <SheetTitle className="text-xl font-bold text-foreground">
-                Add Subscription Plan
+                {t("addSubscriptionPlan", "Add Subscription Plan")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Enroll customers in recurring membership and automated renewal contracts.
+                {t("addSubscriptionDesc", "Enroll customers in recurring membership and automated renewal contracts.")}
               </SheetDescription>
             </SheetHeader>
 
@@ -642,7 +644,7 @@ function SubscriptionsPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="sub-cust" className="text-xs font-semibold">
-                      Customer Name <span className="text-destructive">*</span>
+                      {t("customerName", "Customer Name")} <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="sub-cust"
@@ -651,7 +653,7 @@ function SubscriptionsPage() {
                         setCustomerName(e.target.value);
                         clearSubError("customerName");
                       }}
-                      placeholder="e.g. Rachel Green"
+                      placeholder={t("customerNamePlaceholder", "e.g. Rachel Green")}
                       className={subErrors.customerName ? "border-destructive" : ""}
                     />
                     <FieldError message={subErrors.customerName} />
@@ -659,21 +661,21 @@ function SubscriptionsPage() {
 
                   <div className="space-y-1.5">
                     <Label htmlFor="sub-phone" className="text-xs font-semibold">
-                      Phone Number
+                      {t("phoneNumber", "Phone Number")}
                     </Label>
                     <Input
                       id="sub-phone"
                       type="tel"
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
-                      placeholder="e.g. +1 555-0199"
+                      placeholder={t("phonePlaceholder", "e.g. +1 555-0199")}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
                   <Label htmlFor="sub-plan" className="text-xs font-semibold">
-                    Subscription Plan Name <span className="text-destructive">*</span>
+                    {t("subscriptionPlanName", "Subscription Plan Name")} <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="sub-plan"
@@ -682,7 +684,7 @@ function SubscriptionsPage() {
                       setPlanName(e.target.value);
                       clearSubError("planName");
                     }}
-                    placeholder="e.g. VIP Gym Pass, Software Pro License"
+                    placeholder={t("planNamePlaceholder", "e.g. VIP Gym Pass, Software Pro License")}
                     className={subErrors.planName ? "border-destructive" : ""}
                   />
                   <FieldError message={subErrors.planName} />
@@ -691,7 +693,7 @@ function SubscriptionsPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="sub-amt" className="text-xs font-semibold">
-                      Billing Amount ({currencySymbol}) <span className="text-destructive">*</span>
+                      {t("billingAmount", "Billing Amount")} ({currencySymbol}) <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="sub-amt"
@@ -710,15 +712,15 @@ function SubscriptionsPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Billing Frequency</Label>
+                    <Label className="text-xs font-semibold">{t("billingFrequency", "Billing Frequency")}</Label>
                     <Select value={billingCycle} onValueChange={(val: any) => setBillingCycle(val)}>
                       <SelectTrigger className="h-9 text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="weekly">Weekly Cycle</SelectItem>
-                        <SelectItem value="monthly">Monthly Cycle</SelectItem>
-                        <SelectItem value="yearly">Yearly / Annual Cycle</SelectItem>
+                        <SelectItem value="weekly">{t("weeklyCycle", "Weekly Cycle")}</SelectItem>
+                        <SelectItem value="monthly">{t("monthlyCycle", "Monthly Cycle")}</SelectItem>
+                        <SelectItem value="yearly">{t("yearlyAnnualCycle", "Yearly / Annual Cycle")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -726,7 +728,7 @@ function SubscriptionsPage() {
 
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold">
-                    Next Renewal Date <span className="text-destructive">*</span>
+                    {t("nextRenewalDate", "Next Renewal Date")} <span className="text-destructive">*</span>
                   </Label>
                   <DatePicker
                     date={nextBillingDate}
@@ -735,7 +737,7 @@ function SubscriptionsPage() {
                       setNextBillingDate(val);
                       clearSubError("nextBillingDate");
                     }}
-                    placeholder="Select next renewal billing date"
+                    placeholder={t("selectRenewalDate", "Select next renewal billing date")}
                   />
                   <FieldError message={subErrors.nextBillingDate} />
                 </div>
@@ -743,11 +745,11 @@ function SubscriptionsPage() {
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
                 <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>
-                  Cancel
+                  {t("cancel", "Cancel")}
                 </Button>
                 <Button type="submit" disabled={isSaving} className="font-semibold shadow-sm">
                   {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
-                  Create Subscription
+                  {t("createSubscription", "Create Subscription")}
                 </Button>
               </SheetFooter>
             </form>
@@ -765,24 +767,24 @@ function SubscriptionsPage() {
               </div>
               <div>
                 <DialogTitle className="text-lg font-bold text-foreground">
-                  Cancel Subscription
+                  {t("cancelSubscriptionTitle", "Cancel Subscription")}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Are you sure you want to cancel and remove this subscription contract?
+                  {t("cancelSubscriptionDesc", "Are you sure you want to cancel and remove this subscription contract?")}
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button
               type="button"
               variant="destructive"
               onClick={() => deleteId && deleteSub(deleteId)}
             >
-              Delete
+              {t("delete", "Delete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -798,10 +800,10 @@ function SubscriptionsPage() {
               </div>
               <div>
                 <DialogTitle className="text-base sm:text-lg font-bold text-foreground">
-                  Member Check-In & Validity Scanner
+                  {t("memberCheckInScanner", "Member Check-In & Validity Scanner")}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Scan member RFID card, barcode pass, or search phone number
+                  {t("memberCheckInScannerDesc", "Scan member RFID card, barcode pass, or search phone number")}
                 </DialogDescription>
               </div>
             </div>
@@ -811,7 +813,7 @@ function SubscriptionsPage() {
             <div className="relative">
               <ScanBarcode className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4.5 text-emerald-600 dark:text-emerald-400" />
               <Input
-                placeholder="Scan Card ID / Member Barcode or enter Mobile..."
+                placeholder={t("scanPassPlaceholder", "Scan Card ID / Member Barcode or enter Mobile...")}
                 value={checkInScanQuery}
                 onChange={(e) => setCheckInScanQuery(e.target.value)}
                 className="pl-10 h-12 text-sm sm:text-base font-semibold rounded-2xl border-emerald-500/30 bg-emerald-500/5 focus:border-emerald-500 font-mono shadow-xs"
@@ -836,8 +838,8 @@ function SubscriptionsPage() {
                     <ScanBarcode className="size-8 text-muted-foreground/40 mx-auto" />
                     <p className="text-xs text-muted-foreground">
                       {checkInScanQuery
-                        ? `No member found matching "${checkInScanQuery}".`
-                        : "Ready to scan. Swipe member card or type phone number."}
+                        ? t("noMemberFoundMatching", "No member found matching query.")
+                        : t("readyToScan", "Ready to scan. Swipe member card or type phone number.")}
                     </p>
                   </div>
                 );
@@ -863,7 +865,7 @@ function SubscriptionsPage() {
                           {matchedMember.customerName}
                         </h4>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {matchedMember.customerPhone || "No phone logged"}
+                          {matchedMember.customerPhone || t("noPhoneLogged", "No phone logged")}
                         </p>
                       </div>
                     </div>
@@ -879,24 +881,24 @@ function SubscriptionsPage() {
                       }
                     >
                       {!isActive
-                        ? "Expired / Inactive"
+                        ? t("expiredInactive", "Expired / Inactive")
                         : isExpiringSoon
-                          ? `Expiring in ${diffDays}d`
-                          : `Active (${diffDays}d left)`}
+                          ? `${t("expiringIn", "Expiring in")} ${diffDays}d`
+                          : `${t("activeStatus", "Active")} (${diffDays}d ${t("left", "left")})`}
                     </Badge>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="p-2.5 rounded-xl bg-card border border-border/60">
                       <span className="text-[10px] text-muted-foreground uppercase font-bold block">
-                        Enrolled Plan
+                        {t("enrolledPlan", "Enrolled Plan")}
                       </span>
                       <span className="font-bold text-foreground">{matchedMember.planName}</span>
                     </div>
 
                     <div className="p-2.5 rounded-xl bg-card border border-border/60">
                       <span className="text-[10px] text-muted-foreground uppercase font-bold block">
-                        Billing Cycle
+                        {t("billingCycle", "Billing Cycle")}
                       </span>
                       <span className="font-bold text-foreground uppercase">
                         {matchedMember.billingCycle} • {currencySymbol}
@@ -906,7 +908,7 @@ function SubscriptionsPage() {
 
                     <div className="p-2.5 rounded-xl bg-card border border-border/60">
                       <span className="text-[10px] text-muted-foreground uppercase font-bold block">
-                        Valid Until
+                        {t("validUntil", "Valid Until")}
                       </span>
                       <span
                         className={`font-bold ${isActive ? "text-emerald-600" : "text-destructive"}`}
@@ -917,7 +919,7 @@ function SubscriptionsPage() {
 
                     <div className="p-2.5 rounded-xl bg-card border border-border/60">
                       <span className="text-[10px] text-muted-foreground uppercase font-bold block">
-                        Member ID
+                        {t("memberId", "Member ID")}
                       </span>
                       <span className="font-mono font-bold text-foreground">
                         #{String(matchedMember.id).slice(0, 8).toUpperCase()}
@@ -937,7 +939,7 @@ function SubscriptionsPage() {
                       className="flex-1 h-11 rounded-xl font-extrabold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-soft gap-2"
                     >
                       <CalendarCheck className="size-4" />
-                      Log Attendance Entry ✓
+                      {t("logAttendanceEntry", "Log Attendance Entry")} ✓
                     </Button>
                     {!isActive && (
                       <Button
@@ -954,7 +956,7 @@ function SubscriptionsPage() {
                         }}
                         className="h-11 rounded-xl text-xs font-bold text-primary border-primary/30"
                       >
-                        Renew Plan →
+                        {t("renewPlan", "Renew Plan")} →
                       </Button>
                     )}
                   </div>
@@ -969,7 +971,7 @@ function SubscriptionsPage() {
               onClick={() => setShowCheckInModal(false)}
               className="h-10 rounded-xl text-xs font-semibold"
             >
-              Done (Esc)
+              {t("doneEsc", "Done (Esc)")}
             </Button>
           </div>
         </DialogContent>

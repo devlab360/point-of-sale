@@ -78,6 +78,7 @@ import {
 import { getCategoriesFn } from "@/api/categories";
 import { getBrandsFn } from "@/api/brands";
 import { getUnitsFn } from "@/api/units";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/products/")({
   head: () => ({
@@ -87,6 +88,7 @@ export const Route = createFileRoute("/products/")({
 });
 
 function ProductsPage() {
+  const { t } = useLanguage();
   const { saasPlan } = useAuth();
   const { formatCurrency } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
@@ -262,15 +264,15 @@ function ProductsPage() {
     <div className="page-container space-y-6">
       {/* Standard PageHeader */}
       <PageHeader
-        title="Products & Master Catalog"
-        description="Manage your full SKU catalog, tiered pricing rules, and stock reorder thresholds."
+        title={t("products", "Products & Master Catalog")}
+        description={t("manageCatalog", "Manage your full SKU catalog, tiered pricing rules, and stock reorder thresholds.")}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5">
-              <Download className="size-4" /> Export CSV
+              <Download className="size-4" /> {t("exportCSV", "Export CSV")}
             </Button>
             <Button size="sm" onClick={openNew} className="gap-1.5">
-              <Plus className="size-4" /> Add Product
+              <Plus className="size-4" /> {t("addProduct", "Add Product")}
             </Button>
           </div>
         }
@@ -279,30 +281,30 @@ function ProductsPage() {
       {/* Standard StatCard Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Total Catalog SKUs"
+          label={t("totalCatalogSkus", "Total Catalog SKUs")}
           value={String(totalSkus)}
-          hint="Active items in system"
+          hint={t("activeItemsInSystem", "Active items in system")}
           icon={Package}
           accent="primary"
         />
         <StatCard
-          label="Low Stock Warnings"
+          label={t("lowStockWarnings", "Low Stock Warnings")}
           value={`${lowStockCount} items`}
-          hint="Below reorder threshold"
+          hint={t("inventoryBelowReorder", "Below reorder threshold")}
           icon={AlertTriangle}
           accent="warning"
         />
         <StatCard
-          label="Inventory Asset Value"
+          label={t("inventoryAssetValue", "Inventory Asset Value")}
           value={formatCurrency(totalInventoryValue)}
-          hint="Holding cost valuation"
+          hint={t("holdingCostValuation", "Holding cost valuation")}
           icon={DollarSign}
           accent="success"
         />
         <StatCard
-          label="Active Departments"
+          label={t("activeDepartments", "Active Departments")}
           value={`${categories.length} Categories`}
-          hint="Product classifications"
+          hint={t("productClassifications", "Product classifications")}
           icon={Layers}
           accent="info"
         />
@@ -315,7 +317,7 @@ function ProductsPage() {
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name, SKU, or barcode..."
+              placeholder={t("searchProducts", "Search by name, SKU, or barcode...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-9 text-sm rounded-lg"
@@ -325,10 +327,10 @@ function ProductsPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="h-9 w-36 text-xs rounded-lg">
-                <SelectValue placeholder="All Categories" />
+                <SelectValue placeholder={t("allCategories", "All Categories")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="all">{t("allCategories", "All Categories")}</SelectItem>
                 {categories.map((c: any) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name}
@@ -339,13 +341,13 @@ function ProductsPage() {
 
             <Select value={stockFilter} onValueChange={setStockFilter}>
               <SelectTrigger className="h-9 w-32 text-xs rounded-lg">
-                <SelectValue placeholder="Stock Level" />
+                <SelectValue placeholder={t("allStock", "Stock Level")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Stock</SelectItem>
-                <SelectItem value="in_stock">In Stock</SelectItem>
-                <SelectItem value="low_stock">Low Stock Alert</SelectItem>
-                <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+                <SelectItem value="all">{t("allStock", "All Stock")}</SelectItem>
+                <SelectItem value="in_stock">{t("inStock", "In Stock")}</SelectItem>
+                <SelectItem value="low_stock">{t("lowStock", "Low Stock Alert")}</SelectItem>
+                <SelectItem value="out_of_stock">{t("outOfStock", "Out of Stock")}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -390,13 +392,13 @@ function ProductsPage() {
         ) : products.length === 0 ? (
           <EmptyState
             icon={PackageSearch}
-            title="No products found"
+            title={t("noProductsFound", "No products found")}
             description={
               search
-                ? "Try adjusting your search criteria."
-                : "You haven't added any products to your catalog yet."
+                ? t("adjustSearch", "Try adjusting your search criteria.")
+                : t("noProductsYet", "You haven't added any products to your catalog yet.")
             }
-            actionLabel="Add Product"
+            actionLabel={t("addProduct", "Add Product")}
             onAction={openNew}
           />
         ) : view === "grid" ? (
@@ -424,14 +426,14 @@ function ProductsPage() {
                         <div className="absolute top-2 left-2">
                           {isLow ? (
                             <Badge variant="destructive" className="text-[10px] font-bold">
-                              Low Stock ({p.stock})
+                              {t("lowStock", "Low Stock")} ({p.stock})
                             </Badge>
                           ) : (
                             <Badge
                               variant="outline"
                               className="bg-success/15 text-success border-success/30 text-[10px] font-bold"
                             >
-                              {p.stock} {unitObj?.short || "pcs"} in stock
+                              {p.stock} {unitObj?.short || "pcs"} {t("inStock", "in stock")}
                             </Badge>
                           )}
                         </div>
@@ -448,26 +450,23 @@ function ProductsPage() {
                         </div>
                         <h3
                           onClick={() => handleEdit(p)}
-                          className="font-bold text-sm text-foreground hover:text-primary transition-colors cursor-pointer truncate mt-0.5"
+                          className="cursor-pointer hover:text-primary transition-colors text-sm font-bold text-foreground truncate mt-1"
                         >
                           {p.name}
                         </h3>
-                        {brandObj && (
-                          <p className="text-xs text-muted-foreground truncate">{brandObj.name}</p>
-                        )}
+                        <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                          {brandObj?.name && <span>{brandObj.name} • </span>}
+                          <span>
+                            {t("cost", "Cost")}: {formatCurrency(p.cost || 0)}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="pt-2.5 border-t border-border/60 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] font-semibold text-muted-foreground uppercase block">
-                          Price
-                        </span>
-                        <span className="text-base font-bold text-foreground">
-                          {formatCurrency(p.price || 0)}
-                        </span>
+                    <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                      <div className="number text-sm font-black text-foreground">
+                        {formatCurrency(p.price || 0)}
                       </div>
-
                       <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
@@ -523,12 +522,12 @@ function ProductsPage() {
               <Table className="min-w-[900px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Product Name</TableHead>
-                    <TableHead>SKU / Barcode</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Stock Level</TableHead>
-                    <TableHead className="text-right">Retail Price</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("product", "Product Name")}</TableHead>
+                    <TableHead>{t("sku", "SKU")} / {t("barcode", "Barcode")}</TableHead>
+                    <TableHead>{t("category", "Category")}</TableHead>
+                    <TableHead>{t("stock", "Stock Level")}</TableHead>
+                    <TableHead className="text-right">{t("price", "Retail Price")}</TableHead>
+                    <TableHead className="text-right">{t("actions", "Actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

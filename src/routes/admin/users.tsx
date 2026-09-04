@@ -64,6 +64,7 @@ import {
 import { SUPER_ADMIN_MODULES } from "@/lib/admin/super-admin-permissions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { exportToCSV } from "@/lib/export-utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/admin/users")({
   head: () => ({ meta: [{ title: `Super Admin Personnel · ${appName}` }] }),
@@ -71,6 +72,7 @@ export const Route = createFileRoute("/admin/users")({
 });
 
 function SuperAdminUsersPage() {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const { user: currentUser } = useAdminAuth();
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
@@ -385,12 +387,12 @@ function SuperAdminUsersPage() {
                 <Table>
                   <TableHeader className="bg-muted/40 border-b text-xs font-bold text-muted-foreground uppercase">
                     <TableRow>
-                      <TableHead className="px-4 py-3.5">Administrator</TableHead>
-                      <TableHead className="px-4 py-3.5">Module Permissions</TableHead>
-                      <TableHead className="px-4 py-3.5">Status</TableHead>
-                      <TableHead className="px-4 py-3.5">Last Active</TableHead>
-                      <TableHead className="px-4 py-3.5">Joined</TableHead>
-                      <TableHead className="px-4 py-3.5 text-right">Actions</TableHead>
+                      <TableHead className="px-4 py-3.5">{t("admin.administrator", "Administrator")}</TableHead>
+                      <TableHead className="px-4 py-3.5">{t("admin.modulePermissions", "Module Permissions")}</TableHead>
+                      <TableHead className="px-4 py-3.5">{t("common.status", "Status")}</TableHead>
+                      <TableHead className="px-4 py-3.5">{t("admin.lastActive", "Last Active")}</TableHead>
+                      <TableHead className="px-4 py-3.5">{t("admin.joined", "Joined")}</TableHead>
+                      <TableHead className="px-4 py-3.5 text-right">{t("common.actions", "Actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -545,12 +547,12 @@ function SuperAdminUsersPage() {
                 <Table>
                   <TableHeader className="bg-muted/40 border-b text-xs font-bold text-muted-foreground uppercase">
                     <TableRow>
-                      <TableHead className="px-4 py-3.5">Session User</TableHead>
-                      <TableHead className="px-4 py-3.5">Session ID</TableHead>
-                      <TableHead className="px-4 py-3.5">Login Created</TableHead>
-                      <TableHead className="px-4 py-3.5">Token Expiry</TableHead>
-                      <TableHead className="px-4 py-3.5">Status</TableHead>
-                      <TableHead className="px-4 py-3.5 text-right">Actions</TableHead>
+                      <TableHead className="px-4 py-3.5">{t("admin.sessionUser", "Session User")}</TableHead>
+                      <TableHead className="px-4 py-3.5">{t("admin.sessionId", "Session ID")}</TableHead>
+                      <TableHead className="px-4 py-3.5">{t("admin.loginCreated", "Login Created")}</TableHead>
+                      <TableHead className="px-4 py-3.5">{t("admin.tokenExpiry", "Token Expiry")}</TableHead>
+                      <TableHead className="px-4 py-3.5">{t("common.status", "Status")}</TableHead>
+                      <TableHead className="px-4 py-3.5 text-right">{t("common.actions", "Actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

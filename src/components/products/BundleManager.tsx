@@ -6,6 +6,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Trash2, Package } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getProductsFn } from "@/api/products";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("en-IN", {
@@ -35,6 +36,7 @@ export function BundleManager({
   basePrice,
   onAutoSumPrice,
 }: BundleManagerProps) {
+  const { t } = useLanguage();
   const { data: productsRes } = useQuery({
     queryKey: ["products"],
     queryFn: () =>
@@ -83,22 +85,21 @@ export function BundleManager({
         <div className="space-y-1">
           <Label className="text-base font-semibold flex items-center gap-2">
             <Package className="size-4" />
-            Bundle Components
+            {t("products.bundleComponents", "Bundle Components")}
           </Label>
           <p className="text-xs text-muted-foreground">
-            Select items that make up this bundle. Inventory will be deducted from these components
-            upon sale.
+            {t("products.bundleDesc", "Select items that make up this bundle. Inventory will be deducted from these components upon sale.")}
           </p>
         </div>
         <Button type="button" variant="outline" size="sm" onClick={addComponent}>
-          + Add Item
+          {t("products.addItem", "+ Add Item")}
         </Button>
       </div>
 
       <div className="space-y-3 mt-4">
         {components.length === 0 ? (
           <div className="text-center py-6 text-sm text-muted-foreground bg-white border rounded-md">
-            No items in bundle yet. Click "Add Item" to start.
+            {t("products.noBundleItems", 'No items in bundle yet. Click "Add Item" to start.')}
           </div>
         ) : (
           components.map((comp, index) => {
@@ -109,7 +110,7 @@ export function BundleManager({
                 className="flex items-start gap-3 p-3 bg-white border rounded-md shadow-sm"
               >
                 <div className="flex-1 space-y-1">
-                  <Label className="text-xs text-muted-foreground">Product</Label>
+                  <Label className="text-xs text-muted-foreground">{t("common.product", "Product")}</Label>
                   <SearchableSelect
                     options={(sellableProducts || []).map((p: any) => ({ label: p.name, value: p.id }))}
                     value={comp.componentProductId}
@@ -117,13 +118,13 @@ export function BundleManager({
                       updateComponent(index, "componentProductId", val);
                       updateComponent(index, "componentVariantId", null);
                     }}
-                    placeholder="Select product..."
+                    placeholder={t("products.selectProduct", "Select product...")}
                   />
                 </div>
 
                 {selectedProduct?.hasVariants && (selectedProduct.variants?.length ?? 0) > 0 && (
                   <div className="flex-1 space-y-1">
-                    <Label className="text-xs text-muted-foreground">Variant</Label>
+                    <Label className="text-xs text-muted-foreground">{t("products.variant", "Variant")}</Label>
                     <SearchableSelect
                       options={(selectedProduct.variants || []).map((v: any) => ({
                         label: v.name,
@@ -131,13 +132,13 @@ export function BundleManager({
                       }))}
                       value={comp.componentVariantId || ""}
                       onChange={(val) => updateComponent(index, "componentVariantId", val)}
-                      placeholder="Select variant..."
+                      placeholder={t("products.selectVariant", "Select variant...")}
                     />
                   </div>
                 )}
 
                 <div className="w-24 space-y-1">
-                  <Label className="text-xs text-muted-foreground">Qty</Label>
+                  <Label className="text-xs text-muted-foreground">{t("products.qty", "Qty")}</Label>
                   <Input
                     type="number"
                     min="1"
@@ -166,11 +167,11 @@ export function BundleManager({
       {components.length > 0 && (
         <div className="flex items-center justify-between pt-4 border-t">
           <div className="text-sm text-muted-foreground">
-            Current Bundle Price:{" "}
+            {t("products.currentBundlePrice", "Current Bundle Price:")}{" "}
             <span className="font-medium text-foreground">{formatCurrency(basePrice)}</span>
           </div>
           <Button type="button" variant="secondary" size="sm" onClick={calculateAutoSum}>
-            Auto-Sum Price from Components
+            {t("products.autoSumPrice", "Auto-Sum Price from Components")}
           </Button>
         </div>
       )}

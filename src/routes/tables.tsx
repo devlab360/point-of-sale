@@ -58,6 +58,7 @@ import { toast } from "sonner";
 import { PersistStore } from "@/lib/session-store";
 import { ErrorState } from "@/components/ui/error-state";
 import { TABLE_STATUSES } from "@/constants";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/tables")({
   head: () => ({ meta: [{ title: `Restaurant Tables & Floor Plan · ${appName}` }] }),
@@ -65,6 +66,7 @@ export const Route = createFileRoute("/tables")({
 });
 
 function TablesPage() {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const orgId = PersistStore.getOrgId() || "default";
   const { currencySymbol, formatCurrency } = useCurrency();
@@ -181,10 +183,10 @@ function TablesPage() {
   return (
     <div className="space-y-6">
       <DataPage
-        title="Restaurant Floor Plan & Tables"
-        description="Real-time table seating capacity, dine-in status, and reservations."
-        primaryAction={{ label: "Add Table", onClick: () => setIsCreateOpen(true) }}
-        searchPlaceholder="Search tables..."
+        title={t("tablesAndFloorPlan", "Restaurant Floor Plan & Tables")}
+        description={t("tablesFloorPlanDesc", "Real-time table seating capacity, dine-in status, and reservations.")}
+        primaryAction={{ label: t("addTable", "Add Table"), onClick: () => setIsCreateOpen(true) }}
+        searchPlaceholder={t("searchTablesPlaceholder", "Search tables...")}
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={false}
@@ -195,16 +197,16 @@ function TablesPage() {
             <div className="flex-1 space-y-4">
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Status
+                  {t("status", "Status")}
                 </Label>
                 <SearchableSelect
                   options={[
-                    { value: "", label: "All Tables" },
+                    { value: "", label: t("allTables", "All Tables") },
                     ...TABLE_STATUSES.map((s) => ({ value: s.value, label: s.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder="Filter by Status"
+                  placeholder={t("filterByStatus", "Filter by Status")}
                 />
               </div>
             </div>
@@ -216,7 +218,7 @@ function TablesPage() {
                   close();
                 }}
               >
-                Apply Filters
+                {t("applyFilters", "Apply Filters")}
               </Button>
             </div>
           </div>
@@ -226,7 +228,7 @@ function TablesPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Total Tables
+                  {t("totalTables", "Total Tables")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
                   <Utensils className="size-4" />
@@ -235,7 +237,7 @@ function TablesPage() {
               <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
                 {metrics.total}{" "}
                 <span className="text-xs font-normal text-muted-foreground">
-                  ({metrics.totalCapacity} seats)
+                  ({metrics.totalCapacity} {t("seats", "seats")})
                 </span>
               </p>
             </div>
@@ -243,7 +245,7 @@ function TablesPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-success/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Available (Free)
+                  {t("availableFree", "Available (Free)")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-success/15 text-success">
                   <CheckCircle2 className="size-4" />
@@ -257,7 +259,7 @@ function TablesPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-rose-500/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Occupied (Dining)
+                  {t("occupiedDining", "Occupied (Dining)")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
                   <Users className="size-4" />
@@ -271,7 +273,7 @@ function TablesPage() {
             <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-amber-500/40">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Reserved
+                  {t("reserved", "Reserved")}
                 </p>
                 <div className="grid size-8 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
                   <Clock className="size-4" />
@@ -294,13 +296,13 @@ function TablesPage() {
             <div className="rounded-xl border border-border bg-card shadow-soft p-12 text-center">
               <EmptyState
                 icon={Utensils}
-                title="No tables found"
+                title={t("noTablesFound", "No tables found")}
                 description={
                   search
-                    ? "No tables matched your search query."
-                    : "Add your first dining table to manage floor seating."
+                    ? t("noTablesMatchedSearch", "No tables matched your search query.")
+                    : t("addFirstDiningTable", "Add your first dining table to manage floor seating.")
                 }
-                actionLabel="Add Table"
+                actionLabel={t("addTable", "Add Table")}
                 onAction={() => setIsCreateOpen(true)}
                 className="border-none bg-transparent my-0 py-4 shadow-none"
               />
@@ -341,7 +343,7 @@ function TablesPage() {
                               {table.name}
                             </h3>
                             <span className="text-xs text-muted-foreground font-medium flex items-center gap-1 mt-0.5">
-                              <Users className="size-3" /> Seats: {table.capacity}
+                              <Users className="size-3" /> {t("seats", "Seats")}: {table.capacity}
                             </span>
                           </div>
                         </div>
@@ -356,7 +358,7 @@ function TablesPage() {
                                 : "bg-emerald-500/15 text-emerald-500 border-emerald-500/25"
                           }`}
                         >
-                          {table.status}
+                          {t(table.status, table.status)}
                         </Badge>
                       </div>
                     </div>
@@ -370,20 +372,20 @@ function TablesPage() {
                         disabled={updateStatus.isPending}
                       >
                         <SelectTrigger className="h-9 text-xs flex-1 bg-background/80 rounded-xl font-bold">
-                          <SelectValue placeholder="Change Status" />
+                          <SelectValue placeholder={t("changeStatus", "Change Status")} />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl">
                           <SelectItem
                             value="available"
                             className="text-xs font-bold text-emerald-500"
                           >
-                            Available (Free)
+                            {t("availableFree", "Available (Free)")}
                           </SelectItem>
                           <SelectItem value="occupied" className="text-xs font-bold text-rose-500">
-                            Occupied (Guest / Dining)
+                            {t("occupiedDining", "Occupied (Guest / Dining)")}
                           </SelectItem>
                           <SelectItem value="reserved" className="text-xs font-bold text-amber-500">
-                            Reserved
+                            {t("reserved", "Reserved")}
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -399,17 +401,17 @@ function TablesPage() {
                           setGuestRoomRate(120);
                           setGuestRoomServiceAmt(table.status === "occupied" ? 45.5 : 0);
                         }}
-                        title="Room Folio & Guest Details"
+                        title={t("roomFolioAndGuestDetails", "Room Folio & Guest Details")}
                       >
                         <Receipt className="size-3.5" />
-                        <span className="hidden sm:inline">Folio</span>
+                        <span className="hidden sm:inline">{t("folio", "Folio")}</span>
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
                         className="size-9 rounded-xl text-destructive hover:bg-destructive/10 shrink-0"
                         onClick={() => setDeleteId(table.id)}
-                        title="Delete Table"
+                        title={t("deleteTable", "Delete Table")}
                       >
                         <Trash2 className="size-4" />
                       </Button>
@@ -431,25 +433,25 @@ function TablesPage() {
           <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
             <SheetTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
               <Utensils className="size-5 text-primary" />
-              <span>Add Restaurant Table</span>
+              <span>{t("addRestaurantTable", "Add Restaurant Table")}</span>
             </SheetTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Add floor tables for dine-in seating and kitchen order routing.
+              {t("addRestaurantTableDesc", "Add floor tables for dine-in seating and kitchen order routing.")}
             </p>
           </SheetHeader>
           <div className="flex flex-col flex-1 overflow-hidden">
             <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
               <div className="space-y-1.5">
-                <Label>Table Name / Number *</Label>
+                <Label>{t("tableNameNumber", "Table Name / Number")} *</Label>
                 <Input
-                  placeholder="e.g. Table 1, Window Booth 2, Patio 4"
+                  placeholder={t("tableNamePlaceholder", "e.g. Table 1, Window Booth 2, Patio 4")}
                   value={newTableName}
                   onChange={(e) => setNewTableName(e.target.value)}
                   autoFocus
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Seating Capacity *</Label>
+                <Label>{t("seatingCapacity", "Seating Capacity")} *</Label>
                 <Input
                   type="number"
                   min={1}
@@ -462,7 +464,7 @@ function TablesPage() {
 
             <div className="border-t border-border p-4 bg-card/80 backdrop-blur-sm flex items-center justify-end gap-3 shrink-0">
               <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-                Cancel
+                {t("cancel", "Cancel")}
               </Button>
               <Button
                 onClick={handleCreate}
@@ -470,7 +472,7 @@ function TablesPage() {
                 className="min-w-[140px]"
               >
                 {createTable.isPending && <Loader2 className="size-4 mr-2 animate-spin" />}
-                Save Table
+                {t("saveTable", "Save Table")}
               </Button>
             </div>
           </div>
@@ -481,18 +483,18 @@ function TablesPage() {
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent className="rounded-xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Table?</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteTableTitle", "Delete Table?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently remove this dining table.
+              {t("deleteTableDesc", "This action cannot be undone. This will permanently remove this dining table.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel", "Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteId && deleteTable.mutate(deleteId)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {t("delete", "Delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -511,10 +513,10 @@ function TablesPage() {
               </div>
               <div>
                 <DialogTitle className="text-base sm:text-lg font-bold text-foreground">
-                  Room Folio & Guest Billing
+                  {t("roomFolioAndGuestBilling", "Room Folio & Guest Billing")}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  {selectedRoomForFolio?.name} • Max {selectedRoomForFolio?.capacity || 2} Occupants
+                  {selectedRoomForFolio?.name} • {t("maxOccupants", "Max")} {selectedRoomForFolio?.capacity || 2} {t("occupants", "Occupants")}
                 </DialogDescription>
               </div>
             </div>
@@ -526,7 +528,7 @@ function TablesPage() {
                   : "bg-emerald-500/15 text-emerald-600 border-emerald-500/30 font-bold"
               }
             >
-              {selectedRoomForFolio?.status === "occupied" ? "Occupied" : "Vacant / Available"}
+              {selectedRoomForFolio?.status === "occupied" ? t("occupied", "Occupied") : t("vacantAvailable", "Vacant / Available")}
             </Badge>
           </div>
 
@@ -537,16 +539,16 @@ function TablesPage() {
                 <div className="rounded-2xl border border-border/80 bg-muted/20 p-4 space-y-3">
                   <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
                     <span className="text-xs font-bold text-foreground">
-                      Current In-House Guest
+                      {t("currentInHouseGuest", "Current In-House Guest")}
                     </span>
                     <span className="text-xs font-mono font-bold text-primary">
-                      Folio #{String(selectedRoomForFolio.id).slice(0, 8).toUpperCase()}
+                      {t("folioNo", "Folio #")}{String(selectedRoomForFolio.id).slice(0, 8).toUpperCase()}
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
                       <span className="text-[10px] text-muted-foreground uppercase font-bold block">
-                        Guest Name
+                        {t("guestName", "Guest Name")}
                       </span>
                       <span className="font-bold text-foreground">
                         {guestName || "Mr. Robert Vance"}
@@ -554,7 +556,7 @@ function TablesPage() {
                     </div>
                     <div>
                       <span className="text-[10px] text-muted-foreground uppercase font-bold block">
-                        Contact Phone
+                        {t("contactPhone", "Contact Phone")}
                       </span>
                       <span className="font-semibold text-foreground">
                         {guestPhone || "+1 (555) 349-2910"}
@@ -562,16 +564,16 @@ function TablesPage() {
                     </div>
                     <div>
                       <span className="text-[10px] text-muted-foreground uppercase font-bold block">
-                        Duration
+                        {t("duration", "Duration")}
                       </span>
                       <span className="font-semibold text-foreground">
-                        {guestNights} Night(s) @ {currencySymbol}
-                        {guestRoomRate}/night
+                        {guestNights} {t("nights", "Night(s)")} @ {currencySymbol}
+                        {guestRoomRate}/{t("night", "night")}
                       </span>
                     </div>
                     <div>
                       <span className="text-[10px] text-muted-foreground uppercase font-bold block">
-                        Checked In
+                        {t("checkedIn", "Checked In")}
                       </span>
                       <span className="font-semibold text-foreground">Today, 02:30 PM</span>
                     </div>
@@ -581,11 +583,11 @@ function TablesPage() {
                 {/* Folio Financial Ledger */}
                 <div className="rounded-2xl border border-border/80 bg-card p-4 space-y-2.5 text-xs">
                   <span className="text-xs font-bold text-foreground block border-b border-border/60 pb-2">
-                    Itemized Room Folio Breakdown
+                    {t("itemizedFolioBreakdown", "Itemized Room Folio Breakdown")}
                   </span>
                   <div className="flex justify-between text-muted-foreground">
                     <span>
-                      Room Accommodation ({guestNights} Nights × {currencySymbol}
+                      {t("roomAccommodation", "Room Accommodation")} ({guestNights} {t("nights", "Nights")} × {currencySymbol}
                       {guestRoomRate}):
                     </span>
                     <span className="font-mono font-bold text-foreground">
@@ -594,14 +596,14 @@ function TablesPage() {
                     </span>
                   </div>
                   <div className="flex justify-between text-muted-foreground">
-                    <span>Restaurant / Room Service & Minibar KOTs:</span>
+                    <span>{t("restaurantRoomServiceMinibar", "Restaurant / Room Service & Minibar KOTs")}:</span>
                     <span className="font-mono font-bold text-foreground">
                       {currencySymbol}
                       {guestRoomServiceAmt.toFixed(2)}
                     </span>
                   </div>
                   <div className="border-t border-border/60 pt-2 flex justify-between items-center text-sm font-black">
-                    <span className="text-foreground">Total Folio Balance Outstanding:</span>
+                    <span className="text-foreground">{t("totalFolioBalanceOutstanding", "Total Folio Balance Outstanding")}:</span>
                     <span className="text-base font-black text-rose-600 dark:text-rose-400 font-mono">
                       {currencySymbol}
                       {(guestNights * guestRoomRate + guestRoomServiceAmt).toFixed(2)}
@@ -614,9 +616,9 @@ function TablesPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Guest Full Name *</Label>
+                    <Label className="text-xs font-bold text-foreground">{t("guestFullName", "Guest Full Name")} *</Label>
                     <Input
-                      placeholder="e.g. Johnathan Smith"
+                      placeholder={t("guestNamePlaceholder", "e.g. Johnathan Smith")}
                       value={guestName}
                       onChange={(e) => setGuestName(e.target.value)}
                       className="h-10 rounded-xl font-medium"
@@ -624,7 +626,7 @@ function TablesPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Mobile Phone</Label>
+                    <Label className="text-xs font-bold text-foreground">{t("mobilePhone", "Mobile Phone")}</Label>
                     <Input
                       placeholder="e.g. +1 (555) 019-2834"
                       value={guestPhone}
@@ -637,7 +639,7 @@ function TablesPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label className="text-xs font-bold text-foreground">
-                      Nightly Rate ({currencySymbol})
+                      {t("nightlyRate", "Nightly Rate")} ({currencySymbol})
                     </Label>
                     <Input
                       type="number"
@@ -648,7 +650,7 @@ function TablesPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Number of Nights</Label>
+                    <Label className="text-xs font-bold text-foreground">{t("numberOfNights", "Number of Nights")}</Label>
                     <Input
                       type="number"
                       min="1"
@@ -660,7 +662,7 @@ function TablesPage() {
                 </div>
 
                 <div className="rounded-2xl border border-blue-500/25 bg-blue-500/5 p-3.5 flex justify-between items-center text-xs">
-                  <span className="text-muted-foreground font-medium">Estimated Stay Charges:</span>
+                  <span className="text-muted-foreground font-medium">{t("estimatedStayCharges", "Estimated Stay Charges")}:</span>
                   <span className="font-mono font-black text-sm text-blue-600 dark:text-blue-400">
                     {currencySymbol}
                     {(guestNights * guestRoomRate).toFixed(2)}
@@ -676,7 +678,7 @@ function TablesPage() {
               onClick={() => setSelectedRoomForFolio(null)}
               className="h-11 rounded-xl text-xs font-semibold"
             >
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             {selectedRoomForFolio?.status === "occupied" ? (
               <Button
@@ -690,7 +692,7 @@ function TablesPage() {
                 className="h-11 px-6 rounded-xl font-extrabold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-soft gap-2"
               >
                 <CreditCard className="size-4" />
-                Settle Folio & Check-Out Guest ✓
+                {t("settleFolioAndCheckOut", "Settle Folio & Check-Out Guest ✓")}
               </Button>
             ) : (
               <Button
@@ -706,7 +708,7 @@ function TablesPage() {
                 className="h-11 px-6 rounded-xl font-extrabold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-soft gap-2"
               >
                 <DoorOpen className="size-4" />
-                Check-In Guest & Occupy Room
+                {t("checkInGuestAndOccupy", "Check-In Guest & Occupy Room")}
               </Button>
             )}
           </div>

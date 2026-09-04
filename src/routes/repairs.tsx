@@ -70,6 +70,7 @@ import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   Table,
   TableBody,
@@ -85,29 +86,29 @@ export const Route = createFileRoute("/repairs")({
   component: RepairsPage,
 });
 
-function getStatusBadge(status: string) {
+function getStatusBadge(status: string, t?: (key: string, fb: string) => string) {
   const s = (status || "").toLowerCase();
   if (s === "pending" || s === "received") {
     return {
-      label: "Received",
+      label: t ? t("received", "Received") : "Received",
       color: "bg-info/10 text-info border-info/20",
     };
   }
   if (s === "diagnosing" || s === "in_progress" || s === "in_repair") {
     return {
-      label: "In Repair",
+      label: t ? t("inRepair", "In Repair") : "In Repair",
       color: "bg-warning/15 text-warning-foreground border-warning/30",
     };
   }
   if (s === "ready" || s === "ready_for_pickup") {
     return {
-      label: "Ready for Pickup",
+      label: t ? t("readyForPickup", "Ready for Pickup") : "Ready for Pickup",
       color: "bg-primary/10 text-primary border-primary/20",
     };
   }
   if (s === "delivered" || s === "completed") {
     return {
-      label: "Delivered",
+      label: t ? t("delivered", "Delivered") : "Delivered",
       color: "bg-success/15 text-success border-success/30",
     };
   }
@@ -118,6 +119,7 @@ function getStatusBadge(status: string) {
 }
 
 function RepairsPage() {
+  const { t } = useLanguage();
   const { formatDate } = usePreferences();
   const { formatCurrency, currencySymbol } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
@@ -353,8 +355,8 @@ function RepairsPage() {
     <div className="page-container space-y-6">
       {/* Standard PageHeader */}
       <PageHeader
-        title="Repair Orders & Job Sheets"
-        description="Log customer intake receipts, track diagnostic bench status, record advance deposits, and generate printable thermal work orders."
+        title={t("repairOrdersJobSheets", "Repair Orders & Job Sheets")}
+        description={t("repairsDesc", "Log customer intake receipts, track diagnostic bench status, record advance deposits, and generate printable thermal work orders.")}
         actions={
           <Button
             size="sm"
@@ -364,7 +366,7 @@ function RepairsPage() {
             }}
             className="gap-1.5"
           >
-            <Plus className="size-4" /> New Repair Ticket
+            <Plus className="size-4" /> {t("newRepairTicket", "New Repair Ticket")}
           </Button>
         }
       />
@@ -372,30 +374,30 @@ function RepairsPage() {
       {/* Standard StatCard Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Total Job Sheets"
+          label={t("totalJobSheets", "Total Job Sheets")}
           value={String(totalRepairs)}
-          hint="All intake tickets"
+          hint={t("allIntakeTickets", "All intake tickets")}
           icon={Wrench}
           accent="primary"
         />
         <StatCard
-          label="On Workbench"
+          label={t("onWorkbench", "On Workbench")}
           value={String(inProgressCount)}
-          hint="Diagnosing / In progress"
+          hint={t("diagnosingInProgress", "Diagnosing / In progress")}
           icon={Clock}
           accent="warning"
         />
         <StatCard
-          label="Ready for Pickup"
+          label={t("readyForPickup", "Ready for Pickup")}
           value={String(readyCount)}
-          hint="Awaiting customer pickup"
+          hint={t("awaitingPickup", "Awaiting customer pickup")}
           icon={CheckCircle}
           accent="info"
         />
         <StatCard
-          label="Delivered & Closed"
+          label={t("deliveredClosed", "Delivered & Closed")}
           value={String(completedCount)}
-          hint="Settled service orders"
+          hint={t("settledServiceOrders", "Settled service orders")}
           icon={CheckCircle2}
           accent="success"
         />
@@ -408,7 +410,7 @@ function RepairsPage() {
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search by ticket #, customer, device..."
+              placeholder={t("searchRepairsPlaceholder", "Search by ticket #, customer, device...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-9 text-sm rounded-lg"
@@ -418,10 +420,10 @@ function RepairsPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="h-9 w-38 text-xs rounded-lg">
-                <SelectValue placeholder="All Statuses" />
+                <SelectValue placeholder={t("allStatuses", "All Statuses")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="all">{t("allStatuses", "All Statuses")}</SelectItem>
                 {REPAIR_STATUSES.map((s) => (
                   <SelectItem key={s.value} value={s.value}>
                     {s.label}
@@ -439,7 +441,7 @@ function RepairsPage() {
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Table View"
+                title={t("tableView", "Table View")}
               >
                 <TableIcon className="size-4" />
               </button>
@@ -451,7 +453,7 @@ function RepairsPage() {
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Grid View"
+                title={t("gridView", "Grid View")}
               >
                 <LayoutGrid className="size-4" />
               </button>
@@ -471,13 +473,13 @@ function RepairsPage() {
         ) : filteredRepairs.length === 0 ? (
           <EmptyState
             icon={Wrench}
-            title="No repair job sheets found"
+            title={t("noRepairsFound", "No repair job sheets found")}
             description={
               search
-                ? "Try adjusting your search criteria."
-                : "You haven't logged any repair or service intake tickets yet."
+                ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
+                : t("noRepairsYet", "You haven't logged any repair or service intake tickets yet.")
             }
-            actionLabel="New Repair Ticket"
+            actionLabel={t("newRepairTicket", "New Repair Ticket")}
             onAction={() => {
               clearRepAll();
               setIsAddOpen(true);
@@ -488,7 +490,7 @@ function RepairsPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {paginatedRepairs.map((r: any) => {
-                const badgeInfo = getStatusBadge(r.status);
+                const badgeInfo = getStatusBadge(r.status, t);
                 const estCost = Number(r.estimatedCost) || 0;
                 const advPaid = Number(r.advancePaid) || 0;
                 const balDue = Math.max(0, estCost - advPaid);
@@ -521,17 +523,17 @@ function RepairsPage() {
                       </div>
 
                       <div className="p-3 rounded-xl bg-muted/40 border border-border/50 text-xs space-y-1">
-                        <span className="text-muted-foreground font-semibold block">Issue:</span>
+                        <span className="text-muted-foreground font-semibold block">{t("issue", "Issue")}:</span>
                         <p className="text-foreground line-clamp-2">{r.problemDescription}</p>
                       </div>
 
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>
-                          Estimate:{" "}
+                          {t("estimate", "Estimate")}:{" "}
                           <strong className="text-foreground">{formatCurrency(estCost)}</strong>
                         </span>
                         <span>
-                          Due:{" "}
+                          {t("due", "Due")}:{" "}
                           <strong className="text-destructive">{formatCurrency(balDue)}</strong>
                         </span>
                       </div>
@@ -544,7 +546,7 @@ function RepairsPage() {
                         onClick={() => handlePrintSlip(r)}
                         className="h-8 text-xs font-semibold"
                       >
-                        <Printer className="size-3.5 mr-1" /> Slip
+                        <Printer className="size-3.5 mr-1" /> {t("slip", "Slip")}
                       </Button>
 
                       <DropdownMenu>
@@ -555,19 +557,19 @@ function RepairsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="rounded-xl w-44">
                           <DropdownMenuItem onClick={() => updateStatus(r.id, "in_progress")}>
-                            Mark In Progress
+                            {t("markInProgress", "Mark In Progress")}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => updateStatus(r.id, "ready")}>
-                            Mark Ready for Pickup
+                            {t("markReadyForPickup", "Mark Ready for Pickup")}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => updateStatus(r.id, "delivered")}>
-                            Mark Delivered / Closed
+                            {t("markDeliveredClosed", "Mark Delivered / Closed")}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => setDeleteId(r.id)}
                             className="text-destructive"
                           >
-                            <Trash2 className="size-3.5 mr-2" /> Delete Ticket
+                            <Trash2 className="size-3.5 mr-2" /> {t("deleteTicket", "Delete Ticket")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -596,18 +598,18 @@ function RepairsPage() {
               <Table className="min-w-[750px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Ticket #</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Device & Model</TableHead>
-                    <TableHead>Issue Summary</TableHead>
-                    <TableHead>Est. Cost</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("ticketHash", "Ticket #")}</TableHead>
+                    <TableHead>{t("customer", "Customer")}</TableHead>
+                    <TableHead>{t("deviceModel", "Device & Model")}</TableHead>
+                    <TableHead>{t("issueSummary", "Issue Summary")}</TableHead>
+                    <TableHead>{t("estCost", "Est. Cost")}</TableHead>
+                    <TableHead>{t("status", "Status")}</TableHead>
+                    <TableHead className="text-right">{t("actions", "Actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedRepairs.map((r: any) => {
-                    const badgeInfo = getStatusBadge(r.status);
+                    const badgeInfo = getStatusBadge(r.status, t);
 
                     return (
                       <TableRow key={r.id} className="hover:bg-muted/30 transition-colors">
@@ -643,7 +645,7 @@ function RepairsPage() {
                               onClick={() => handlePrintSlip(r)}
                               className="h-8 text-xs font-semibold"
                             >
-                              <Printer className="size-3.5 mr-1" /> Slip
+                              <Printer className="size-3.5 mr-1" /> {t("slip", "Slip")}
                             </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -653,19 +655,19 @@ function RepairsPage() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="rounded-xl w-44">
                                 <DropdownMenuItem onClick={() => updateStatus(r.id, "in_progress")}>
-                                  Mark In Progress
+                                  {t("markInProgress", "Mark In Progress")}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => updateStatus(r.id, "ready")}>
-                                  Mark Ready
+                                  {t("markReady", "Mark Ready")}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => updateStatus(r.id, "delivered")}>
-                                  Mark Delivered
+                                  {t("markDelivered", "Mark Delivered")}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => setDeleteId(r.id)}
                                   className="text-destructive"
                                 >
-                                  <Trash2 className="size-3.5 mr-2" /> Delete
+                                  <Trash2 className="size-3.5 mr-2" /> {t("delete", "Delete")}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -702,10 +704,10 @@ function RepairsPage() {
           <div className="flex flex-col h-full overflow-hidden">
             <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
               <SheetTitle className="text-xl font-bold text-foreground">
-                Intake Repair Job Sheet
+                {t("intakeRepairJobSheet", "Intake Repair Job Sheet")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Register customer equipment details, reported faults, and advance deposit payments.
+                {t("intakeRepairDesc", "Register customer equipment details, reported faults, and advance deposit payments.")}
               </SheetDescription>
             </SheetHeader>
 
@@ -717,7 +719,7 @@ function RepairsPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="rep-cust" className="text-xs font-semibold">
-                      Customer Name <span className="text-destructive">*</span>
+                      {t("customerName", "Customer Name")} <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="rep-cust"
@@ -726,7 +728,7 @@ function RepairsPage() {
                         setCustomerName(e.target.value);
                         clearRepError("customerName");
                       }}
-                      placeholder="e.g. Alex Morgan"
+                      placeholder={t("customerNamePlaceholder", "e.g. Alex Morgan")}
                       className={repErrors.customerName ? "border-destructive" : ""}
                     />
                     <FieldError message={repErrors.customerName} />
@@ -734,7 +736,7 @@ function RepairsPage() {
 
                   <div className="space-y-1.5">
                     <Label htmlFor="rep-phone" className="text-xs font-semibold">
-                      Phone Number <span className="text-destructive">*</span>
+                      {t("phoneNumber", "Phone Number")} <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="rep-phone"
@@ -744,7 +746,7 @@ function RepairsPage() {
                         setCustomerPhone(e.target.value);
                         clearRepError("customerPhone");
                       }}
-                      placeholder="e.g. +1 555-0199"
+                      placeholder={t("phonePlaceholder", "e.g. +1 555-0199")}
                       className={repErrors.customerPhone ? "border-destructive" : ""}
                     />
                     <FieldError message={repErrors.customerPhone} />
@@ -754,7 +756,7 @@ function RepairsPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="rep-dev" className="text-xs font-semibold">
-                      Device / Model <span className="text-destructive">*</span>
+                      {t("deviceModel", "Device / Model")} <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="rep-dev"
@@ -763,7 +765,7 @@ function RepairsPage() {
                         setDeviceName(e.target.value);
                         clearRepError("deviceName");
                       }}
-                      placeholder="e.g. iPhone 15 Pro, Dell XPS 15"
+                      placeholder={t("devicePlaceholder", "e.g. iPhone 15 Pro, Dell XPS 15")}
                       className={repErrors.deviceName ? "border-destructive" : ""}
                     />
                     <FieldError message={repErrors.deviceName} />
@@ -771,13 +773,13 @@ function RepairsPage() {
 
                   <div className="space-y-1.5">
                     <Label htmlFor="rep-sn" className="text-xs font-semibold">
-                      Serial / IMEI
+                      {t("serialImei", "Serial / IMEI")}
                     </Label>
                     <Input
                       id="rep-sn"
                       value={serialOrImei}
                       onChange={(e) => setSerialOrImei(e.target.value)}
-                      placeholder="e.g. 356789102938475"
+                      placeholder={t("serialPlaceholder", "e.g. 356789102938475")}
                       className="font-mono text-xs"
                     />
                   </div>
@@ -785,7 +787,7 @@ function RepairsPage() {
 
                 <div className="space-y-1.5">
                   <Label htmlFor="rep-issue" className="text-xs font-semibold">
-                    Reported Problem / Diagnostics <span className="text-destructive">*</span>
+                    {t("reportedProblemDiagnostics", "Reported Problem / Diagnostics")} <span className="text-destructive">*</span>
                   </Label>
                   <Textarea
                     id="rep-issue"
@@ -795,7 +797,7 @@ function RepairsPage() {
                       setProblemDescription(e.target.value);
                       clearRepError("problemDescription");
                     }}
-                    placeholder="e.g. Cracked screen, battery draining rapidly..."
+                    placeholder={t("issuePlaceholder", "e.g. Cracked screen, battery draining rapidly...")}
                     className={repErrors.problemDescription ? "border-destructive" : ""}
                   />
                   <FieldError message={repErrors.problemDescription} />
@@ -804,7 +806,7 @@ function RepairsPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="rep-est" className="text-xs font-semibold">
-                      Estimated Repair Cost ({currencySymbol})
+                      {t("estimatedRepairCost", "Estimated Repair Cost")} ({currencySymbol})
                     </Label>
                     <Input
                       id="rep-est"
@@ -818,7 +820,7 @@ function RepairsPage() {
 
                   <div className="space-y-1.5">
                     <Label htmlFor="rep-adv" className="text-xs font-semibold">
-                      Advance Deposit Paid ({currencySymbol})
+                      {t("advanceDepositPaid", "Advance Deposit Paid")} ({currencySymbol})
                     </Label>
                     <Input
                       id="rep-adv"
@@ -833,24 +835,24 @@ function RepairsPage() {
 
                 <div className="space-y-1.5">
                   <Label htmlFor="rep-notes" className="text-xs font-semibold">
-                    Technician Internal Notes
+                    {t("technicianInternalNotes", "Technician Internal Notes")}
                   </Label>
                   <Input
                     id="rep-notes"
                     value={technicianNotes}
                     onChange={(e) => setTechnicianNotes(e.target.value)}
-                    placeholder="e.g. Replacement OLED screen ordered from vendor"
+                    placeholder={t("techNotesPlaceholder", "e.g. Replacement OLED screen ordered from vendor")}
                   />
                 </div>
               </div>
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
                 <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>
-                  Cancel
+                  {t("cancel", "Cancel")}
                 </Button>
                 <Button type="submit" disabled={isSaving} className="font-semibold shadow-sm">
                   {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
-                  Create Job Sheet
+                  {t("createJobSheet", "Create Job Sheet")}
                 </Button>
               </SheetFooter>
             </form>
@@ -868,24 +870,24 @@ function RepairsPage() {
               </div>
               <div>
                 <DialogTitle className="text-lg font-bold text-foreground">
-                  Delete Repair Ticket
+                  {t("deleteRepairTicket", "Delete Repair Ticket")}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Are you sure you want to permanently delete this repair ticket?
+                  {t("deleteRepairDesc", "Are you sure you want to permanently delete this repair ticket?")}
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button
               type="button"
               variant="destructive"
               onClick={() => deleteId && deleteTicket(deleteId)}
             >
-              Delete
+              {t("delete", "Delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

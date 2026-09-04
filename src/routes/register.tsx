@@ -25,6 +25,7 @@ import { validateEmail, validatePassword, sanitizeInput } from "@/lib/validation
 
 import { getCountryOptionList, getCountryByIso } from "@/lib/countries";
 import { appName } from "@/lib/env";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/register")({
   head: () => ({ meta: [{ title: `Start Free Trial · ${appName} SaaS` }] }),
@@ -44,6 +45,7 @@ const INDUSTRIES = [
 ];
 
 function RegisterPage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -204,23 +206,22 @@ function RegisterPage() {
         {/* Value Proposition */}
         <div className="relative z-10 space-y-6 max-w-lg">
           <h2 className="font-display text-3xl sm:text-4xl lg:text-[2.75rem] leading-[1.15] font-bold tracking-tight text-primary-foreground">
-            Your shop, set up in minutes.
+            {t("yourShopMinutes", "Your shop, set up in minutes.")}
           </h2>
 
           <p className="text-base sm:text-lg text-primary-foreground/90 leading-relaxed font-normal">
-            Start a free 7-day trial — no card needed. We pre-load your catalog so you can ring up
-            today.
+            {t("startFreeTrialHero", "Start a free 7-day trial — no card needed. We pre-load your catalog so you can ring up today.")}
           </p>
 
           <div className="space-y-3.5 pt-2">
             {[
-              "Pre-loaded product templates for your industry",
-              "Unlimited invoices, staff logins & customer ledgers",
-              "Instant thermal & WhatsApp receipts",
-              "Automatic daily reports & stock alerts",
-            ].map((feat) => (
+              t("featIndustryTemplates", "Pre-loaded product templates for your industry"),
+              t("featUnlimitedInvoices", "Unlimited invoices, staff logins & customer ledgers"),
+              t("featInstantReceipts", "Instant thermal & WhatsApp receipts"),
+              t("featAutomaticReports", "Automatic daily reports & stock alerts"),
+            ].map((feat, idx) => (
               <div
-                key={feat}
+                key={idx}
                 className="flex items-center gap-3 text-base sm:text-lg text-primary-foreground/95 font-medium"
               >
                 <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary-foreground/15 border border-primary-foreground/30 text-primary-foreground">
@@ -249,7 +250,7 @@ function RegisterPage() {
             to="/login"
             className="hover:text-primary-foreground transition-colors underline font-semibold"
           >
-            Sign In to Existing Store
+            {t("signInToExistingStore", "Sign In to Existing Store")}
           </Link>
         </div>
       </div>
@@ -263,7 +264,7 @@ function RegisterPage() {
               <Store className="size-7" />
             </div>
             <h2 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-              Create Your Store Account
+              {t("createYourStoreAccount", "Create Your Store Account")}
             </h2>
 
             {/* Step Progress Bar */}
@@ -281,8 +282,8 @@ function RegisterPage() {
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground">
               {step === 1
-                ? "Start your 7-day free trial. No credit card required."
-                : "Select your country and business type to tailor your POS."}
+                ? t("startTrialNoCard", "Start your 7-day free trial. No credit card required.")
+                : t("selectCountryBusinessType", "Select your country and business type to tailor your POS.")}
             </p>
           </div>
 
@@ -295,7 +296,7 @@ function RegisterPage() {
                     htmlFor="ownerName"
                     className="text-sm sm:text-base font-bold text-foreground"
                   >
-                    Your Full Name
+                    {t("yourFullName", "Your Full Name")}
                   </Label>
                   <Input
                     id="ownerName"
@@ -313,7 +314,7 @@ function RegisterPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm sm:text-base font-bold text-foreground">
-                    Business Email Address
+                    {t("businessEmailAddress", "Business Email Address")}
                   </Label>
                   <Input
                     id="email"
@@ -335,7 +336,7 @@ function RegisterPage() {
                     htmlFor="password"
                     className="text-sm sm:text-base font-bold text-foreground"
                   >
-                    Password
+                    {t("password", "Password")}
                   </Label>
                   <PasswordInput
                     id="password"
@@ -355,7 +356,7 @@ function RegisterPage() {
                   onClick={handleNextStep}
                   className="w-full h-12 sm:h-13 rounded-xl font-bold gap-2 text-base sm:text-lg mt-2 shadow-sm"
                 >
-                  <span>Continue to Store Profile</span>
+                  <span>{t("continueToStoreProfile", "Continue to Store Profile")}</span>
                   <ChevronRight className="size-5" />
                 </Button>
               </div>
@@ -367,7 +368,7 @@ function RegisterPage() {
                     htmlFor="country"
                     className="text-sm sm:text-base font-bold text-foreground"
                   >
-                    Country / Operating Territory
+                    {t("countryOperatingTerritory", "Country / Operating Territory")}
                   </Label>
                   <SearchableSelect
                     options={getCountryOptionList().map((c) => ({
@@ -376,7 +377,7 @@ function RegisterPage() {
                     }))}
                     value={formData.country}
                     onChange={(val) => setFormData({ ...formData, country: val })}
-                    placeholder="Select country..."
+                    placeholder={t("selectCountryPlaceholder", "Select country...")}
                   />
                 </div>
 
@@ -385,13 +386,13 @@ function RegisterPage() {
                     htmlFor="companyName"
                     className="text-sm sm:text-base font-bold text-foreground"
                   >
-                    Store / Business Name
+                    {t("storeBusinessName", "Store / Business Name")}
                   </Label>
                   <Input
                     id="companyName"
                     value={formData.companyName}
                     onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                    placeholder="e.g. Apex Supermarket & Grocery"
+                    placeholder={t("storeNamePlaceholder", "e.g. Apex Supermarket & Grocery")}
                     className="h-12 sm:h-13 rounded-xl text-base px-4"
                   />
                   {errors.companyName && (
@@ -403,7 +404,7 @@ function RegisterPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="phone" className="text-sm sm:text-base font-bold text-foreground">
-                    Contact Phone Number (Optional)
+                    {t("contactPhoneNumberOptional", "Contact Phone Number (Optional)")}
                   </Label>
                   <Input
                     id="phone"
@@ -419,13 +420,13 @@ function RegisterPage() {
                     htmlFor="industry"
                     className="text-sm sm:text-base font-bold text-foreground"
                   >
-                    Select Business Type
+                    {t("selectBusinessType", "Select Business Type")}
                   </Label>
                   <SearchableSelect
                     options={INDUSTRIES.map((ind) => ({ label: ind, value: ind }))}
                     value={formData.industry}
                     onChange={(val) => setFormData({ ...formData, industry: val })}
-                    placeholder="Choose industry..."
+                    placeholder={t("chooseIndustryPlaceholder", "Choose industry...")}
                   />
                   {errors.industry && (
                     <p className="text-xs sm:text-sm text-destructive mt-1 font-semibold">
@@ -442,7 +443,7 @@ function RegisterPage() {
                     className="h-12 sm:h-13 rounded-xl gap-1.5 px-6 font-bold text-base"
                   >
                     <ChevronLeft className="size-5" />
-                    <span>Back</span>
+                    <span>{t("back", "Back")}</span>
                   </Button>
                   <Button
                     type="submit"
@@ -452,12 +453,12 @@ function RegisterPage() {
                     {isRegistering ? (
                       <>
                         <Loader2 className="size-5 animate-spin" />
-                        <span>Creating Store…</span>
+                        <span>{t("creatingStore", "Creating Store…")}</span>
                       </>
                     ) : (
                       <>
                         <CheckCircle2 className="size-5" />
-                        <span>Start 7-Day Free Trial</span>
+                        <span>{t("startFreeTrial", "Start 7-Day Free Trial")}</span>
                       </>
                     )}
                   </Button>
@@ -468,9 +469,9 @@ function RegisterPage() {
             {/* Link to Sign In */}
             <div className="border-t border-border/80 pt-5 text-center">
               <p className="text-sm sm:text-base text-muted-foreground">
-                Already have a store account?{" "}
+                {t("alreadyHaveAccount", "Already have a store account?")}{" "}
                 <Link to="/login" className="font-bold text-primary hover:underline ml-1">
-                  Sign In
+                  {t("signIn", "Sign In")}
                 </Link>
               </p>
             </div>

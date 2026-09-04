@@ -44,6 +44,7 @@ import { printAccountingStatement } from "@/lib/accounting-print";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { DATE_PERIOD_OPTIONS } from "@/constants";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/accounting-reports")({
   head: () => ({ meta: [{ title: `Accounting Financial Reports · ${appName}` }] }),
@@ -51,6 +52,7 @@ export const Route = createFileRoute("/accounting-reports")({
 });
 
 function AccountingReportsPage() {
+  const { t } = useLanguage();
   const { formatCurrency, currencySymbol } = useCurrency();
   const { formatDate, formatDateTime } = usePreferences();
   const { saasOrg, settings } = useAuth();
@@ -206,21 +208,21 @@ function AccountingReportsPage() {
   }, [filteredVouchers, selectedLedgerAccountId]);
 
   const datePeriodLabels: Record<string, string> = {
-    all: "All Time",
-    this_month: "This Month",
-    last_month: "Last Month",
-    this_year: "This Year",
+    all: t("allTime", "All Time"),
+    this_month: t("thisMonth", "This Month"),
+    last_month: t("lastMonth", "Last Month"),
+    this_year: t("thisYear", "This Year"),
   };
 
   const handleExportTrialBalance = () => {
     exportToCSV(
       trialBalanceData,
       [
-        { key: "code", label: "Account Code" },
-        { key: "name", label: "Account Title" },
-        { key: "type", label: "Account Type" },
-        { key: "debit", label: "Debit Amount" },
-        { key: "credit", label: "Credit Amount" },
+        { key: "code", label: t("accountCode", "Account Code") },
+        { key: "name", label: t("accountTitle", "Account Title") },
+        { key: "type", label: t("accountType", "Account Type") },
+        { key: "debit", label: t("debitAmount", "Debit Amount") },
+        { key: "credit", label: t("creditAmount", "Credit Amount") },
       ],
       "trial-balance",
     );
@@ -228,7 +230,7 @@ function AccountingReportsPage() {
 
   const handlePrint = () => {
     const storeTitle = settings?.storeName || saasOrg?.name || `${appName} Store`;
-    const periodStr = datePeriodLabels[dateRange] || "All Time";
+    const periodStr = datePeriodLabels[dateRange] || t("allTime", "All Time");
     const currSym = currencySymbol || "₹";
 
     if (activeTab === "trial-balance") {
@@ -237,6 +239,7 @@ function AccountingReportsPage() {
         storeName: storeTitle,
         periodLabel: periodStr,
         currencySymbol: currSym,
+        t,
         data: {
           accounts: trialBalanceData,
           totalDebit,
@@ -249,6 +252,7 @@ function AccountingReportsPage() {
         storeName: storeTitle,
         periodLabel: periodStr,
         currencySymbol: currSym,
+        t,
         data: {
           assets,
           liabilities,
@@ -266,6 +270,7 @@ function AccountingReportsPage() {
         storeName: storeTitle,
         periodLabel: periodStr,
         currencySymbol: currSym,
+        t,
         data: {
           grossRevenue,
           costOfGoodsSold,
@@ -283,6 +288,7 @@ function AccountingReportsPage() {
         storeName: storeTitle,
         periodLabel: periodStr,
         currencySymbol: currSym,
+        t,
         data: {
           ledgerRows,
         },
@@ -294,12 +300,18 @@ function AccountingReportsPage() {
     return (
       <div className="page-container space-y-6">
         <PageHeader
-          title="Financial Accounting Reports"
-          description="Generate Trial Balance, Balance Sheet, and Profit & Loss Statements."
+          title={t("financialAccountingReports", "Financial Accounting Reports")}
+          description={t(
+            "financialReportsSubtitle",
+            "Generate Trial Balance, Balance Sheet, and Profit & Loss Statements.",
+          )}
         />
         <ErrorState
-          title="Failed to load accounting data"
-          description="Could not retrieve account ledgers and journal vouchers. Please retry."
+          title={t("failedToLoadAccountingData", "Failed to load accounting data")}
+          description={t(
+            "couldNotRetrieveAccountingData",
+            "Could not retrieve account ledgers and journal vouchers. Please retry.",
+          )}
           onRetry={() => refetchAccounts()}
         />
       </div>
@@ -309,8 +321,11 @@ function AccountingReportsPage() {
   return (
     <div className="page-container space-y-6">
       <PageHeader
-        title="Financial Accounting Reports"
-        description="Double-entry Trial Balance, Balance Sheet, Income Statement, and General Ledgers."
+        title={t("financialAccountingReports", "Financial Accounting Reports")}
+        description={t(
+          "financialReportsDescription",
+          "Double-entry Trial Balance, Balance Sheet, Income Statement, and General Ledgers.",
+        )}
         actions={
           <div className="flex items-center gap-2">
             <Button
@@ -319,7 +334,7 @@ function AccountingReportsPage() {
               onClick={handlePrint}
               className="gap-1.5 font-bold text-xs h-9"
             >
-              <Printer className="size-3.5" /> Print Statement
+              <Printer className="size-3.5" /> {t("printStatement", "Print Statement")}
             </Button>
             <Button
               variant="outline"
@@ -327,7 +342,7 @@ function AccountingReportsPage() {
               onClick={handleExportTrialBalance}
               className="gap-1.5 font-bold text-xs h-9"
             >
-              <FileSpreadsheet className="size-3.5 text-primary" /> Export CSV
+              <FileSpreadsheet className="size-3.5 text-primary" /> {t("exportCsv", "Export CSV")}
             </Button>
           </div>
         }
@@ -342,40 +357,40 @@ function AccountingReportsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="rounded-2xl border border-border/80 bg-gradient-to-br from-primary/5 to-card p-4 shadow-card">
               <div className="flex items-center justify-between text-muted-foreground text-[11px] font-black uppercase">
-                <span>Total Assets</span>
+                <span>{t("totalAssets", "Total Assets")}</span>
                 <Scale className="size-4 text-primary" />
               </div>
               <div className="text-xl font-black text-primary mt-1">
                 {formatCurrency(totalAssets)}
               </div>
-              <p className="text-[10px] text-muted-foreground mt-0.5">Cash, receivables & stock</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{t("cashReceivablesStock", "Cash, receivables & stock")}</p>
             </div>
 
             <div className="rounded-2xl border border-border/80 bg-gradient-to-br from-amber-500/5 to-card p-4 shadow-card">
               <div className="flex items-center justify-between text-muted-foreground text-[11px] font-black uppercase">
-                <span>Total Liabilities</span>
+                <span>{t("totalLiabilities", "Total Liabilities")}</span>
                 <ArrowRightLeft className="size-4 text-amber-500" />
               </div>
               <div className="text-xl font-black text-amber-600 dark:text-amber-400 mt-1">
                 {formatCurrency(totalLiabilities)}
               </div>
-              <p className="text-[10px] text-muted-foreground mt-0.5">Payables & taxes due</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{t("payablesTaxesDue", "Payables & taxes due")}</p>
             </div>
 
             <div className="rounded-2xl border border-border/80 bg-gradient-to-br from-emerald-500/5 to-card p-4 shadow-card">
               <div className="flex items-center justify-between text-muted-foreground text-[11px] font-black uppercase">
-                <span>Gross Trading Revenue</span>
+                <span>{t("grossTradingRevenue", "Gross Trading Revenue")}</span>
                 <DollarSign className="size-4 text-emerald-500" />
               </div>
               <div className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
                 {formatCurrency(grossRevenue)}
               </div>
-              <p className="text-[10px] text-muted-foreground mt-0.5">From sales & revenue heads</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{t("fromSalesRevenueHeads", "From sales & revenue heads")}</p>
             </div>
 
             <div className="rounded-2xl border border-border/80 bg-gradient-to-br from-cyan-500/5 to-card p-4 shadow-card">
               <div className="flex items-center justify-between text-muted-foreground text-[11px] font-black uppercase">
-                <span>Net Operating Margin</span>
+                <span>{t("netOperatingMargin", "Net Operating Margin")}</span>
                 <TrendingUp className="size-4 text-cyan-500" />
               </div>
               <div
@@ -384,7 +399,7 @@ function AccountingReportsPage() {
                 {formatCurrency(netOperatingProfit)}
               </div>
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                Margin: {netMarginPct.toFixed(1)}%
+                {t("margin", "Margin")}: {netMarginPct.toFixed(1)}%
               </p>
             </div>
           </div>
@@ -397,32 +412,32 @@ function AccountingReportsPage() {
                   value="trial-balance"
                   className="font-bold text-xs rounded-xl px-4 py-2 data-[state=active]:bg-card data-[state=active]:shadow-soft"
                 >
-                  <Layers className="size-3.5 mr-1.5" /> Trial Balance
+                  <Layers className="size-3.5 mr-1.5" /> {t("trialBalance", "Trial Balance")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="balance-sheet"
                   className="font-bold text-xs rounded-xl px-4 py-2 data-[state=active]:bg-card data-[state=active]:shadow-soft"
                 >
-                  <Scale className="size-3.5 mr-1.5" /> Balance Sheet
+                  <Scale className="size-3.5 mr-1.5" /> {t("balanceSheet", "Balance Sheet")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="pnl"
                   className="font-bold text-xs rounded-xl px-4 py-2 data-[state=active]:bg-card data-[state=active]:shadow-soft"
                 >
-                  <TrendingUp className="size-3.5 mr-1.5" /> Income Statement (P&L)
+                  <TrendingUp className="size-3.5 mr-1.5" /> {t("incomeStatementPnl", "Income Statement (P&L)")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="ledger"
                   className="font-bold text-xs rounded-xl px-4 py-2 data-[state=active]:bg-card data-[state=active]:shadow-soft"
                 >
-                  <BookOpen className="size-3.5 mr-1.5" /> General Ledger
+                  <BookOpen className="size-3.5 mr-1.5" /> {t("generalLedger", "General Ledger")}
                 </TabsTrigger>
               </TabsList>
 
               {/* Date Range Selector */}
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-bold text-muted-foreground uppercase hidden sm:inline">
-                  Period:
+                  {t("period", "Period:")}
                 </span>
                 <div className="flex bg-muted/60 rounded-xl p-1 border border-border/60">
                   {DATE_PERIOD_OPTIONS.filter((o) =>
@@ -448,10 +463,10 @@ function AccountingReportsPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="text-base font-black text-foreground">
-                        Trial Balance Statement
+                        {t("trialBalanceStatement", "Trial Balance Statement")}
                       </CardTitle>
                       <CardDescription className="text-xs">
-                        Double-entry verification ensuring Total Debits equal Total Credits.
+                        {t("trialBalanceDescription", "Double-entry verification ensuring Total Debits equal Total Credits.")}
                       </CardDescription>
                     </div>
                     {Math.abs(totalDebit - totalCredit) < 0.01 ? (
@@ -459,11 +474,11 @@ function AccountingReportsPage() {
                         variant="outline"
                         className="bg-success/15 text-success border-success/30 font-bold text-xs py-1 px-3"
                       >
-                        <CheckCircle2 className="size-3.5 mr-1.5" /> Balanced
+                        <CheckCircle2 className="size-3.5 mr-1.5" /> {t("balanced", "Balanced")}
                       </Badge>
                     ) : (
                       <Badge variant="destructive" className="font-bold text-xs py-1 px-3">
-                        <AlertCircle className="size-3.5 mr-1.5" /> Discrepancy:{" "}
+                        <AlertCircle className="size-3.5 mr-1.5" /> {t("discrepancy", "Discrepancy:")}{" "}
                         {formatCurrency(Math.abs(totalDebit - totalCredit))}
                       </Badge>
                     )}
@@ -474,14 +489,14 @@ function AccountingReportsPage() {
                     <Table className="min-w-[700px] text-xs">
                       <TableHeader className="bg-muted/40">
                         <TableRow>
-                          <TableHead className="w-28 font-bold">Code</TableHead>
-                          <TableHead className="font-bold">Account Title</TableHead>
-                          <TableHead className="font-bold">Category</TableHead>
+                          <TableHead className="w-28 font-bold">{t("code", "Code")}</TableHead>
+                          <TableHead className="font-bold">{t("accountTitle", "Account Title")}</TableHead>
+                          <TableHead className="font-bold">{t("category", "Category")}</TableHead>
                           <TableHead className="text-right w-44 font-bold text-primary">
-                            Debit (+)
+                            {t("debitPlus", "Debit (+)")}
                           </TableHead>
                           <TableHead className="text-right w-44 font-bold text-muted-foreground">
-                            Credit (-)
+                            {t("creditMinus", "Credit (-)")}
                           </TableHead>
                         </TableRow>
                       </TableHeader>
@@ -511,8 +526,7 @@ function AccountingReportsPage() {
                               colSpan={5}
                               className="p-12 text-center text-muted-foreground text-xs"
                             >
-                              No ledger accounts found. Go to Chart of Accounts to add or seed
-                              accounts.
+                              {t("noLedgerAccountsFound", "No ledger accounts found. Go to Chart of Accounts to add or seed accounts.")}
                             </TableCell>
                           </TableRow>
                         )}
@@ -523,7 +537,7 @@ function AccountingReportsPage() {
                             colSpan={3}
                             className="p-3.5 text-right uppercase tracking-wider text-xs font-black"
                           >
-                            Grand Statement Total
+                            {t("grandStatementTotal", "Grand Statement Total")}
                           </td>
                           <td className="p-3.5 text-right font-mono text-primary font-black">
                             {formatCurrency(totalDebit)}
@@ -546,10 +560,10 @@ function AccountingReportsPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="text-base font-black text-foreground">
-                        Balance Sheet Statement
+                        {t("balanceSheetStatement", "Balance Sheet Statement")}
                       </CardTitle>
                       <CardDescription className="text-xs">
-                        Enterprise financial position: Assets = Total Liabilities + Equity Capital.
+                        {t("balanceSheetDescription", "Enterprise financial position: Assets = Total Liabilities + Equity Capital.")}
                       </CardDescription>
                     </div>
                     {isBalanced ? (
@@ -557,11 +571,11 @@ function AccountingReportsPage() {
                         variant="outline"
                         className="bg-success/15 text-success border-success/30 font-bold text-xs py-1 px-3"
                       >
-                        <CheckCircle2 className="size-3.5 mr-1.5" /> Equation Balanced
+                        <CheckCircle2 className="size-3.5 mr-1.5" /> {t("equationBalanced", "Equation Balanced")}
                       </Badge>
                     ) : (
                       <Badge variant="destructive" className="font-bold text-xs py-1 px-3">
-                        Variance:{" "}
+                        {t("variance", "Variance:")}{" "}
                         {formatCurrency(Math.abs(totalAssets - totalLiabilitiesAndEquity))}
                       </Badge>
                     )}
@@ -573,7 +587,7 @@ function AccountingReportsPage() {
                     <div className="space-y-4">
                       <div className="rounded-2xl border border-border/80 bg-card overflow-hidden shadow-sm">
                         <div className="bg-primary/10 p-3.5 border-b border-border/60 font-black uppercase tracking-wider flex justify-between text-xs text-primary">
-                          <span>Total Enterprise Assets</span>
+                          <span>{t("totalEnterpriseAssets", "Total Enterprise Assets")}</span>
                           <span className="font-mono">{formatCurrency(totalAssets)}</span>
                         </div>
                         <Table className="text-xs">
@@ -597,7 +611,7 @@ function AccountingReportsPage() {
                                   colSpan={2}
                                   className="p-6 text-center text-muted-foreground text-xs"
                                 >
-                                  No asset accounts recorded
+                                  {t("noAssetAccountsRecorded", "No asset accounts recorded")}
                                 </TableCell>
                               </TableRow>
                             )}
@@ -611,7 +625,7 @@ function AccountingReportsPage() {
                       {/* Liabilities */}
                       <div className="rounded-2xl border border-border/80 bg-card overflow-hidden shadow-sm">
                         <div className="bg-amber-500/10 p-3.5 border-b border-border/60 font-black uppercase tracking-wider flex justify-between text-xs text-amber-600 dark:text-amber-400">
-                          <span>Total Liabilities</span>
+                          <span>{t("totalLiabilities", "Total Liabilities")}</span>
                           <span className="font-mono">{formatCurrency(totalLiabilities)}</span>
                         </div>
                         <Table className="text-xs">
@@ -635,7 +649,7 @@ function AccountingReportsPage() {
                                   colSpan={2}
                                   className="p-6 text-center text-muted-foreground text-xs"
                                 >
-                                  No liability accounts recorded
+                                  {t("noLiabilityAccountsRecorded", "No liability accounts recorded")}
                                 </TableCell>
                               </TableRow>
                             )}
@@ -646,7 +660,7 @@ function AccountingReportsPage() {
                       {/* Equity */}
                       <div className="rounded-2xl border border-border/80 bg-card overflow-hidden shadow-sm">
                         <div className="bg-emerald-500/10 p-3.5 border-b border-border/60 font-black uppercase tracking-wider flex justify-between text-xs text-emerald-600 dark:text-emerald-400">
-                          <span>Owner's Equity & Retained Capital</span>
+                          <span>{t("ownersEquityAndRetainedCapital", "Owner's Equity & Retained Capital")}</span>
                           <span className="font-mono">{formatCurrency(totalEquity)}</span>
                         </div>
                         <Table className="text-xs">
@@ -670,7 +684,7 @@ function AccountingReportsPage() {
                                   colSpan={2}
                                   className="p-6 text-center text-muted-foreground text-xs"
                                 >
-                                  No equity accounts recorded
+                                  {t("noEquityAccountsRecorded", "No equity accounts recorded")}
                                 </TableCell>
                               </TableRow>
                             )}
@@ -681,7 +695,7 @@ function AccountingReportsPage() {
                       {/* Total Liabilities & Equity Summary */}
                       <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 flex justify-between items-center text-xs font-black text-foreground">
                         <span className="uppercase tracking-wider">
-                          Total Liabilities & Equity:
+                          {t("totalLiabilitiesAndEquity", "Total Liabilities & Equity:")}
                         </span>
                         <span className="font-mono font-black text-base text-primary">
                           {formatCurrency(totalLiabilitiesAndEquity)}
@@ -700,31 +714,33 @@ function AccountingReportsPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="text-base font-black text-foreground">
-                        Profit & Loss Statement (Income Statement)
+                        {t("profitAndLossStatement", "Profit & Loss Statement (Income Statement)")}
                       </CardTitle>
                       <CardDescription className="text-xs">
-                        Trading revenue, Cost of Goods Sold, operating overheads, and Net Operating
-                        Income.
+                        {t(
+                          "pnlDescription",
+                          "Trading revenue, Cost of Goods Sold, operating overheads, and Net Operating Income.",
+                        )}
                       </CardDescription>
                     </div>
                     <Badge
                       variant="outline"
                       className={`font-black text-xs py-1 px-3 ${netOperatingProfit >= 0 ? "bg-success/15 text-success border-success/30" : "bg-destructive/15 text-destructive border-destructive/30"}`}
                     >
-                      Net Income: {formatCurrency(netOperatingProfit)}
+                      {t("netIncome", "Net Income:")} {formatCurrency(netOperatingProfit)}
                     </Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-4 space-y-6">
                   <div className="rounded-xl border border-border/80 overflow-hidden bg-card text-xs">
                     <div className="bg-muted/40 p-3 font-black uppercase tracking-wider text-muted-foreground border-b border-border/60">
-                      1. Operating Revenue & Income
+                      1. {t("operatingRevenueAndIncome", "Operating Revenue & Income")}
                     </div>
                     <Table>
                       <TableBody className="divide-y divide-border/60">
                         <TableRow>
                           <TableCell className="font-bold pl-5">
-                            Gross Point-of-Sale Trading Revenue
+                            {t("grossPosTradingRevenue", "Gross Point-of-Sale Trading Revenue")}
                           </TableCell>
                           <TableCell className="text-right font-mono font-black pr-5">
                             {formatCurrency(grossRevenue)}
@@ -746,13 +762,13 @@ function AccountingReportsPage() {
 
                   <div className="rounded-xl border border-border/80 overflow-hidden bg-card text-xs">
                     <div className="bg-muted/40 p-3 font-black uppercase tracking-wider text-muted-foreground border-b border-border/60">
-                      2. Cost of Sales / COGS
+                      2. {t("costOfSalesCogs", "Cost of Sales / COGS")}
                     </div>
                     <Table>
                       <TableBody className="divide-y divide-border/60">
                         <TableRow>
                           <TableCell className="font-bold pl-5">
-                            Cost of Goods Sold (Purchases & Inventories)
+                            {t("costOfGoodsSoldPurchases", "Cost of Goods Sold (Purchases & Inventories)")}
                           </TableCell>
                           <TableCell className="text-right font-mono font-black pr-5 text-destructive">
                             - {formatCurrency(costOfGoodsSold)}
@@ -760,7 +776,7 @@ function AccountingReportsPage() {
                         </TableRow>
                         <TableRow className="bg-primary/5 font-black">
                           <TableCell className="pl-5 text-primary text-sm">
-                            Gross Trading Profit
+                            {t("grossTradingProfit", "Gross Trading Profit")}
                           </TableCell>
                           <TableCell className="text-right font-mono font-black text-primary text-sm pr-5">
                             {formatCurrency(grossProfit)}
@@ -772,7 +788,7 @@ function AccountingReportsPage() {
 
                   <div className="rounded-xl border border-border/80 overflow-hidden bg-card text-xs">
                     <div className="bg-muted/40 p-3 font-black uppercase tracking-wider text-muted-foreground border-b border-border/60">
-                      3. Operating Expenses & Overheads
+                      3. {t("operatingExpensesOverheads", "Operating Expenses & Overheads")}
                     </div>
                     <Table>
                       <TableBody className="divide-y divide-border/60">
@@ -789,7 +805,7 @@ function AccountingReportsPage() {
                         {otherExpenses.length === 0 && (
                           <TableRow>
                             <TableCell className="pl-5 font-bold">
-                              General Operating Expenses
+                              {t("generalOperatingExpenses", "General Operating Expenses")}
                             </TableCell>
                             <TableCell className="text-right font-mono font-bold pr-5 text-destructive">
                               - {formatCurrency(totalOtherExpenses)}
@@ -797,7 +813,7 @@ function AccountingReportsPage() {
                           </TableRow>
                         )}
                         <TableRow className="bg-muted/30 font-black text-sm">
-                          <TableCell className="pl-5">Net Operating Profit / (Loss)</TableCell>
+                          <TableCell className="pl-5">{t("netOperatingProfitLoss", "Net Operating Profit / (Loss)")}</TableCell>
                           <TableCell
                             className={`text-right font-mono font-black pr-5 text-sm ${netOperatingProfit >= 0 ? "text-success" : "text-destructive"}`}
                           >
@@ -818,17 +834,17 @@ function AccountingReportsPage() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                       <CardTitle className="text-base font-black text-foreground">
-                        General Ledger Journal Audit
+                        {t("generalLedgerJournalAudit", "General Ledger Journal Audit")}
                       </CardTitle>
                       <CardDescription className="text-xs">
-                        Chronological record of all double-entry debit and credit vouchers.
+                        {t("generalLedgerDescription", "Chronological record of all double-entry debit and credit vouchers.")}
                       </CardDescription>
                     </div>
 
                     <div className="w-full sm:w-72">
                       <SearchableSelect
                         options={[
-                          { value: "all", label: "All Ledger Accounts" },
+                          { value: "all", label: t("allLedgerAccounts", "All Ledger Accounts") },
                           ...accounts.map((a) => ({
                             value: a.id,
                             label: `[${a.code}] ${a.name}`,
@@ -836,7 +852,7 @@ function AccountingReportsPage() {
                         ]}
                         value={selectedLedgerAccountId}
                         onChange={(val) => setSelectedLedgerAccountId(val)}
-                        placeholder="Filter by Account..."
+                        placeholder={t("filterByAccount", "Filter by Account...")}
                       />
                     </div>
                   </div>
@@ -846,13 +862,13 @@ function AccountingReportsPage() {
                     <Table className="min-w-[800px] text-xs">
                       <TableHeader className="bg-muted/40">
                         <TableRow>
-                          <TableHead>Voucher #</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Debit Account (+)</TableHead>
-                          <TableHead>Credit Account (-)</TableHead>
-                          <TableHead className="text-right">Amount</TableHead>
-                          <TableHead>Narration</TableHead>
+                          <TableHead>{t("voucherNumber", "Voucher #")}</TableHead>
+                          <TableHead>{t("date", "Date")}</TableHead>
+                          <TableHead>{t("type", "Type")}</TableHead>
+                          <TableHead>{t("debitAccountPlus", "Debit Account (+)")}</TableHead>
+                          <TableHead>{t("creditAccountMinus", "Credit Account (-)")}</TableHead>
+                          <TableHead className="text-right">{t("amount", "Amount")}</TableHead>
+                          <TableHead>{t("narration", "Narration")}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody className="divide-y divide-border/60">
@@ -889,7 +905,7 @@ function AccountingReportsPage() {
                               colSpan={7}
                               className="p-12 text-center text-muted-foreground text-xs"
                             >
-                              No journal vouchers match the selected period or account.
+                              {t("noVouchersMatchFilter", "No journal vouchers match the selected period or account.")}
                             </TableCell>
                           </TableRow>
                         )}

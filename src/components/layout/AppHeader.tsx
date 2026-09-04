@@ -387,7 +387,7 @@ export function AppHeader() {
           >
             <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground group-hover:text-primary transition-colors" />
             <div className="flex items-center h-10 md:w-40 xl:w-64 rounded-xl border border-border/80 bg-card/80 backdrop-blur-sm pl-10 pr-3 xl:pr-10 text-xs font-medium text-muted-foreground select-none hover:border-primary/50 hover:bg-card shadow-xs transition-all overflow-hidden">
-              <span className="truncate">Search modules, products, sales...</span>
+              <span className="truncate">{t("searchPlaceholder", "Search modules, products, sales...")}</span>
             </div>
             <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-lg border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] font-extrabold text-muted-foreground/80 xl:inline-flex shadow-2xs">
               <Command className="size-3" />K
@@ -421,7 +421,7 @@ export function AppHeader() {
               className="hidden sm:inline-flex shadow-sm text-xs font-bold"
             >
               <Link to="/pos">
-                <Plus className="size-4" /> New Sale
+                <Plus className="size-4" /> {t("newSale", "New Sale")}
               </Link>
             </Button>
           )}
@@ -534,7 +534,7 @@ export function AppHeader() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-80">
                 <DropdownMenuLabel className="flex items-center justify-between">
-                  <span className="font-bold text-xs">Notifications</span>
+                  <span className="font-bold text-xs">{t("notifications", "Notifications")}</span>
                   {unread > 0 ? (
                     <button
                       type="button"
@@ -550,11 +550,11 @@ export function AppHeader() {
                       }}
                       className="text-[11px] font-bold text-primary hover:underline cursor-pointer"
                     >
-                      Mark all read
+                      {t("markAllRead", "Mark all read")}
                     </button>
                   ) : (
                     <span className="text-[11px] font-normal text-muted-foreground">
-                      All caught up
+                      {t("allCaughtUp", "All caught up")}
                     </span>
                   )}
                 </DropdownMenuLabel>
@@ -598,7 +598,7 @@ export function AppHeader() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link to="/notifications" className="justify-center text-sm font-medium">
-                    View all notifications
+                    {t("viewAllNotifications", "View all notifications")}
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -637,16 +637,16 @@ export function AppHeader() {
 
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link to="/profile">{t("profile") || "Profile"}</Link>
+                <Link to="/profile">{t("profile", "Profile")}</Link>
               </DropdownMenuItem>
               {hasPermissionForRoute(user, "/settings", user?.role === "super_admin", saasPlan)
                 .allowed && (
                 <DropdownMenuItem asChild>
-                  <Link to="/settings">{t("settings") || "Settings"}</Link>
+                  <Link to="/settings">{t("settings", "Settings")}</Link>
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem asChild>
-                <Link to="/help">{t("help") || "Help center"}</Link>
+                <Link to="/help">{t("help", "Help Center")}</Link>
               </DropdownMenuItem>
 
               <DropdownMenuItem
@@ -656,7 +656,7 @@ export function AppHeader() {
                 <span className="flex items-center gap-2">
                   <Sun className="size-4 dark:hidden" />
                   <Moon className="hidden size-4 dark:block" />
-                  <span>Appearance</span>
+                  <span>{t("appearance", "Appearance")}</span>
                 </span>
                 <span className="text-xs text-muted-foreground capitalize">{theme}</span>
               </DropdownMenuItem>
@@ -667,7 +667,7 @@ export function AppHeader() {
                   onClick={handleCloseRegister}
                   className="text-warning flex items-center gap-2 font-medium"
                 >
-                  <Wallet className="size-4" /> {t("closeRegister") || "Close Register"}
+                  <Wallet className="size-4" /> {t("closeRegister", "Close Register")}
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem
@@ -677,7 +677,7 @@ export function AppHeader() {
                 }}
                 className="text-destructive flex items-center gap-2 font-medium cursor-pointer"
               >
-                <LogOut className="size-4" /> {t("logout") || "Sign out"}
+                <LogOut className="size-4" /> {t("logout", "Sign out")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -717,7 +717,7 @@ export function AppHeader() {
               >
                 <Link to="/pos" className="flex items-center justify-center gap-2">
                   <Plus className="size-5" />
-                  <span>Launch POS / New Sale</span>
+                  <span>{t("openPosTerminal", "Launch POS / New Sale")}</span>
                 </Link>
               </Button>
             )}

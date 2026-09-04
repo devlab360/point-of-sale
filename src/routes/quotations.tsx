@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { appName } from "@/lib/env";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
@@ -75,6 +76,7 @@ type QuotationLineItem = {
 };
 
 function QuotationsPage() {
+  const { t } = useLanguage();
   const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency, currencySymbol } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
@@ -372,10 +374,10 @@ function QuotationsPage() {
   return (
     <>
       <DataPage
-        title="B2B Quotations & Estimates"
-        description="Create proforma invoices, price quotations, and convert them to B2B invoices."
-        primaryAction={{ label: "Create Quotation", onClick: () => setIsAddOpen(true) }}
-        searchPlaceholder="Search by quotation # or customer..."
+        title={t("quotationsEstimates", "B2B Quotations & Estimates")}
+        description={t("manageQuotationsDesc", "Create proforma invoices, price quotations, and convert them to B2B invoices.")}
+        primaryAction={{ label: t("newQuotation", "Create Quotation"), onClick: () => setIsAddOpen(true) }}
+        searchPlaceholder={t("searchQuotations", "Search by quotation # or customer...")}
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={false}
@@ -386,15 +388,15 @@ function QuotationsPage() {
           <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
             <div className="flex-1 space-y-4">
               <div className="space-y-2">
-                <Label>Status</Label>
+                <Label>{t("status", "Status")}</Label>
                 <SearchableSelect
                   options={[
-                    { value: "", label: "All Statuses" },
+                    { value: "", label: t("allStatuses", "All Statuses") },
                     ...QUOTATION_STATUSES.map((q) => ({ value: q.value, label: q.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder="Filter by Status"
+                  placeholder={t("filterByStatus", "Filter by Status")}
                 />
               </div>
             </div>
@@ -406,7 +408,7 @@ function QuotationsPage() {
                   close();
                 }}
               >
-                Apply Filters
+                {t("applyFilters", "Apply Filters")}
               </Button>
             </div>
           </div>
@@ -415,7 +417,7 @@ function QuotationsPage() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
               <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Total Quotes
+                {t("totalQuotations", "Total Quotes")}
               </div>
               <div className="mt-1 text-xl sm:text-2xl font-black text-foreground">
                 {rawQuotations.length}
@@ -423,7 +425,7 @@ function QuotationsPage() {
             </div>
             <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
               <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Converted
+                {t("converted", "Converted")}
               </div>
               <div className="mt-1 text-xl sm:text-2xl font-black text-success">
                 {rawQuotations.filter((q) => q.status === "converted").length}
@@ -431,7 +433,7 @@ function QuotationsPage() {
             </div>
             <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
               <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Pending / Sent
+                {t("pending", "Pending / Sent")}
               </div>
               <div className="mt-1 text-xl sm:text-2xl font-black text-amber-500">
                 {rawQuotations.filter((q) => q.status === "sent" || q.status === "draft").length}
@@ -439,7 +441,7 @@ function QuotationsPage() {
             </div>
             <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
               <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Estimated Value
+                {t("estimatedValue", "Estimated Value")}
               </div>
               <div className="mt-1 text-xl sm:text-2xl font-black text-primary truncate">
                 {formatCurrency(
@@ -457,13 +459,13 @@ function QuotationsPage() {
               <Table className="min-w-[800px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Quotation #</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Quote Date</TableHead>
-                    <TableHead>Valid Until</TableHead>
-                    <TableHead className="text-right">Estimated Total</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("quoteNumber", "Quotation #")}</TableHead>
+                    <TableHead>{t("customer", "Customer")}</TableHead>
+                    <TableHead>{t("date", "Quote Date")}</TableHead>
+                    <TableHead>{t("validUntil", "Valid Until")}</TableHead>
+                    <TableHead className="text-right">{t("total", "Estimated Total")}</TableHead>
+                    <TableHead>{t("status", "Status")}</TableHead>
+                    <TableHead className="text-right">{t("actions", "Actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -472,13 +474,13 @@ function QuotationsPage() {
                       <TableCell colSpan={7} className="h-64 text-center">
                         <EmptyState
                           icon={FileText}
-                          title="No quotations found"
+                          title={t("noQuotationsFound", "No quotations found")}
                           description={
                             search
-                              ? "Try adjusting your search query."
-                              : "Create your first B2B quotation to get started."
+                              ? t("adjustSearch", "Try adjusting your search query.")
+                              : t("noQuotationsYet", "Create your first B2B quotation to get started.")
                           }
-                          actionLabel="Create Quotation"
+                          actionLabel={t("newQuotation", "Create Quotation")}
                           onAction={() => setIsAddOpen(true)}
                           className="border-none bg-transparent my-0 py-8 shadow-none"
                         />
@@ -508,11 +510,11 @@ function QuotationsPage() {
                         <TableCell className="whitespace-nowrap">
                           {q.status === "converted" ? (
                             <Badge className="bg-success/12 text-success border-success/25 text-[10px] font-bold">
-                              Converted to Invoice
+                              {t("convertedToInvoice", "Converted to Invoice")}
                             </Badge>
                           ) : q.status === "sent" ? (
                             <Badge className="bg-info/12 text-info border-info/25 text-[10px] font-bold">
-                              Sent to Client
+                              {t("sentToClient", "Sent to Client")}
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="text-[10px] font-bold capitalize">
@@ -532,22 +534,21 @@ function QuotationsPage() {
                                 onClick={() => setViewItem(q)}
                                 className="text-xs font-semibold"
                               >
-                                <FileText className="mr-2 size-3.5 text-primary" /> View / Print
-                                Quote
+                                <FileText className="mr-2 size-3.5 text-primary" /> {t("view", "View / Print Quote")}
                               </DropdownMenuItem>
                               {q.status !== "converted" && (
                                 <DropdownMenuItem
                                   onClick={() => convertToInvoice(q)}
                                   className="text-xs font-bold text-success"
                                 >
-                                  <ArrowRightLeft className="mr-2 size-3.5" /> Convert to Invoice
+                                  <ArrowRightLeft className="mr-2 size-3.5" /> {t("convertToSale", "Convert to Invoice")}
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuItem
                                 className="text-destructive text-xs font-semibold"
                                 onClick={() => deleteQuotation(q.id)}
                               >
-                                <Trash2 className="mr-2 size-3.5" /> Delete
+                                <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -738,12 +739,12 @@ function QuotationsPage() {
                   <Table className="text-xs min-w-[500px]">
                     <TableHeader className="bg-muted/50 font-semibold uppercase text-muted-foreground">
                       <TableRow>
-                        <TableHead className="p-3 text-left">Item</TableHead>
-                        <TableHead className="p-3 text-center w-24">Qty</TableHead>
+                        <TableHead className="p-3 text-left">{t("quotations.item", "Item")}</TableHead>
+                        <TableHead className="p-3 text-center w-24">{t("common.qty", "Qty")}</TableHead>
                         <TableHead className="p-3 text-right w-32">
-                          Unit Price ({currencySymbol})
+                          {t("quotations.unitPrice", "Unit Price")} ({currencySymbol})
                         </TableHead>
-                        <TableHead className="p-3 text-right w-28">Total</TableHead>
+                        <TableHead className="p-3 text-right w-28">{t("common.total", "Total")}</TableHead>
                         <TableHead className="p-3 text-center w-12"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -907,10 +908,10 @@ function QuotationsPage() {
                   <Table className="text-xs min-w-[400px]">
                     <TableHeader className="bg-muted/50 font-semibold uppercase text-muted-foreground">
                       <TableRow>
-                        <TableHead className="p-2.5 text-left">Item Name</TableHead>
-                        <TableHead className="p-2.5 text-center">Qty</TableHead>
-                        <TableHead className="p-2.5 text-right">Price</TableHead>
-                        <TableHead className="p-2.5 text-right">Total</TableHead>
+                        <TableHead className="p-2.5 text-left">{t("quotations.itemName", "Item Name")}</TableHead>
+                        <TableHead className="p-2.5 text-center">{t("common.qty", "Qty")}</TableHead>
+                        <TableHead className="p-2.5 text-right">{t("common.price", "Price")}</TableHead>
+                        <TableHead className="p-2.5 text-right">{t("common.total", "Total")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

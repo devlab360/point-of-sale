@@ -59,6 +59,7 @@ import {
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CUSTOMER_TYPES, CUSTOMER_STATUSES } from "@/constants";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/loyalty")({
   head: () => ({ meta: [{ title: `Loyalty & Rewards Program — ${appName}` }] }),
@@ -214,6 +215,7 @@ function getTierVisuals(tierName: string, colorClass: string) {
 }
 
 function LoyaltyPage() {
+  const { t } = useLanguage();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
   const { formatAppCurrency } = useAppFormatter();
@@ -400,15 +402,15 @@ function LoyaltyPage() {
     },
     onSuccess: (res) => {
       if (res?.success) {
-        toast.success("Loyalty program settings saved successfully!");
+        toast.success(t("loyaltySavedSuccess", "Loyalty program settings saved successfully!"));
         queryClient.invalidateQueries({ queryKey: ["settings", orgId] });
         setIsConfigOpen(false);
       } else {
-        toast.error(res?.error || "Failed to update settings");
+        toast.error(res?.error || t("updateFailed", "Failed to update settings"));
       }
     },
     onError: (err: any) => {
-      toast.error(err?.message || "An unexpected error occurred");
+      toast.error(err?.message || t("unexpectedError", "An unexpected error occurred"));
     },
   });
 
@@ -424,14 +426,14 @@ function LoyaltyPage() {
     },
     onSuccess: (res) => {
       if (res?.success) {
-        toast.success("Customer profile updated successfully!");
+        toast.success(t("customerUpdatedSuccess", "Customer profile updated successfully!"));
         queryClient.invalidateQueries({ queryKey: ["customers", orgId] });
       } else {
-        toast.error(res?.error || "Failed to update customer");
+        toast.error(res?.error || t("failedToUpdateCustomer", "Failed to update customer"));
       }
     },
     onError: (err: any) => {
-      toast.error(err?.message || "Failed to update customer");
+      toast.error(err?.message || t("failedToUpdateCustomer", "Failed to update customer"));
     },
   });
 
@@ -439,7 +441,7 @@ function LoyaltyPage() {
     e.preventDefault();
     for (let i = 0; i < editTiers.length; i++) {
       if (!editTiers[i].tier.trim()) {
-        toast.error(`Tier #${i + 1} must have a valid name`);
+        toast.error(t("tierNameRequired", `Tier #${i + 1} must have a valid name`));
         return;
       }
     }
@@ -475,7 +477,7 @@ function LoyaltyPage() {
     if (!activeCustomer) return;
     const qty = parseInt(adjustAmount, 10);
     if (isNaN(qty) || qty <= 0) {
-      toast.error("Please enter a valid points amount greater than 0");
+      toast.error(t("validPointsRequired", "Please enter a valid points amount greater than 0"));
       return;
     }
 
@@ -494,7 +496,7 @@ function LoyaltyPage() {
     e.preventDefault();
     if (!activeCustomer) return;
     if (!editCustomerName.trim()) {
-      toast.error("Customer name is required");
+      toast.error(t("customerNameRequired", "Customer name is required"));
       return;
     }
 
@@ -523,7 +525,7 @@ function LoyaltyPage() {
 
   const removeEditTier = (index: number) => {
     if (editTiers.length <= 1) {
-      toast.error("You must have at least one loyalty tier");
+      toast.error(t("atLeastOneTierRequired", "You must have at least one loyalty tier"));
       return;
     }
     const updated = [...editTiers];
@@ -578,14 +580,16 @@ function LoyaltyPage() {
           <div className="space-y-2 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/15 border border-primary/25 text-primary text-xs font-bold tracking-wide backdrop-blur-md">
               <Sparkles className="size-3.5 animate-pulse text-amber-500" />
-              <span>LOYALTY & REWARDS SYSTEM</span>
+              <span>{t("loyaltyAndRewardsSystem", "LOYALTY & REWARDS SYSTEM")}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-foreground">
-              Customer Retention & VIP Loyalty
+              {t("customerRetentionVipLoyalty", "Customer Retention & VIP Loyalty")}
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              Reward your most frequent buyers, elevate customer lifetime value, and automate tier
-              progression with point multipliers and custom VIP perks.
+              {t(
+                "loyaltySubtitleDesc",
+                "Reward your most frequent buyers, elevate customer lifetime value, and automate tier progression with point multipliers and custom VIP perks.",
+              )}
             </p>
           </div>
 
@@ -597,13 +601,13 @@ function LoyaltyPage() {
                 if (customers.length > 0) {
                   handleOpenCustomerDrawer(customers[0], "adjust");
                 } else {
-                  toast.error("No customers available to view or adjust");
+                  toast.error(t("noCustomersAvailable", "No customers available to view or adjust"));
                 }
               }}
               className="gap-2 border-border/80 bg-background/80 hover:bg-muted/80 backdrop-blur shadow-sm text-xs font-bold rounded-xl"
             >
               <Coins className="size-4 text-warning" />
-              Member Drawer
+              {t("memberDrawer", "Member Drawer")}
             </Button>
             <Button
               size="lg"
@@ -611,7 +615,7 @@ function LoyaltyPage() {
               className="gap-2 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] transition-all text-xs font-bold rounded-xl"
             >
               <SlidersHorizontal className="size-4" />
-              Configure Program & Tiers
+              {t("configureProgramTiers", "Configure Program & Tiers")}
             </Button>
           </div>
         </div>
@@ -623,7 +627,7 @@ function LoyaltyPage() {
         <div className="rounded-2xl border border-border/80 bg-card/90 backdrop-blur p-5 shadow-sm hover:shadow-md hover:border-primary/40 transition-all group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              Enrolled Members
+              {t("enrolledMembers", "Enrolled Members")}
             </span>
             <div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary border border-primary/20 group-hover:scale-110 transition-transform">
               <Users className="size-5" />
@@ -635,7 +639,10 @@ function LoyaltyPage() {
             </div>
             <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
               <span className="inline-block size-2 rounded-full bg-success animate-ping" />
-              <span>{tierCounts[activeTiers[activeTiers.length - 1]?.tier] || 0} in VIP tier</span>
+              <span>
+                {tierCounts[activeTiers[activeTiers.length - 1]?.tier] || 0}{" "}
+                {t("inVipTier", "in VIP tier")}
+              </span>
             </div>
           </div>
         </div>
@@ -644,7 +651,7 @@ function LoyaltyPage() {
         <div className="rounded-2xl border border-border/80 bg-card/90 backdrop-blur p-5 shadow-sm hover:shadow-md hover:border-amber-500/40 transition-all group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              Points in Circulation
+              {t("pointsInCirculation", "Points in Circulation")}
             </span>
             <div className="grid size-10 place-items-center rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 group-hover:scale-110 transition-transform">
               <Star className="size-5 fill-amber-500/30" />
@@ -655,7 +662,7 @@ function LoyaltyPage() {
               {totalPoints.toLocaleString()}
             </div>
             <div className="mt-1 text-xs text-muted-foreground font-medium">
-              ≈ {formatAppCurrency(totalRedemptionValue)} store credit value
+              ≈ {formatAppCurrency(totalRedemptionValue)} {t("storeCreditValue", "store credit value")}
             </div>
           </div>
         </div>
@@ -664,7 +671,7 @@ function LoyaltyPage() {
         <div className="rounded-2xl border border-border/80 bg-card/90 backdrop-blur p-5 shadow-sm hover:shadow-md hover:border-emerald-500/40 transition-all group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              Average Customer LTV
+              {t("avgCustomerLtv", "Average Customer LTV")}
             </span>
             <div className="grid size-10 place-items-center rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 group-hover:scale-110 transition-transform">
               <TrendingUp className="size-5" />
@@ -675,7 +682,7 @@ function LoyaltyPage() {
               {formatAppCurrency(avgLtv)}
             </div>
             <div className="mt-1 text-xs text-muted-foreground font-medium">
-              Average spend per loyalty member
+              {t("avgSpendPerMember", "Average spend per loyalty member")}
             </div>
           </div>
         </div>
@@ -684,7 +691,7 @@ function LoyaltyPage() {
         <div className="rounded-2xl border border-border/80 bg-card/90 backdrop-blur p-5 shadow-sm hover:shadow-md hover:border-indigo-500/40 transition-all group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              Earning & Redemption
+              {t("earningAndRedemption", "Earning & Redemption")}
             </span>
             <div className="grid size-10 place-items-center rounded-xl bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 group-hover:scale-110 transition-transform">
               <Gift className="size-5" />
@@ -696,7 +703,7 @@ function LoyaltyPage() {
               {activeRules.earnRate}
             </div>
             <div className="mt-1 text-xs text-muted-foreground font-medium">
-              Redeem: 100 pts = {formatAppCurrency(activeRules.redemptionRate)}
+              {t("redeemRatio", "Redeem: 100 pts")} = {formatAppCurrency(activeRules.redemptionRate)}
             </div>
           </div>
         </div>
@@ -710,10 +717,13 @@ function LoyaltyPage() {
             <div>
               <h2 className="text-lg font-black text-foreground flex items-center gap-2">
                 <ShieldCheck className="size-5 text-primary" />
-                Active Loyalty Tiers & Benefits
+                {t("activeLoyaltyTiersBenefits", "Active Loyalty Tiers & Benefits")}
               </h2>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Customers dynamically unlock elevated tiers and privileges as they collect points.
+                {t(
+                  "loyaltyTiersHelp",
+                  "Customers dynamically unlock elevated tiers and privileges as they collect points.",
+                )}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -723,26 +733,26 @@ function LoyaltyPage() {
                 onClick={() => setIsConfigOpen(true)}
                 className="gap-1.5 h-8 text-xs font-bold rounded-xl border-border/80"
               >
-                <Edit className="size-3.5 text-primary" /> Edit Tiers
+                <Edit className="size-3.5 text-primary" /> {t("editTiers", "Edit Tiers")}
               </Button>
               <Badge
                 variant="outline"
                 className="font-bold text-xs py-1 px-3 w-fit bg-primary/5 border-primary/20 text-primary"
               >
-                {activeTiers.length} Configured Tiers
+                {activeTiers.length} {t("configuredTiers", "Configured Tiers")}
               </Badge>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {activeTiers.map((t, idx) => {
-              const count = tierCounts[t.tier] || 0;
+            {activeTiers.map((tItem, idx) => {
+              const count = tierCounts[tItem.tier] || 0;
               const percent = totalMembers > 0 ? Math.round((count / totalMembers) * 100) : 0;
-              const visuals = getTierVisuals(t.tier, t.color);
+              const visuals = getTierVisuals(tItem.tier, tItem.color);
 
               return (
                 <div
-                  key={t.tier + idx}
+                  key={tItem.tier + idx}
                   className={`rounded-2xl border ${visuals.border} bg-gradient-to-br ${visuals.gradient} bg-card/60 backdrop-blur p-5 flex flex-col justify-between space-y-4 hover:-translate-y-0.5 transition-all duration-200 ${visuals.glow} group relative`}
                 >
                   <div className="flex items-start justify-between">
@@ -752,12 +762,12 @@ function LoyaltyPage() {
                       </div>
                       <div>
                         <div className="font-black text-base text-foreground flex items-center gap-2">
-                          {t.tier} Tier
+                          {tItem.tier} {t("tier", "Tier")}
                         </div>
                         <div className="text-xs text-muted-foreground font-semibold mt-0.5">
-                          {count} {count === 1 ? "member" : "members"}{" "}
+                          {count} {count === 1 ? t("member", "member") : t("members", "members")}{" "}
                           <span className="text-[11px] font-normal opacity-80">
-                            ({percent}% share)
+                            ({percent}% {t("share", "share")})
                           </span>
                         </div>
                       </div>
@@ -765,14 +775,14 @@ function LoyaltyPage() {
 
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-background/80 border border-border/80 text-foreground shadow-xs">
-                        {t.min}+ pts
+                        {tItem.min}+ pts
                       </span>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => setIsConfigOpen(true)}
                         className="size-7 text-muted-foreground hover:text-primary rounded-lg"
-                        title="Edit this tier"
+                        title={t("editThisTier", "Edit this tier")}
                       >
                         <Edit className="size-3.5" />
                       </Button>
@@ -782,7 +792,7 @@ function LoyaltyPage() {
                   {/* Distribution Share Progress Bar */}
                   <div className="space-y-1">
                     <div className="flex justify-between text-[10px] text-muted-foreground font-semibold">
-                      <span>Enrollment Distribution</span>
+                      <span>{t("enrollmentDistribution", "Enrollment Distribution")}</span>
                       <span>{percent}%</span>
                     </div>
                     <div className="w-full bg-muted/60 rounded-full h-1.5 overflow-hidden">
@@ -796,10 +806,10 @@ function LoyaltyPage() {
                   {/* Perks List */}
                   <div className="pt-2 border-t border-border/40 space-y-1.5">
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
-                      Privileges & Perks:
+                      {t("privilegesAndPerks", "Privileges & Perks:")}
                     </span>
                     <div className="space-y-1">
-                      {t.perks
+                      {tItem.perks
                         .filter((p) => p && p.trim() !== "")
                         .map((perk, pIdx) => (
                           <div
@@ -810,9 +820,9 @@ function LoyaltyPage() {
                             <span className="truncate">{perk}</span>
                           </div>
                         ))}
-                      {(!t.perks || t.perks.filter((p) => p.trim()).length === 0) && (
+                      {(!tItem.perks || tItem.perks.filter((p) => p.trim()).length === 0) && (
                         <span className="text-xs text-muted-foreground italic">
-                          Standard tier rewards
+                          {t("standardTierRewards", "Standard tier rewards")}
                         </span>
                       )}
                     </div>
@@ -830,16 +840,18 @@ function LoyaltyPage() {
               <div>
                 <h2 className="text-lg font-black text-foreground flex items-center gap-2">
                   <Crown className="size-5 text-amber-500" />
-                  Top Champions
+                  {t("topChampions", "Top Champions")}
                 </h2>
-                <p className="text-xs text-muted-foreground mt-0.5">Top 5 loyalty point holders</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t("top5PointHolders", "Top 5 loyalty point holders")}
+                </p>
               </div>
               <Flame className="size-5 text-warning animate-bounce" />
             </div>
 
             {topMembers.length === 0 ? (
               <div className="py-12 text-center text-xs text-muted-foreground border border-dashed rounded-2xl">
-                No customer loyalty points recorded yet.
+                {t("noLoyaltyPointsRecorded", "No customer loyalty points recorded yet.")}
               </div>
             ) : (
               <div className="space-y-2.5">
@@ -882,14 +894,15 @@ function LoyaltyPage() {
                           </span>
                         </div>
                         <p className="text-[11px] text-muted-foreground truncate mt-0.5">
-                          {c.phone || c.email || "Walk-in Member"} · {c.visits || 0} visits
+                          {c.phone || c.email || t("walkInMember", "Walk-in Member")} · {c.visits || 0}{" "}
+                          {t("visits", "visits")}
                         </p>
                       </div>
 
                       {/* Points Display */}
                       <div className="text-right shrink-0">
                         <span className="text-xs font-black text-warning block">
-                          {c.loyaltyPoints?.toLocaleString()} pts
+                          {c.loyaltyPoints?.toLocaleString()} {t("pts", "pts")}
                         </span>
                         <span className="text-[10px] font-semibold text-muted-foreground">
                           {formatAppCurrency(c.totalSpent)}
@@ -904,7 +917,7 @@ function LoyaltyPage() {
 
           <div className="pt-3 border-t border-border/50 text-[11px] text-muted-foreground flex items-center justify-between">
             <span className="flex items-center gap-1">
-              <Zap className="size-3 text-warning" /> Auto points on every POS sale
+              <Zap className="size-3 text-warning" /> {t("autoPointsOnSale", "Auto points on every POS sale")}
             </span>
             <span className="text-primary font-bold">
               1 pt / {currencySymbol}
@@ -920,11 +933,13 @@ function LoyaltyPage() {
           <div>
             <h2 className="text-lg font-black text-foreground flex items-center gap-2">
               <Users className="size-5 text-primary" />
-              Member Loyalty Directory
+              {t("memberLoyaltyDirectory", "Member Loyalty Directory")}
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Browse customers, view live tier progression progress, and click any row to view,
-              adjust points, or edit member details.
+              {t(
+                "loyaltyDirectoryDesc",
+                "Browse customers, view live tier progression progress, and click any row to view, adjust points, or edit member details.",
+              )}
             </p>
           </div>
 
@@ -933,7 +948,7 @@ function LoyaltyPage() {
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input
-                placeholder="Search name, phone, email..."
+                placeholder={t("searchLoyaltyPlaceholder", "Search name, phone, email...")}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -952,13 +967,15 @@ function LoyaltyPage() {
               }}
             >
               <SelectTrigger className="h-9 w-36 text-xs rounded-xl bg-background/80">
-                <SelectValue placeholder="All Tiers" />
+                <SelectValue placeholder={t("allTiers", "All Tiers")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Tiers ({customers.length})</SelectItem>
-                {activeTiers.map((t) => (
-                  <SelectItem key={t.tier} value={t.tier.toLowerCase()}>
-                    {t.tier} ({tierCounts[t.tier] || 0})
+                <SelectItem value="all">
+                  {t("allTiers", "All Tiers")} ({customers.length})
+                </SelectItem>
+                {activeTiers.map((tItem) => (
+                  <SelectItem key={tItem.tier} value={tItem.tier.toLowerCase()}>
+                    {tItem.tier} ({tierCounts[tItem.tier] || 0})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -966,13 +983,13 @@ function LoyaltyPage() {
 
             <Select value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
               <SelectTrigger className="h-9 w-40 text-xs rounded-xl bg-background/80">
-                <SelectValue placeholder="Sort by" />
+                <SelectValue placeholder={t("sortBy", "Sort by")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="points-desc">Highest Points</SelectItem>
-                <SelectItem value="points-asc">Lowest Points</SelectItem>
-                <SelectItem value="spent-desc">Highest Spend</SelectItem>
-                <SelectItem value="name-asc">Name (A-Z)</SelectItem>
+                <SelectItem value="points-desc">{t("highestPoints", "Highest Points")}</SelectItem>
+                <SelectItem value="points-asc">{t("lowestPoints", "Lowest Points")}</SelectItem>
+                <SelectItem value="spent-desc">{t("highestSpend", "Highest Spend")}</SelectItem>
+                <SelectItem value="name-asc">{t("nameAsc", "Name (A-Z)")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -983,13 +1000,13 @@ function LoyaltyPage() {
           <table className="w-full text-left text-xs">
             <thead className="bg-muted/40 text-muted-foreground font-bold border-b border-border/80 uppercase text-[10px] tracking-wider">
               <tr>
-                <th className="p-4 pl-5">Customer Member</th>
-                <th className="p-4">Current Tier</th>
-                <th className="p-4">Points Balance</th>
-                <th className="p-4 min-w-[180px]">Tier Progression</th>
-                <th className="p-4">Total Spent</th>
-                <th className="p-4">Visits</th>
-                <th className="p-4 text-right pr-5">Quick Actions</th>
+                <th className="p-4 pl-5">{t("customerMember", "Customer Member")}</th>
+                <th className="p-4">{t("currentTier", "Current Tier")}</th>
+                <th className="p-4">{t("pointsBalance", "Points Balance")}</th>
+                <th className="p-4 min-w-[180px]">{t("tierProgression", "Tier Progression")}</th>
+                <th className="p-4">{t("totalSpent", "Total Spent")}</th>
+                <th className="p-4">{t("visits", "Visits")}</th>
+                <th className="p-4 text-right pr-5">{t("quickActions", "Quick Actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/60">
@@ -997,13 +1014,13 @@ function LoyaltyPage() {
                 <tr>
                   <td colSpan={7} className="py-14 text-center text-muted-foreground">
                     <Loader2 className="size-7 animate-spin mx-auto mb-2 text-primary" />
-                    Loading loyalty members...
+                    {t("loadingMembers", "Loading loyalty members...")}
                   </td>
                 </tr>
               ) : paginatedCustomers.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-muted-foreground">
-                    No customers found matching your filter criteria.
+                    {t("noCustomersFoundCriteria", "No customers found matching your filter criteria.")}
                   </td>
                 </tr>
               ) : (
@@ -1036,7 +1053,7 @@ function LoyaltyPage() {
                               {c.name}
                             </div>
                             <div className="text-[11px] text-muted-foreground truncate">
-                              {c.phone || c.email || "No contact info"}
+                              {c.phone || c.email || t("noContactInfo", "No contact info")}
                             </div>
                           </div>
                         </div>
@@ -1057,11 +1074,11 @@ function LoyaltyPage() {
                         <span className="font-black text-sm text-foreground">
                           {c.loyaltyPoints?.toLocaleString()}
                         </span>{" "}
-                        <span className="text-[10px] text-muted-foreground">pts</span>
+                        <span className="text-[10px] text-muted-foreground">{t("pts", "pts")}</span>
                         <span className="block text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
                           ≈{" "}
                           {formatAppCurrency((c.loyaltyPoints / 100) * activeRules.redemptionRate)}{" "}
-                          value
+                          {t("value", "value")}
                         </span>
                       </td>
 
@@ -1070,9 +1087,9 @@ function LoyaltyPage() {
                         {c.nextTier ? (
                           <div className="space-y-1.5">
                             <div className="flex justify-between text-[10px] text-muted-foreground font-semibold">
-                              <span>To {c.nextTier.tier}</span>
+                              <span>{t("toTier", `To ${c.nextTier.tier}`)}</span>
                               <span className="text-primary font-bold">
-                                {c.pointsToNext} pts needed
+                                {c.pointsToNext} {t("ptsNeeded", "pts needed")}
                               </span>
                             </div>
                             <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
@@ -1085,7 +1102,7 @@ function LoyaltyPage() {
                         ) : (
                           <div className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
                             <Sparkles className="size-3.5" />
-                            Top Tier Champion
+                            {t("topTierChampion", "Top Tier Champion")}
                           </div>
                         )}
                       </td>
@@ -1097,7 +1114,7 @@ function LoyaltyPage() {
 
                       {/* Visits */}
                       <td className="p-4 text-muted-foreground font-medium">
-                        {c.visits || 0} visits
+                        {c.visits || 0} {t("visits", "visits")}
                       </td>
 
                       {/* Action: Drawer View / Adjust / Edit */}
@@ -1110,7 +1127,7 @@ function LoyaltyPage() {
                             className="h-8 text-xs gap-1.5 rounded-xl border-border/80 shadow-xs hover:bg-primary hover:text-primary-foreground transition-all"
                           >
                             <Coins className="size-3.5 text-warning" />
-                            Adjust
+                            {t("adjust", "Adjust")}
                           </Button>
                           <Button
                             variant="ghost"
@@ -1119,7 +1136,7 @@ function LoyaltyPage() {
                             className="h-8 text-xs gap-1 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all"
                           >
                             <Edit className="size-3.5" />
-                            Edit
+                            {t("edit", "Edit")}
                           </Button>
                         </div>
                       </td>
@@ -1135,9 +1152,9 @@ function LoyaltyPage() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between pt-2">
             <span className="text-xs text-muted-foreground font-medium">
-              Showing {(page - 1) * pageSize + 1} to{" "}
-              {Math.min(page * pageSize, filteredCustomers.length)} of {filteredCustomers.length}{" "}
-              members
+              {t("showing", "Showing")} {(page - 1) * pageSize + 1} {t("to", "to")}{" "}
+              {Math.min(page * pageSize, filteredCustomers.length)} {t("of", "of")} {filteredCustomers.length}{" "}
+              {t("members", "members")}
             </span>
             <div className="flex gap-2">
               <Button
@@ -1147,10 +1164,10 @@ function LoyaltyPage() {
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 className="h-8 text-xs px-3 rounded-xl"
               >
-                Previous
+                {t("previous", "Previous")}
               </Button>
               <div className="flex items-center px-2 text-xs font-bold text-foreground">
-                Page {page} of {totalPages}
+                {t("page", "Page")} {page} {t("of", "of")} {totalPages}
               </div>
               <Button
                 variant="outline"
@@ -1159,7 +1176,7 @@ function LoyaltyPage() {
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 className="h-8 text-xs px-3 rounded-xl"
               >
-                Next
+                {t("next", "Next")}
               </Button>
             </div>
           </div>
@@ -1222,26 +1239,26 @@ function LoyaltyPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
-                            Membership Status
+                            {t("membershipStatus", "Membership Status")}
                           </span>
                           <div className="flex items-center gap-2 mt-1">
                             <span
                               className={`text-sm font-black px-3 py-1 rounded-xl border ${visuals.badge} flex items-center gap-1.5`}
                             >
                               <span>{visuals.icon}</span>
-                              {activeCustomer.currentTier?.tier} Tier Member
+                              {activeCustomer.currentTier?.tier} {t("tierMember", "Tier Member")}
                             </span>
                           </div>
                         </div>
 
                         <div className="text-right">
                           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
-                            Loyalty Points
+                            {t("loyaltyPoints", "Loyalty Points")}
                           </span>
                           <span className="text-2xl font-black text-warning">
                             {activeCustomer.loyaltyPoints?.toLocaleString()}
                           </span>
-                          <span className="text-xs text-muted-foreground ml-1 font-bold">pts</span>
+                          <span className="text-xs text-muted-foreground ml-1 font-bold">{t("pts", "pts")}</span>
                         </div>
                       </div>
 
@@ -1250,11 +1267,11 @@ function LoyaltyPage() {
                         <div className="space-y-1.5 pt-2 border-t border-border/60">
                           <div className="flex justify-between text-xs font-semibold">
                             <span className="text-muted-foreground">
-                              Next Tier: <strong>{activeCustomer.nextTier.tier}</strong> (
-                              {activeCustomer.nextTier.min} pts)
+                              {t("nextTier", "Next Tier")}: <strong>{activeCustomer.nextTier.tier}</strong> (
+                              {activeCustomer.nextTier.min} {t("pts", "pts")})
                             </span>
                             <span className="text-primary font-bold">
-                              {activeCustomer.pointsToNext} pts to upgrade
+                              {activeCustomer.pointsToNext} {t("ptsToUpgrade", "pts to upgrade")}
                             </span>
                           </div>
                           <div className="w-full bg-muted/80 rounded-full h-2 overflow-hidden">
@@ -1267,14 +1284,14 @@ function LoyaltyPage() {
                       ) : (
                         <div className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-2">
                           <Sparkles className="size-4" />
-                          Top VIP Champion unlocked! All exclusive tier benefits active.
+                          {t("topVipChampionUnlocked", "Top VIP Champion unlocked! All exclusive tier benefits active.")}
                         </div>
                       )}
 
                       {/* Active Tier Perks */}
                       <div className="space-y-2 pt-2 border-t border-border/60">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
-                          Unlocked Privileges & Perks:
+                          {t("unlockedPrivilegesPerks", "Unlocked Privileges & Perks:")}
                         </span>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {activeCustomer.currentTier?.perks?.map((perk: string, pIdx: number) => (
@@ -1296,7 +1313,7 @@ function LoyaltyPage() {
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div className="p-3.5 bg-muted/20 rounded-2xl border border-border/60">
                     <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider flex items-center justify-center gap-1">
-                      <ShoppingBag className="size-3 text-primary" /> Total Spent
+                      <ShoppingBag className="size-3 text-primary" /> {t("totalSpent", "Total Spent")}
                     </div>
                     <div className="text-sm sm:text-base font-black text-foreground mt-1">
                       {formatAppCurrency(activeCustomer.totalSpent)}
@@ -1304,7 +1321,7 @@ function LoyaltyPage() {
                   </div>
                   <div className="p-3.5 bg-muted/20 rounded-2xl border border-border/60">
                     <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider flex items-center justify-center gap-1">
-                      <Clock className="size-3 text-info" /> Store Visits
+                      <Clock className="size-3 text-info" /> {t("storeVisits", "Store Visits")}
                     </div>
                     <div className="text-sm sm:text-base font-black text-foreground mt-1">
                       {activeCustomer.visits || 0}
@@ -1312,7 +1329,7 @@ function LoyaltyPage() {
                   </div>
                   <div className="p-3.5 bg-muted/20 rounded-2xl border border-border/60">
                     <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider flex items-center justify-center gap-1">
-                      <Wallet className="size-3 text-success" /> Redeem Value
+                      <Wallet className="size-3 text-success" /> {t("redeemValue", "Redeem Value")}
                     </div>
                     <div className="text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400 mt-1">
                       {formatAppCurrency(
@@ -1335,14 +1352,14 @@ function LoyaltyPage() {
                         className="text-xs font-bold rounded-lg flex items-center gap-1.5"
                       >
                         <Coins className="size-3.5 text-warning" />
-                        Adjust Points (+ / -)
+                        {t("adjustPointsTab", "Adjust Points (+ / -)")}
                       </TabsTrigger>
                       <TabsTrigger
                         value="edit"
                         className="text-xs font-bold rounded-lg flex items-center gap-1.5"
                       >
                         <Edit className="size-3.5 text-primary" />
-                        Edit Member & Points
+                        {t("editMemberAndPoints", "Edit Member & Points")}
                       </TabsTrigger>
                     </TabsList>
 
@@ -1363,7 +1380,7 @@ function LoyaltyPage() {
                             }`}
                           >
                             <ArrowUpRight className="size-4 mr-1.5" />
-                            Credit (Add Points)
+                            {t("creditAddPoints", "Credit (Add Points)")}
                           </Button>
                           <Button
                             type="button"
@@ -1377,14 +1394,14 @@ function LoyaltyPage() {
                             }`}
                           >
                             <ArrowDownRight className="size-4 mr-1.5" />
-                            Debit (Deduct Points)
+                            {t("debitDeductPoints", "Debit (Deduct Points)")}
                           </Button>
                         </div>
 
                         {/* Quick Amount Chips */}
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between">
-                            <Label className="text-xs font-bold">Points Amount</Label>
+                            <Label className="text-xs font-bold">{t("pointsAmount", "Points Amount")}</Label>
                             <div className="flex gap-1">
                               {[50, 100, 250, 500].map((amt) => (
                                 <button
@@ -1412,33 +1429,33 @@ function LoyaltyPage() {
 
                         {/* Reason Select */}
                         <div className="space-y-1.5">
-                          <Label className="text-xs font-bold">Reason for Adjustment</Label>
+                          <Label className="text-xs font-bold">{t("reasonForAdjustment", "Reason for Adjustment")}</Label>
                           <Select value={adjustReason} onValueChange={setAdjustReason}>
                             <SelectTrigger className="h-9 text-xs rounded-xl">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="Promotion / Bonus Reward">
-                                Promotion / Bonus Reward
+                                {t("promoBonusReward", "Promotion / Bonus Reward")}
                               </SelectItem>
                               <SelectItem value="Goodwill Gesture / Customer Satisfaction">
-                                Goodwill Gesture / Customer Satisfaction
+                                {t("goodwillGesture", "Goodwill Gesture / Customer Satisfaction")}
                               </SelectItem>
                               <SelectItem value="Birthday / Anniversary Gift">
-                                Birthday / Anniversary Gift
+                                {t("birthdayAnniversaryGift", "Birthday / Anniversary Gift")}
                               </SelectItem>
                               <SelectItem value="Return / Refund Points Deduction">
-                                Return / Refund Points Deduction
+                                {t("returnRefundDeduction", "Return / Refund Points Deduction")}
                               </SelectItem>
                               <SelectItem value="Manual Balance Correction">
-                                Manual Balance Correction
+                                {t("manualCorrection", "Manual Balance Correction")}
                               </SelectItem>
-                              <SelectItem value="Other (Custom)">Other (Custom Reason)</SelectItem>
+                              <SelectItem value="Other (Custom)">{t("otherCustom", "Other (Custom Reason)")}</SelectItem>
                             </SelectContent>
                           </Select>
                           {adjustReason === "Other (Custom)" && (
                             <Input
-                              placeholder="Enter custom reason note..."
+                              placeholder={t("enterCustomReasonNote", "Enter custom reason note...")}
                               value={adjustCustomReason}
                               onChange={(e) => setAdjustCustomReason(e.target.value)}
                               className="mt-2 text-xs rounded-xl"
@@ -1462,17 +1479,17 @@ function LoyaltyPage() {
                           return (
                             <div className="p-3.5 bg-muted/40 rounded-2xl border border-border/80 flex items-center justify-between text-xs">
                               <span className="text-muted-foreground font-medium">
-                                New Point Balance Preview:
+                                {t("newPointBalancePreview", "New Point Balance Preview:")}
                               </span>
                               <div className="text-right">
                                 <span className="font-black text-foreground text-sm mr-2">
-                                  {projected.toLocaleString()} pts
+                                  {projected.toLocaleString()} {t("pts", "pts")}
                                 </span>
                                 <Badge
                                   variant="outline"
                                   className={`text-[10px] font-bold ${projVisuals.badge}`}
                                 >
-                                  {projVisuals.icon} {projectedTier.currentTier.tier} Tier
+                                  {projVisuals.icon} {projectedTier.currentTier.tier} {t("tier", "Tier")}
                                 </Badge>
                               </div>
                             </div>
@@ -1487,7 +1504,7 @@ function LoyaltyPage() {
                           {updateCustomerMutation.isPending && (
                             <Loader2 className="mr-2 size-4 animate-spin" />
                           )}
-                          Confirm Point Adjustment
+                          {t("confirmPointAdjustment", "Confirm Point Adjustment")}
                         </Button>
                       </form>
                     </TabsContent>
@@ -1496,7 +1513,7 @@ function LoyaltyPage() {
                     <TabsContent value="edit" className="space-y-4 pt-1">
                       <form onSubmit={handleConfirmDirectEdit} className="space-y-4">
                         <div className="space-y-1.5">
-                          <Label className="text-xs font-bold">Customer Full Name *</Label>
+                          <Label className="text-xs font-bold">{t("customerFullName", "Customer Full Name")} *</Label>
                           <Input
                             value={editCustomerName}
                             onChange={(e) => setEditCustomerName(e.target.value)}
@@ -1508,7 +1525,7 @@ function LoyaltyPage() {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="space-y-1.5">
-                            <Label className="text-xs font-bold">Mobile Phone</Label>
+                            <Label className="text-xs font-bold">{t("mobilePhone", "Mobile Phone")}</Label>
                             <Input
                               value={editCustomerPhone}
                               onChange={(e) => setEditCustomerPhone(e.target.value)}
@@ -1517,7 +1534,7 @@ function LoyaltyPage() {
                             />
                           </div>
                           <div className="space-y-1.5">
-                            <Label className="text-xs font-bold">Email Address</Label>
+                            <Label className="text-xs font-bold">{t("emailAddress", "Email Address")}</Label>
                             <Input
                               type="email"
                               value={editCustomerEmail}
@@ -1530,7 +1547,7 @@ function LoyaltyPage() {
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <div className="space-y-1.5 sm:col-span-1">
-                            <Label className="text-xs font-bold">Exact Points Balance</Label>
+                            <Label className="text-xs font-bold">{t("exactPointsBalance", "Exact Points Balance")}</Label>
                             <Input
                               type="number"
                               min="0"
@@ -1542,7 +1559,7 @@ function LoyaltyPage() {
                             />
                           </div>
                           <div className="space-y-1.5 sm:col-span-1">
-                            <Label className="text-xs font-bold">Customer Status</Label>
+                            <Label className="text-xs font-bold">{t("customerStatus", "Customer Status")}</Label>
                             <Select
                               value={editCustomerStatus}
                               onValueChange={setEditCustomerStatus}
@@ -1556,20 +1573,20 @@ function LoyaltyPage() {
                                     {s.label}
                                   </SelectItem>
                                 ))}
-                                <SelectItem value="vip">★ VIP Customer</SelectItem>
+                                <SelectItem value="vip">★ VIP {t("customer", "Customer")}</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                           <div className="space-y-1.5 sm:col-span-1">
-                            <Label className="text-xs font-bold">Account Type</Label>
+                            <Label className="text-xs font-bold">{t("accountType", "Account Type")}</Label>
                             <Select value={editCustomerType} onValueChange={setEditCustomerType}>
                               <SelectTrigger className="h-9 text-xs rounded-xl">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                {CUSTOMER_TYPES.map((t) => (
-                                  <SelectItem key={t.value} value={t.value}>
-                                    {t.label}
+                                {CUSTOMER_TYPES.map((typeItem) => (
+                                  <SelectItem key={typeItem.value} value={typeItem.value}>
+                                    {typeItem.label}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -1588,13 +1605,13 @@ function LoyaltyPage() {
                           return (
                             <div className="p-3 bg-muted/40 rounded-2xl border border-border/80 flex items-center justify-between text-xs">
                               <span className="text-muted-foreground font-medium">
-                                Calculated Tier from Points:
+                                {t("calculatedTierFromPoints", "Calculated Tier from Points:")}
                               </span>
                               <Badge
                                 variant="outline"
                                 className={`text-[10px] font-bold ${calcVisuals.badge}`}
                               >
-                                {calcVisuals.icon} {calculatedTier.currentTier.tier} Tier
+                                {calcVisuals.icon} {calculatedTier.currentTier.tier} {t("tier", "Tier")}
                               </Badge>
                             </div>
                           );
@@ -1608,7 +1625,7 @@ function LoyaltyPage() {
                           {updateCustomerMutation.isPending && (
                             <Loader2 className="mr-2 size-4 animate-spin" />
                           )}
-                          Save Customer Profile & Points
+                          {t("saveCustomerProfilePoints", "Save Customer Profile & Points")}
                         </Button>
                       </form>
                     </TabsContent>
@@ -1624,7 +1641,7 @@ function LoyaltyPage() {
                   className="w-full rounded-xl"
                   onClick={() => setIsCustomerDrawerOpen(false)}
                 >
-                  Close Drawer
+                  {t("closeDrawer", "Close Drawer")}
                 </Button>
               </SheetFooter>
             </div>
@@ -1642,11 +1659,13 @@ function LoyaltyPage() {
             <SheetHeader className="bg-gradient-to-r from-primary/10 via-background to-amber-500/10 p-6 border-b border-border/80 pr-12 text-left shrink-0">
               <SheetTitle className="text-xl sm:text-2xl font-black flex items-center gap-2 text-foreground">
                 <SlidersHorizontal className="size-5 text-primary" />
-                Configure Loyalty Program & Tiers
+                {t("configureLoyaltyProgramTiers", "Configure Loyalty Program & Tiers")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Customize tier thresholds, member benefits, earning rate per purchase, and
-                conversion discount values.
+                {t(
+                  "configureLoyaltyDesc",
+                  "Customize tier thresholds, member benefits, earning rate per purchase, and conversion discount values.",
+                )}
               </SheetDescription>
             </SheetHeader>
 
@@ -1654,10 +1673,10 @@ function LoyaltyPage() {
               <Tabs defaultValue="tiers" className="space-y-5">
                 <TabsList className="grid grid-cols-2 w-72 rounded-xl">
                   <TabsTrigger value="tiers" className="text-xs font-bold rounded-lg">
-                    Loyalty Tiers
+                    {t("loyaltyTiers", "Loyalty Tiers")}
                   </TabsTrigger>
                   <TabsTrigger value="rules" className="text-xs font-bold rounded-lg">
-                    Earning & Rules
+                    {t("earningAndRules", "Earning & Rules")}
                   </TabsTrigger>
                 </TabsList>
 
@@ -1671,7 +1690,7 @@ function LoyaltyPage() {
                       <div className="flex items-center justify-between border-b border-border/60 pb-3">
                         <span className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-2">
                           <ShieldCheck className="size-4 text-primary" />
-                          Tier #{i + 1}: {tier.tier}
+                          {t("tier", "Tier")} #{i + 1}: {tier.tier}
                         </span>
                         <Button
                           type="button"
@@ -1680,13 +1699,13 @@ function LoyaltyPage() {
                           className="text-destructive hover:text-destructive hover:bg-destructive/10 h-7 text-xs rounded-lg"
                           onClick={() => removeEditTier(i)}
                         >
-                          <Trash2 className="size-3.5 mr-1" /> Remove
+                          <Trash2 className="size-3.5 mr-1" /> {t("remove", "Remove")}
                         </Button>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div className="space-y-1.5">
-                          <Label className="text-xs font-bold">Tier Name</Label>
+                          <Label className="text-xs font-bold">{t("tierName", "Tier Name")}</Label>
                           <Input
                             value={tier.tier}
                             onChange={(e) => updateEditTier(i, "tier", e.target.value)}
@@ -1696,7 +1715,7 @@ function LoyaltyPage() {
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <Label className="text-xs font-bold">Min Points Threshold</Label>
+                          <Label className="text-xs font-bold">{t("minPointsThreshold", "Min Points Threshold")}</Label>
                           <Input
                             type="number"
                             min="0"
@@ -1709,23 +1728,23 @@ function LoyaltyPage() {
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <Label className="text-xs font-bold">Color Theme</Label>
+                          <Label className="text-xs font-bold">{t("colorTheme", "Color Theme")}</Label>
                           <Select
                             value={tier.color}
                             onValueChange={(val) => updateEditTier(i, "color", val)}
                           >
                             <SelectTrigger className="h-8 text-xs rounded-lg">
-                              <SelectValue placeholder="Select color" />
+                              <SelectValue placeholder={t("selectColor", "Select color")} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="bg-amber-700">Bronze (Brown)</SelectItem>
-                              <SelectItem value="bg-slate-400">Silver (Slate)</SelectItem>
-                              <SelectItem value="bg-amber-500">Gold (Amber)</SelectItem>
-                              <SelectItem value="bg-indigo-600">Platinum (Indigo)</SelectItem>
-                              <SelectItem value="bg-primary">Primary (Brand)</SelectItem>
-                              <SelectItem value="bg-success">Emerald (Green)</SelectItem>
-                              <SelectItem value="bg-destructive">Ruby (Red)</SelectItem>
-                              <SelectItem value="bg-purple-500">Amethyst (Purple)</SelectItem>
+                              <SelectItem value="bg-amber-700">{t("bronzeTheme", "Bronze (Brown)")}</SelectItem>
+                              <SelectItem value="bg-slate-400">{t("silverTheme", "Silver (Slate)")}</SelectItem>
+                              <SelectItem value="bg-amber-500">{t("goldTheme", "Gold (Amber)")}</SelectItem>
+                              <SelectItem value="bg-indigo-600">{t("platinumTheme", "Platinum (Indigo)")}</SelectItem>
+                              <SelectItem value="bg-primary">{t("primaryTheme", "Primary (Brand)")}</SelectItem>
+                              <SelectItem value="bg-success">{t("emeraldTheme", "Emerald (Green)")}</SelectItem>
+                              <SelectItem value="bg-destructive">{t("rubyTheme", "Ruby (Red)")}</SelectItem>
+                              <SelectItem value="bg-purple-500">{t("amethystTheme", "Amethyst (Purple)")}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -1734,7 +1753,7 @@ function LoyaltyPage() {
                       {/* Tier Perks */}
                       <div className="space-y-2">
                         <Label className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider">
-                          Privileges & Perks
+                          {t("privilegesAndPerks", "Privileges & Perks")}
                         </Label>
                         <div className="space-y-2">
                           {tier.perks.map((perk, pIndex) => (
@@ -1763,7 +1782,7 @@ function LoyaltyPage() {
                             className="h-7 text-xs w-full border-dashed rounded-lg"
                             onClick={() => addPerk(i)}
                           >
-                            <Plus className="size-3 mr-1" /> Add Perk
+                            <Plus className="size-3 mr-1" /> {t("addPerk", "Add Perk")}
                           </Button>
                         </div>
                       </div>
@@ -1777,7 +1796,7 @@ function LoyaltyPage() {
                     onClick={addEditTier}
                   >
                     <Plus className="size-4" />
-                    Add New Tier
+                    {t("addNewTier", "Add New Tier")}
                   </Button>
                 </TabsContent>
 
@@ -1786,13 +1805,13 @@ function LoyaltyPage() {
                   <div className="border border-border/80 rounded-2xl p-5 bg-muted/20 space-y-4 shadow-sm">
                     <h3 className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-1.5">
                       <Coins className="size-4 text-warning" />
-                      Point Earning & Redemption Conversion Rules
+                      {t("earningAndRedemptionRules", "Point Earning & Redemption Conversion Rules")}
                     </h3>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <Label className="text-xs font-bold">
-                          Spend to Earn 1 Point ({currencySymbol})
+                          {t("spendToEarnOnePoint", "Spend to Earn 1 Point")} ({currencySymbol})
                         </Label>
                         <Input
                           type="number"
@@ -1807,14 +1826,13 @@ function LoyaltyPage() {
                           className="h-9 text-xs rounded-lg"
                         />
                         <p className="text-[10px] text-muted-foreground">
-                          Customer earns 1 loyalty point for every {currencySymbol}
-                          {editRules.earnRate} spent.
+                          {t("earnPointRuleHelp", `Customer earns 1 loyalty point for every ${currencySymbol}${editRules.earnRate} spent.`)}
                         </p>
                       </div>
 
                       <div className="space-y-1.5">
                         <Label className="text-xs font-bold">
-                          Value per 100 Points ({currencySymbol})
+                          {t("valuePerHundredPoints", "Value per 100 Points")} ({currencySymbol})
                         </Label>
                         <Input
                           type="number"
@@ -1830,14 +1848,13 @@ function LoyaltyPage() {
                           className="h-9 text-xs rounded-lg"
                         />
                         <p className="text-[10px] text-muted-foreground">
-                          100 points can be redeemed for a {currencySymbol}
-                          {editRules.redemptionRate} discount.
+                          {t("redeemPointRuleHelp", `100 points can be redeemed for a ${currencySymbol}${editRules.redemptionRate} discount.`)}
                         </p>
                       </div>
 
                       <div className="space-y-1.5">
                         <Label className="text-xs font-bold">
-                          Minimum Points Required to Redeem
+                          {t("minPointsToRedeem", "Minimum Points Required to Redeem")}
                         </Label>
                         <Input
                           type="number"
@@ -1852,13 +1869,13 @@ function LoyaltyPage() {
                           className="h-9 text-xs rounded-lg"
                         />
                         <p className="text-[10px] text-muted-foreground">
-                          Minimum point threshold before customer can redeem on checkout.
+                          {t("minPointHelp", "Minimum point threshold before customer can redeem on checkout.")}
                         </p>
                       </div>
 
                       <div className="space-y-1.5">
                         <Label className="text-xs font-bold">
-                          Welcome Bonus Points (New Customer)
+                          {t("welcomeBonusPoints", "Welcome Bonus Points (New Customer)")}
                         </Label>
                         <Input
                           type="number"
@@ -1873,7 +1890,7 @@ function LoyaltyPage() {
                           className="h-9 text-xs rounded-lg"
                         />
                         <p className="text-[10px] text-muted-foreground">
-                          Awarded immediately upon customer account creation.
+                          {t("welcomeBonusHelp", "Awarded immediately upon customer account creation.")}
                         </p>
                       </div>
                     </div>
@@ -1889,7 +1906,7 @@ function LoyaltyPage() {
                 className="rounded-xl"
                 onClick={() => setIsConfigOpen(false)}
               >
-                Cancel
+                {t("cancel", "Cancel")}
               </Button>
               <Button
                 type="button"
@@ -1900,7 +1917,7 @@ function LoyaltyPage() {
                 {updateSettingsMutation.isPending && (
                   <Loader2 className="mr-2 size-4 animate-spin" />
                 )}
-                Save Program Settings
+                {t("saveProgramSettings", "Save Program Settings")}
               </Button>
             </SheetFooter>
           </div>

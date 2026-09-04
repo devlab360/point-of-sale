@@ -19,10 +19,10 @@ import { generateVerificationOtp, sendPasswordResetEmail } from "@/lib/email-ser
 import { resetPasswordFn, sendPasswordResetOtpFn } from "@/api/auth";
 import { toast } from "sonner";
 import { validateEmail, validatePassword, sanitizeInput } from "@/lib/validation";
-import { checkRateLimit } from "@/lib/api-response";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { isProduction, appName } from "@/lib/env";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: `Sign In · ${appName} SaaS` }] }),
@@ -30,6 +30,7 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
+  const { t } = useLanguage();
   const [mode, setMode] = useState<"email" | "otp" | "forgot">("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -269,7 +270,7 @@ function LoginPage() {
               {appName}
             </h1>
             <p className="text-xs sm:text-sm text-primary-foreground/90 font-bold uppercase tracking-wider">
-              Own the counter
+              {t("ownTheCounter", "Own the counter")}
             </p>
           </div>
         </div>
@@ -277,22 +278,21 @@ function LoginPage() {
         {/* Feature Hero Copy */}
         <div className="relative z-10 space-y-4 xl:space-y-6 max-w-lg">
           <h2 className="font-display text-3xl sm:text-4xl lg:text-[2.75rem] leading-[1.15] font-bold tracking-tight text-primary-foreground">
-            The warm, human way to run your shop.
+            {t("theWarmHumanWay", "The warm, human way to run your shop.")}
           </h2>
 
           <p className="text-base sm:text-lg text-primary-foreground/90 leading-relaxed font-normal">
-            Ring up sales, look after your stock, and keep your regulars happy — all from one
-            friendly place built for how a real store actually works.
+            {t("ringUpSalesHero", "Ring up sales, look after your stock, and keep your regulars happy — all from one friendly place built for how a real store actually works.")}
           </p>
 
           <ul className="space-y-3 pt-1">
             {[
-              "Multi-branch inventory that just syncs",
-              "Customer ledgers your team will actually use",
-              "Instant, no-fuss thermal receipts",
-            ].map((item) => (
+              t("featureSync", "Multi-branch inventory that just syncs"),
+              t("featureLedgers", "Customer ledgers your team will actually use"),
+              t("featureReceipts", "Instant, no-fuss thermal receipts"),
+            ].map((item, idx) => (
               <li
-                key={item}
+                key={idx}
                 className="flex items-center gap-3 text-base sm:text-lg text-primary-foreground/95 font-medium"
               >
                 <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary-foreground/15 border border-primary-foreground/30 text-primary-foreground">
@@ -329,12 +329,12 @@ function LoginPage() {
               <Store className="size-7" />
             </div>
             <h2 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-              {mode === "forgot" ? "Reset Password" : "Welcome Back"}
+              {mode === "forgot" ? t("resetPassword", "Reset Password") : t("welcomeBack", "Welcome Back")}
             </h2>
             <p className="text-base sm:text-lg text-muted-foreground">
               {mode === "forgot"
-                ? "Enter your email to receive a password reset code"
-                : "Sign in to access your store POS dashboard"}
+                ? t("enterEmailPasswordReset", "Enter your email to receive a password reset code")
+                : t("signInAccessDashboard", "Sign in to access your store POS dashboard")}
             </p>
           </div>
 
@@ -344,7 +344,7 @@ function LoginPage() {
               <form noValidate onSubmit={handleEmailLogin} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm sm:text-base font-bold text-foreground">
-                    Email Address
+                    {t("emailAddress", "Email Address")}
                   </Label>
                   <Input
                     id="email"
@@ -366,14 +366,14 @@ function LoginPage() {
                       htmlFor="password"
                       className="text-sm sm:text-base font-bold text-foreground"
                     >
-                      Password
+                      {t("password", "Password")}
                     </Label>
                     <button
                       type="button"
                       onClick={() => setMode("forgot")}
                       className="text-sm sm:text-base font-semibold text-primary hover:underline"
                     >
-                      Forgot password?
+                      {t("forgotPassword", "Forgot password?")}
                     </button>
                   </div>
                   <PasswordInput
@@ -397,11 +397,11 @@ function LoginPage() {
                   {isLoggingIn ? (
                     <>
                       <Loader2 className="size-5 animate-spin" />
-                      <span>Authenticating…</span>
+                      <span>{t("authenticating", "Authenticating…")}</span>
                     </>
                   ) : (
                     <>
-                      <span>Sign In to Store</span>
+                      <span>{t("signInToStore", "Sign In to Store")}</span>
                       <ArrowRight className="size-5" />
                     </>
                   )}
@@ -412,13 +412,13 @@ function LoginPage() {
                   <div className="pt-2.5 border-t border-border/80 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
-                        <span>⚡</span> 1-Click Dev / Demo Logins
+                        <span>⚡</span> {t("oneClickDevLogins", "1-Click Dev / Demo Logins")}
                       </span>
                       <Link
                         to="/admin"
                         className="text-[11px] font-bold text-muted-foreground hover:text-foreground hover:underline"
                       >
-                        🛡️ Super Admin Portal →
+                        {t("superAdminPortal", "Super Admin Portal →")}
                       </Link>
                     </div>
 
@@ -458,7 +458,7 @@ function LoginPage() {
                         htmlFor="resetEmail"
                         className="text-sm sm:text-base font-bold text-foreground"
                       >
-                        Registered Store Email
+                        {t("registeredStoreEmail", "Registered Store Email")}
                       </Label>
                       <Input
                         id="resetEmail"
@@ -478,12 +478,12 @@ function LoginPage() {
                       {isSendingOtp ? (
                         <>
                           <Loader2 className="size-5 animate-spin" />
-                          <span>Sending OTP…</span>
+                          <span>{t("sendingOtp", "Sending OTP…")}</span>
                         </>
                       ) : (
                         <>
                           <Mail className="size-5" />
-                          <span>Send OTP Code</span>
+                          <span>{t("sendOtpCode", "Send OTP Code")}</span>
                         </>
                       )}
                     </Button>
@@ -495,7 +495,7 @@ function LoginPage() {
                         htmlFor="otpCode"
                         className="text-sm sm:text-base font-bold text-foreground"
                       >
-                        6-Digit OTP Code
+                        {t("sixDigitOtpCode", "6-Digit OTP Code")}
                       </Label>
                       <Input
                         id="otpCode"
@@ -511,7 +511,7 @@ function LoginPage() {
                         htmlFor="newPassword"
                         className="text-sm sm:text-base font-bold text-foreground"
                       >
-                        New Password
+                        {t("newPassword", "New Password")}
                       </Label>
                       <PasswordInput
                         id="newPassword"
@@ -526,7 +526,7 @@ function LoginPage() {
                         htmlFor="confirmPassword"
                         className="text-sm sm:text-base font-bold text-foreground"
                       >
-                        Confirm Password
+                        {t("confirmPassword", "Confirm Password")}
                       </Label>
                       <PasswordInput
                         id="confirmPassword"
@@ -541,7 +541,7 @@ function LoginPage() {
                       disabled={isResetting}
                       className="w-full h-12 sm:h-13 rounded-xl font-bold text-base sm:text-lg"
                     >
-                      {isResetting ? "Updating Password..." : "Update Password & Sign In"}
+                      {isResetting ? t("updatingPassword", "Updating Password...") : t("updatePasswordSignIn", "Update Password & Sign In")}
                     </Button>
                   </form>
                 )}
@@ -555,7 +555,7 @@ function LoginPage() {
                   className="flex items-center justify-center gap-2 w-full text-sm sm:text-base font-bold text-muted-foreground hover:text-foreground pt-1"
                 >
                   <ArrowLeft className="size-4" />
-                  <span>Back to Sign In</span>
+                  <span>{t("backToSignIn", "Back to Sign In")}</span>
                 </button>
               </div>
             )}
@@ -563,9 +563,9 @@ function LoginPage() {
             {/* Link to Register */}
             <div className="border-t border-border/80 pt-3 text-center">
               <p className="text-sm sm:text-base text-muted-foreground">
-                Don't have a store account yet?{" "}
+                {t("dontHaveAccount", "Don't have a store account yet?")}{" "}
                 <Link to="/register" className="font-bold text-primary hover:underline ml-1">
-                  Start 7-Day Free Trial
+                  {t("startFreeTrial", "Start 7-Day Free Trial")}
                 </Link>
               </p>
             </div>

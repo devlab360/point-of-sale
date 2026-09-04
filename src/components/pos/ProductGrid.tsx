@@ -22,11 +22,13 @@ import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { getLocationsFn } from "@/api/locations";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { VariantSelectorModal } from "./VariantSelectorModal";
 import { ModifierSelectionModal } from "./ModifierSelectionModal";
 import { JewelleryCalculatorModal } from "./JewelleryCalculatorModal";
 
 export function ProductGrid({ state }: { state: any }) {
+  const { t } = useLanguage();
   const {
     mobileTab,
     query,
@@ -123,7 +125,7 @@ export function ProductGrid({ state }: { state: any }) {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search products..."
+            placeholder={t("searchProducts", "Search products...")}
             className="h-11 w-full rounded-xl border border-border/80 bg-card pl-9 pr-8 text-xs sm:text-sm font-medium transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground"
           />
           {query && (
@@ -140,7 +142,7 @@ export function ProductGrid({ state }: { state: any }) {
         <div className="relative hidden md:flex md:flex-[2] shrink-0">
           <ScanBarcode className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary" />
           <input
-            placeholder="Scan Barcode..."
+            placeholder={t("scanBarcode", "Scan Barcode...")}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 const b = e.currentTarget.value.trim();
@@ -181,11 +183,11 @@ export function ProductGrid({ state }: { state: any }) {
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
                   <ScanBarcode className="size-4" />
-                  <span>Scan or Enter Barcode</span>
+                  <span>{t("scanOrEnterBarcode", "Scan or Enter Barcode")}</span>
                 </div>
                 <input
                   autoFocus
-                  placeholder="Scan or enter barcode / SKU..."
+                  placeholder={t("scanOrEnterBarcode", "Scan or enter barcode / SKU...")}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       const b = e.currentTarget.value.trim();
@@ -216,10 +218,10 @@ export function ProductGrid({ state }: { state: any }) {
         <Button
           onClick={() => state.setShowAddProduct(true)}
           className="h-11 shrink-0 rounded-xl font-bold shadow-sm gap-1 px-2.5 sm:px-3.5 cursor-pointer"
-          title="Add Product"
+          title={t("addProduct", "Add Product")}
         >
           <Plus className="size-4" />
-          <span className="text-xs hidden sm:inline">Add Product</span>
+          <span className="text-xs hidden sm:inline">{t("addProduct", "Add Product")}</span>
         </Button>
 
         {/* Store Location Selector */}
@@ -229,22 +231,22 @@ export function ProductGrid({ state }: { state: any }) {
         >
           <SelectTrigger
             className="h-11 rounded-xl bg-card border-border/80 text-foreground hover:bg-muted/40 transition-colors w-auto max-w-[130px] sm:max-w-[160px] md:min-w-[140px] px-2.5 gap-1.5 shrink-0 cursor-pointer text-xs"
-            title="Store / Location Outlet"
+            title={t("selectStoreOutlet", "Store / Location Outlet")}
           >
             <div className="flex items-center gap-1.5 min-w-0">
               <MapPin className="size-3.5 text-primary shrink-0" />
               <span className="truncate text-xs font-semibold">
-                <SelectValue placeholder="Main Outlet" />
+                <SelectValue placeholder={t("mainOutlet", "Main Outlet")} />
               </span>
             </div>
           </SelectTrigger>
           <SelectContent align="end" className="w-[200px] sm:w-[220px]">
             <div className="px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border/50 mb-1 flex items-center gap-1.5">
               <MapPin className="size-3 text-primary" />
-              <span>Select Store Outlet</span>
+              <span>{t("selectStoreOutlet", "Select Store Outlet")}</span>
             </div>
             <SelectItem value="default" className="text-xs font-medium">
-              Main Outlet
+              {t("mainOutlet", "Main Outlet")}
             </SelectItem>
             {locations.map((loc: any) => (
               <SelectItem key={loc.id} value={loc.id} className="text-xs font-medium">
@@ -279,7 +281,7 @@ export function ProductGrid({ state }: { state: any }) {
           active={activeCat === "all"}
           onClick={() => setActiveCat("all")}
           icon="✨"
-          label="All Products"
+          label={t("allProducts", "All Products")}
           count={products.length}
         />
         {Array.from(
@@ -315,8 +317,8 @@ export function ProductGrid({ state }: { state: any }) {
             <div className="grid size-14 place-items-center rounded-2xl bg-muted/50 mb-3">
               <Search className="size-6 text-muted-foreground/60" />
             </div>
-            <p className="font-bold text-foreground text-sm">No products found</p>
-            <p className="mt-1 max-w-xs">Try a different search term or choose another category.</p>
+            <p className="font-bold text-foreground text-sm">{t("noProductsFound", "No products found")}</p>
+            <p className="mt-1 max-w-xs">{t("noProductsFoundDesc", "Try a different search term or choose another category.")}</p>
           </div>
         ) : (
           <div
@@ -408,17 +410,17 @@ export function ProductGrid({ state }: { state: any }) {
                             {/* Stock Status Pills */}
                             {low && !out && (
                               <span className="absolute left-2 top-2 rounded-full bg-warning/95 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-warning-foreground shadow-sm backdrop-blur-sm">
-                                {p.stock} left
+                                {p.stock} {t("left", "left")}
                               </span>
                             )}
                             {out && (
                               <span className="absolute left-2 top-2 rounded-full bg-destructive/95 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-sm">
-                                Out of Stock
+                                {t("outOfStock", "Out of Stock")}
                               </span>
                             )}
                             {isService && (
                               <span className="absolute left-2 top-2 rounded-full bg-primary/95 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-primary-foreground shadow-sm backdrop-blur-sm">
-                                Service
+                                {t("services", "Service")}
                               </span>
                             )}
                             {p.metadata?.isJewellery && (

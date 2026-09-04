@@ -197,18 +197,18 @@ export function ProductForm({
     clearError: clearProdError,
   } = useFormValidation({
     name: {
-      required: "Product name is required",
-      minLength: { value: 2, message: "Name must be at least 2 characters" },
+      required: t("products.nameRequired", "Product name is required"),
+      minLength: { value: 2, message: t("products.nameMinLength", "Name must be at least 2 characters") },
     },
-    sku: { required: "SKU is required" },
+    sku: { required: t("products.skuRequired", "SKU is required") },
     price: {
-      required: "Retail price is required",
-      positive: "Price must be a valid positive number",
+      required: t("products.retailPriceRequired", "Retail price is required"),
+      positive: t("products.pricePositive", "Price must be a valid positive number"),
     },
     // cost is optional — 0 is valid for free / bundled items
     cost: {},
     // stock and reorderLevel allow 0 — only block negative values
-    stock: { required: "Stock quantity is required" },
+    stock: { required: t("products.stockRequired", "Stock quantity is required") },
     reorderLevel: {},
   });
 
@@ -227,7 +227,7 @@ export function ProductForm({
     if (validateProd({ ...formData, stock: computedStock })) {
       onSubmit(submitData);
     } else {
-      toast.error("Please fill in all required fields correctly.");
+      toast.error(t("common.fillRequired", "Please fill in all required fields correctly."));
     }
   };
 
@@ -237,12 +237,12 @@ export function ProductForm({
       <div className="sticky top-0 z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-background/90 backdrop-blur-xl pb-3 pt-2 border-b border-border/80 shadow-sm -mx-4 px-4 sm:-mx-6 sm:px-6">
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
-            {initialData ? "Edit Product" : "Create New Product"}
+            {initialData ? t("products.editProduct", "Edit Product") : t("products.createNewProduct", "Create New Product")}
           </h1>
           <p className="text-xs text-muted-foreground hidden sm:block">
             {initialData
-              ? "Update catalog metadata, pricing tiers, and stock allocations."
-              : "Configure attributes, pricing, and multi-location inventory."}
+              ? t("products.editProductDesc", "Update catalog metadata, pricing tiers, and stock allocations.")
+              : t("products.createProductDesc", "Configure attributes, pricing, and multi-location inventory.")}
           </p>
         </div>
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
@@ -251,7 +251,7 @@ export function ProductForm({
             onClick={() => navigate({ to: "/products" })}
             className="flex-1 sm:flex-none h-10 rounded-xl text-xs font-semibold"
           >
-            Discard
+            {t("common.discard", "Discard")}
           </Button>
           <Button
             onClick={handleSubmit}
@@ -259,7 +259,7 @@ export function ProductForm({
             className="flex-1 sm:flex-none min-w-[140px] h-10 rounded-xl font-bold text-xs shadow-soft"
           >
             {isSaving && <Loader2 className="size-4 animate-spin mr-1.5" />}
-            Save Product
+            {t("products.saveProduct", "Save Product")}
           </Button>
         </div>
       </div>
@@ -270,17 +270,17 @@ export function ProductForm({
           <Card className="shadow-card border-border/80 rounded-2xl overflow-hidden">
             <CardHeader className="border-b border-border/60 bg-muted/20 pb-3.5">
               <CardTitle className="text-base font-bold flex items-center gap-2">
-                <Package className="size-4 text-primary" /> General Information
+                <Package className="size-4 text-primary" /> {t("products.generalInfo", "General Information")}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="grid gap-6">
                 <div className="grid gap-1.5">
                   <Label className="text-sm font-semibold">
-                    Product Name <span className="text-destructive">*</span>
+                    {t("products.productName", "Product Name")} <span className="text-destructive">*</span>
                   </Label>
                   <Input
-                    placeholder="e.g. Premium Wireless Headphones"
+                    placeholder={t("products.productNamePlaceholder", "e.g. Premium Wireless Headphones")}
                     value={formData.name}
                     onChange={(e) => {
                       setFormData({ ...formData, name: e.target.value });
@@ -294,13 +294,13 @@ export function ProductForm({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                   <div className="space-y-1.5">
                     <Label htmlFor="category" className="text-sm font-semibold">
-                      {t("category") || "Category"}
+                      {t("products.category", "Category")}
                     </Label>
                     <SearchableSelect
                       options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
                       value={formData.category}
                       onChange={(val) => setFormData({ ...formData, category: val })}
-                      placeholder={t("selectCategory") || "Select category..."}
+                      placeholder={t("products.selectCategory", "Select category...")}
                       onCreate={async (name) => {
                         const res = await createCategoryFn({ data: { category: { name } } });
                         if (res?.success) {
@@ -312,13 +312,13 @@ export function ProductForm({
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="brand" className="text-sm font-semibold">
-                      {t("brand") || "Brand"}
+                      {t("products.brand", "Brand")}
                     </Label>
                     <SearchableSelect
                       options={brands.map((b: any) => ({ value: b.id, label: b.name }))}
                       value={formData.brand}
                       onChange={(val) => setFormData({ ...formData, brand: val })}
-                      placeholder={t("selectBrand") || "Select brand..."}
+                      placeholder={t("products.selectBrand", "Select brand...")}
                       onCreate={async (name) => {
                         const res = await createBrandFn({ data: { brand: { name } } });
                         if (res?.success) {
@@ -330,13 +330,13 @@ export function ProductForm({
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="unit" className="text-sm font-semibold">
-                      {t("unitType") || "Unit Type"}
+                      {t("products.unitType", "Unit Type")}
                     </Label>
                     <SearchableSelect
                       options={units.map((u: any) => ({ value: u.id, label: u.name }))}
                       value={formData.unit}
                       onChange={(val) => setFormData({ ...formData, unit: val })}
-                      placeholder={t("selectUnit") || "Select unit..."}
+                      placeholder={t("products.selectUnit", "Select unit...")}
                       onCreate={async (name) => {
                         const res = await createUnitFn({
                           data: { unit: { name, shortName: name } },
@@ -357,11 +357,11 @@ export function ProductForm({
             <CardHeader className="border-b border-border/60 bg-muted/20 pb-3.5">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base font-bold flex items-center gap-2">
-                  <DollarSign className="size-4 text-primary" /> Pricing & Profit Margins
+                  <DollarSign className="size-4 text-primary" /> {t("products.pricingMargins", "Pricing & Profit Margins")}
                 </CardTitle>
                 {formData.price > 0 && (
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground font-semibold">Margin:</span>
+                    <span className="text-xs text-muted-foreground font-semibold">{t("products.margin", "Margin:")}</span>
                     <span
                       className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
                         formData.price - formData.cost >= 0
@@ -382,7 +382,7 @@ export function ProductForm({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="grid gap-1.5">
                   <Label className="text-xs font-bold">
-                    Retail Selling Price ({currencySymbol}){" "}
+                    {t("products.retailPrice", "Retail Selling Price")} ({currencySymbol}){" "}
                     <span className="text-destructive">*</span>
                   </Label>
                   <div className="relative">
@@ -409,7 +409,7 @@ export function ProductForm({
                 </div>
                 <div className="grid gap-1.5">
                   <Label className="text-xs font-bold">
-                    Unit Cost / Purchase Price ({currencySymbol}){" "}
+                    {t("products.costPrice", "Unit Cost / Purchase Price")} ({currencySymbol}){" "}
                     <span className="text-destructive">*</span>
                   </Label>
                   <div className="relative">
@@ -440,7 +440,7 @@ export function ProductForm({
               <div className="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-muted/40 border border-border/60 text-xs">
                 <div>
                   <span className="text-muted-foreground text-[11px] block">
-                    Gross Profit Per Unit:
+                    {t("products.grossProfitPerUnit", "Gross Profit Per Unit:")}
                   </span>
                   <span
                     className={`font-black font-mono text-sm ${formData.price >= formData.cost ? "text-primary" : "text-destructive"}`}
@@ -449,7 +449,7 @@ export function ProductForm({
                   </span>
                 </div>
                 <div className="text-right">
-                  <span className="text-muted-foreground text-[11px] block">Markup Over Cost:</span>
+                  <span className="text-muted-foreground text-[11px] block">{t("products.markupOverCost", "Markup Over Cost:")}</span>
                   <span className="font-black font-mono text-sm text-foreground">
                     {formData.cost > 0
                       ? `${(((formData.price - formData.cost) / formData.cost) * 100).toFixed(1)}%`
@@ -460,7 +460,7 @@ export function ProductForm({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-border/50">
                 <div className="grid gap-1.5">
-                  <Label className="text-xs font-bold">Wholesale Price (Optional)</Label>
+                  <Label className="text-xs font-bold">{t("products.wholesalePrice", "Wholesale Price (Optional)")}</Label>
                   <Input
                     type="number"
                     min="0"
@@ -475,7 +475,7 @@ export function ProductForm({
                   />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label className="text-xs font-bold">Dealer Price (Optional)</Label>
+                  <Label className="text-xs font-bold">{t("products.dealerPrice", "Dealer Price (Optional)")}</Label>
                   <Input
                     type="number"
                     min="0"
@@ -498,15 +498,15 @@ export function ProductForm({
                     <div className="flex items-center gap-2">
                       <MapPin className="size-4 text-primary" />
                       <div>
-                        <Label className="text-sm font-bold">Multi-Outlet Stock Allocation</Label>
+                        <Label className="text-sm font-bold">{t("products.multiOutletStock", "Multi-Outlet Stock Allocation")}</Label>
                         <p className="text-xs text-muted-foreground">
-                          Manage physical inventory across {locations.length} store locations & warehouses.
+                          {t("products.multiOutletDesc", "Manage physical inventory across store locations & warehouses.")}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 self-start sm:self-center">
                       <span className="px-3 py-1 bg-primary/10 text-primary text-xs font-black rounded-xl border border-primary/20">
-                        Total Network Stock: {totalLocationStock} units
+                        {t("products.totalNetworkStock", "Total Network Stock")}: {totalLocationStock} {t("products.units", "units")}
                       </span>
                     </div>
                   </div>
@@ -515,7 +515,7 @@ export function ProductForm({
                   <div className="bg-muted/40 p-3.5 rounded-xl border border-border/60 space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                        <Sparkles className="size-3.5 text-primary" /> Quick Bulk Allocator
+                        <Sparkles className="size-3.5 text-primary" /> {t("products.quickBulkAllocator", "Quick Bulk Allocator")}
                       </span>
                       <Button
                         type="button"
@@ -526,10 +526,10 @@ export function ProductForm({
                           const reset: Record<string, number> = {};
                           locations.forEach((l: any) => (reset[l.id] = 0));
                           setLocationStock(reset);
-                          toast.info("All outlet stocks set to 0");
+                          toast.info(t("products.allStockResetZero", "All outlet stocks set to 0"));
                         }}
                       >
-                        Reset All to 0
+                        {t("products.resetAllToZero", "Reset All to 0")}
                       </Button>
                     </div>
 
@@ -557,7 +557,7 @@ export function ProductForm({
                             toast.success(`Applied ${val} units to all ${locations.length} outlets`);
                           }}
                         >
-                          Apply to All Outlets
+                          {t("products.applyToAllOutlets", "Apply to All Outlets")}
                         </Button>
                       </div>
 
@@ -589,7 +589,7 @@ export function ProductForm({
                             toast.success(`Distributed ${total} units evenly across ${locations.length} outlets`);
                           }}
                         >
-                          Split Total Evenly
+                          {t("products.splitTotalEvenly", "Split Total Evenly")}
                         </Button>
                       </div>
                     </div>
@@ -600,7 +600,7 @@ export function ProductForm({
                     <div className="relative max-w-xs">
                       <Search className="size-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
                       <Input
-                        placeholder="Search outlet..."
+                        placeholder={t("products.searchOutlet", "Search outlet...")}
                         value={locSearch}
                         onChange={(e) => setLocSearch(e.target.value)}
                         className="pl-8 h-8 text-xs rounded-lg bg-background"
@@ -630,7 +630,7 @@ export function ProductForm({
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                   {loc.isHeadOffice && (
                                     <span className="text-[10px] font-black uppercase px-1 py-0.2 bg-primary/10 text-primary rounded">
-                                      HQ
+                                      {t("common.hq", "HQ")}
                                     </span>
                                   )}
                                   <span className="text-[10px] font-medium text-muted-foreground capitalize">
@@ -656,7 +656,7 @@ export function ProductForm({
 
                             {/* Quick Step Buttons */}
                             <div className="flex items-center gap-1.5 pt-1 border-t border-border/40">
-                              <span className="text-[10px] font-semibold text-muted-foreground mr-1">Quick:</span>
+                              <span className="text-[10px] font-semibold text-muted-foreground mr-1">{t("products.quick", "Quick:")}</span>
                               {[10, 50, 100].map((step) => (
                                 <button
                                   key={step}
@@ -692,7 +692,7 @@ export function ProductForm({
 
                   <div className="grid gap-1.5 mt-4 pt-2 border-t border-border/60">
                     <Label className="text-sm font-semibold">
-                      Reorder Level Alert Threshold <span className="text-destructive">*</span>
+                      {t("products.reorderLevelThreshold", "Reorder Level Alert Threshold")} <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       type="number"
@@ -707,7 +707,7 @@ export function ProductForm({
                       className={`max-w-[220px] h-10 ${prodErrors.reorderLevel ? "border-destructive focus-visible:ring-destructive" : ""}`}
                     />
                     <p className="text-xs text-muted-foreground">
-                      Triggers low-stock alerts when an outlet's inventory drops to or below this amount.
+                      {t("products.reorderLevelDesc", "Triggers low-stock alerts when an outlet's inventory drops to or below this amount.")}
                     </p>
                     <FieldError message={prodErrors.reorderLevel} />
                   </div>
@@ -716,7 +716,7 @@ export function ProductForm({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="grid gap-1.5">
                     <Label className="text-sm font-semibold">
-                      Initial Stock <span className="text-destructive">*</span>
+                      {t("products.initialStock", "Initial Stock")} <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       type="number"
@@ -736,7 +736,7 @@ export function ProductForm({
                   </div>
                   <div className="grid gap-1.5">
                     <Label className="text-sm font-semibold">
-                      Reorder Level <span className="text-destructive">*</span>
+                      {t("products.reorderLevel", "Reorder Level")} <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       type="number"
@@ -762,7 +762,7 @@ export function ProductForm({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border p-4 rounded-lg bg-muted/10 shadow-inner">
                 <div>
                   <Label className="text-xs font-semibold text-muted-foreground mb-1 block">
-                    Rack No.
+                    {t("products.rackNo", "Rack No.")}
                   </Label>
                   <Input
                     placeholder="e.g. A2"
@@ -773,7 +773,7 @@ export function ProductForm({
                 </div>
                 <div>
                   <Label className="text-xs font-semibold text-muted-foreground mb-1 block">
-                    Shelf No.
+                    {t("products.shelfNo", "Shelf No.")}
                   </Label>
                   <Input
                     placeholder="e.g. 3"
@@ -784,7 +784,7 @@ export function ProductForm({
                 </div>
                 <div>
                   <Label className="text-xs font-semibold text-muted-foreground mb-1 block">
-                    Bin Position
+                    {t("products.binPosition", "Bin Position")}
                   </Label>
                   <Input
                     placeholder="e.g. B4"
@@ -800,7 +800,7 @@ export function ProductForm({
           <Card className="shadow-sm border-border/60 overflow-hidden">
             <CardHeader className="border-b bg-muted/20 pb-4">
               <CardTitle className="text-lg flex items-center gap-2">
-                <Settings className="size-5 text-primary" /> Configuration & Variants
+                <Settings className="size-5 text-primary" /> {t("products.configVariants", "Configuration & Variants")}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6 space-y-6">
@@ -824,10 +824,10 @@ export function ProductForm({
                     htmlFor="hasVariants"
                     className="font-semibold cursor-pointer text-base text-foreground"
                   >
-                    This product has variants
+                    {t("products.hasVariants", "This product has variants")}
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Manage different sizes, colors, or options for this item.
+                    {t("products.hasVariantsDesc", "Manage different sizes, colors, or options for this item.")}
                   </p>
                 </div>
               </div>
@@ -864,10 +864,10 @@ export function ProductForm({
                     htmlFor="isBundle"
                     className="font-semibold cursor-pointer text-base text-foreground"
                   >
-                    This is a Bundle / Combo Product
+                    {t("products.isBundle", "This is a Bundle / Combo Product")}
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Combine multiple products into a single package or bill of materials.
+                    {t("products.isBundleDesc", "Combine multiple products into a single package or bill of materials.")}
                   </p>
                 </div>
               </div>
@@ -899,10 +899,10 @@ export function ProductForm({
                     htmlFor="hasModifiers"
                     className="font-semibold cursor-pointer text-base text-foreground"
                   >
-                    Enable Modifiers & Add-ons
+                    {t("products.enableModifiers", "Enable Modifiers & Add-ons")}
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Useful for restaurants to offer extra toppings or preparation instructions.
+                    {t("products.enableModifiersDesc", "Useful for restaurants to offer extra toppings or preparation instructions.")}
                   </p>
                 </div>
               </div>
@@ -926,7 +926,7 @@ export function ProductForm({
                   className="rounded border-gray-300 text-primary focus:ring-primary w-5 h-5 cursor-pointer"
                 />
                 <Label htmlFor="trackFifo" className="font-semibold cursor-pointer text-sm">
-                  Track FIFO Costing for this Product
+                  {t("products.trackFifo", "Track FIFO Costing for this Product")}
                 </Label>
               </div>
 
@@ -935,31 +935,31 @@ export function ProductForm({
                   <div className="flex items-center justify-between">
                     <Label className="text-sm font-semibold flex items-center gap-2">
                       <UtensilsCrossed className="size-4 text-primary" />
-                      <span>KOT Course Routing (Kitchen Sequencing)</span>
+                      <span>{t("products.kotCourseRouting", "KOT Course Routing (Kitchen Sequencing)")}</span>
                     </Label>
                     <Badge
                       variant="outline"
                       className="text-[10px] font-bold bg-primary/10 text-primary border-primary/20"
                     >
-                      Restaurant & Food
+                      {t("products.restaurantFood", "Restaurant & Food")}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Assign this item to a kitchen preparation course sequence (Starters, Mains, Desserts, Drinks).
+                    {t("products.kotCourseDesc", "Assign this item to a kitchen preparation course sequence (Starters, Mains, Desserts, Drinks).")}
                   </p>
                   <Select
                     value={formData.course}
                     onValueChange={(val) => setFormData({ ...formData, course: val })}
                   >
                     <SelectTrigger className="w-full max-w-sm">
-                      <SelectValue placeholder="Select Course" />
+                      <SelectValue placeholder={t("products.selectCourse", "Select Course")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Starters">Starters (Appetizers)</SelectItem>
-                      <SelectItem value="Main Course">Main Course</SelectItem>
-                      <SelectItem value="Desserts">Desserts</SelectItem>
-                      <SelectItem value="Drinks">Drinks & Beverages</SelectItem>
-                      <SelectItem value="Uncategorized">Uncategorized</SelectItem>
+                      <SelectItem value="Starters">{t("products.courseStarters", "Starters (Appetizers)")}</SelectItem>
+                      <SelectItem value="Main Course">{t("products.courseMain", "Main Course")}</SelectItem>
+                      <SelectItem value="Desserts">{t("products.courseDesserts", "Desserts")}</SelectItem>
+                      <SelectItem value="Drinks">{t("products.courseDrinks", "Drinks & Beverages")}</SelectItem>
+                      <SelectItem value="Uncategorized">{t("products.courseUncategorized", "Uncategorized")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -973,7 +973,7 @@ export function ProductForm({
           <Card className="shadow-card border-border/80 rounded-2xl overflow-hidden">
             <CardHeader className="border-b border-border/60 bg-muted/20 pb-3.5">
               <CardTitle className="text-base font-bold flex items-center gap-2">
-                <ImageIcon className="size-4 text-primary" /> Product Media & Image
+                <ImageIcon className="size-4 text-primary" /> {t("products.mediaImage", "Product Media & Image")}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-5">
@@ -996,7 +996,7 @@ export function ProductForm({
                 allowedTypes={["image/jpeg", "image/png", "image/webp", "image/gif"]}
                 maxSizeMB={3}
                 label=""
-                description="Upload high-res product photo. Max size: 3MB."
+                description={t("products.uploadPhotoDesc", "Upload high-res product photo. Max size: 3MB.")}
               />
             </CardContent>
           </Card>
@@ -1004,14 +1004,14 @@ export function ProductForm({
           <Card className="shadow-card border-border/80 rounded-2xl overflow-hidden">
             <CardHeader className="border-b border-border/60 bg-muted/20 pb-3.5">
               <CardTitle className="text-base font-bold flex items-center gap-2">
-                <Tag className="size-4 text-primary" /> SKU & Barcode Codes
+                <Tag className="size-4 text-primary" /> {t("products.skuBarcodeCodes", "SKU & Barcode Codes")}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-5 space-y-4">
               <div className="grid gap-1.5">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-bold">
-                    SKU Identifier <span className="text-destructive">*</span>
+                    {t("products.skuIdentifier", "SKU Identifier")} <span className="text-destructive">*</span>
                   </Label>
                   <button
                     type="button"
@@ -1022,7 +1022,7 @@ export function ProductForm({
                     }}
                     className="text-[11px] font-bold text-primary hover:underline"
                   >
-                    Auto Generate
+                    {t("products.autoGenerate", "Auto Generate")}
                   </button>
                 </div>
                 <Input
@@ -1037,7 +1037,7 @@ export function ProductForm({
                 <FieldError message={prodErrors.sku} />
               </div>
               <div className="grid gap-1.5">
-                <Label className="text-xs font-bold">Barcode (EAN / UPC / Code128)</Label>
+                <Label className="text-xs font-bold">{t("products.barcodeEan", "Barcode (EAN / UPC / Code128)")}</Label>
                 <div className="flex gap-2">
                   <Input
                     placeholder="e.g. 123456789012"
@@ -1058,7 +1058,7 @@ export function ProductForm({
                     }
                     className="h-10 rounded-xl text-xs font-bold"
                   >
-                    Generate
+                    {t("products.generate", "Generate")}
                   </Button>
                 </div>
               </div>
@@ -1068,12 +1068,12 @@ export function ProductForm({
           <Card className="shadow-card border-border/80 rounded-2xl overflow-hidden">
             <CardHeader className="border-b border-border/60 bg-muted/20 pb-3.5">
               <CardTitle className="text-base font-bold flex items-center gap-2">
-                <FileText className="size-4 text-primary" /> Tax & Compliance
+                <FileText className="size-4 text-primary" /> {t("products.taxCompliance", "Tax & Compliance")}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-5 space-y-4">
               <div className="grid gap-1.5">
-                <Label className="text-xs font-bold">HSN / SAC Code</Label>
+                <Label className="text-xs font-bold">{t("products.hsnSacCode", "HSN / SAC Code")}</Label>
                 <Input
                   placeholder="e.g. 8517"
                   value={formData.hsnCode}
@@ -1082,7 +1082,7 @@ export function ProductForm({
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label className="text-sm font-semibold">Tax Rate (Tax Master)</Label>
+                <Label className="text-sm font-semibold">{t("products.taxRate", "Tax Rate (Tax Master)")}</Label>
                 <Select
                   value={formData.taxMasterId?.toString() || ""}
                   onValueChange={(v) => {
@@ -1095,10 +1095,10 @@ export function ProductForm({
                   }}
                 >
                   <SelectTrigger className="h-10">
-                    <SelectValue placeholder="Select Tax Rate" />
+                    <SelectValue placeholder={t("products.selectTaxRate", "Select Tax Rate")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">0% (Nil Rated)</SelectItem>
+                    <SelectItem value="">{t("products.nilRated", "0% (Nil Rated)")}</SelectItem>
                     {taxMasters
                       .filter((m: any) => m.status !== "archived")
                       .map((m: any) => (
@@ -1109,8 +1109,7 @@ export function ProductForm({
                   </SelectContent>
                 </Select>
                 <p className="text-[10px] text-muted-foreground">
-                  Rates are managed dynamically in Tax Master. If empty, use it to keep product tax
-                  in sync.
+                  {t("products.taxMasterNote", "Rates are managed dynamically in Tax Master. If empty, use it to keep product tax in sync.")}
                 </p>
               </div>
               <div className="flex items-center gap-3 pt-2">
@@ -1122,7 +1121,7 @@ export function ProductForm({
                   className="rounded border-gray-300 text-primary focus:ring-primary w-5 h-5 cursor-pointer"
                 />
                 <Label htmlFor="taxInclusive" className="text-sm font-medium cursor-pointer">
-                  Price is Tax Inclusive
+                  {t("products.taxInclusive", "Price is Tax Inclusive")}
                 </Label>
               </div>
             </CardContent>
@@ -1131,7 +1130,7 @@ export function ProductForm({
           <Card className="shadow-sm border-border/60 overflow-hidden">
             <CardHeader className="border-b bg-muted/20 pb-4">
               <CardTitle className="text-lg flex items-center gap-2">
-                <ShieldCheck className="size-5 text-primary" /> Advanced Tracking
+                <ShieldCheck className="size-5 text-primary" /> {t("products.advancedTracking", "Advanced Tracking")}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
@@ -1148,7 +1147,7 @@ export function ProductForm({
                     htmlFor="hasSerial"
                     className="font-semibold text-sm text-primary cursor-pointer"
                   >
-                    Track Serial / IMEI
+                    {t("products.trackSerial", "Track Serial / IMEI")}
                   </Label>
                   {formData.hasSerial && (
                     <textarea
@@ -1166,7 +1165,7 @@ export function ProductForm({
                 <div className="flex items-start gap-3 p-4 rounded-lg border border-primary/20 bg-primary/5 transition-colors">
                   <div className="space-y-3 w-full">
                     <Label className="font-semibold text-sm text-primary">
-                      Pharmacy Attributes
+                      {t("products.pharmacyAttributes", "Pharmacy Attributes")}
                     </Label>
                     <div className="flex gap-4">
                       <label className="flex items-center gap-2 text-sm cursor-pointer">
@@ -1184,7 +1183,7 @@ export function ProductForm({
                             })
                           }
                         />
-                        Prescription Required
+                        {t("products.prescriptionRequired", "Prescription Required")}
                       </label>
                     </div>
                   </div>
@@ -1204,12 +1203,12 @@ export function ProductForm({
                     htmlFor="hasBatch"
                     className="font-semibold text-sm text-warning cursor-pointer"
                   >
-                    Track Batches & Expiry
+                    {t("products.trackBatches", "Track Batches & Expiry")}
                   </Label>
                   {formData.hasBatch && (
                     <div className="space-y-4 mt-3">
                       <div>
-                        <Label className="text-xs font-semibold block mb-1.5">Batch Number</Label>
+                        <Label className="text-xs font-semibold block mb-1.5">{t("products.batchNumber", "Batch Number")}</Label>
                         <Input
                           placeholder="e.g. BATCH-2026A"
                           value={formData.batchNoInput}
@@ -1220,7 +1219,7 @@ export function ProductForm({
                         />
                       </div>
                       <div>
-                        <Label className="text-xs font-semibold block mb-1.5">Batch Expiry</Label>
+                        <Label className="text-xs font-semibold block mb-1.5">{t("products.batchExpiry", "Batch Expiry")}</Label>
                         <DatePicker
                           date={formData.batchExpiryInput}
                           onDateChange={(d) =>
@@ -1233,7 +1232,7 @@ export function ProductForm({
                       </div>
                       <div>
                         <Label className="text-xs font-semibold block mb-1.5">
-                          Batch Stock Qty
+                          {t("products.batchStockQty", "Batch Stock Qty")}
                         </Label>
                         <Input
                           type="number"
@@ -1255,13 +1254,13 @@ export function ProductForm({
               </div>
 
               <div className="grid gap-2 pt-2">
-                <Label className="text-sm font-semibold">Master Expiry Date</Label>
+                <Label className="text-sm font-semibold">{t("products.masterExpiryDate", "Master Expiry Date")}</Label>
                 <DatePicker
                   date={formData.expiryDate}
                   onDateChange={(d) =>
                     setFormData({ ...formData, expiryDate: d ? d.toISOString().split("T")[0] : "" })
                   }
-                  placeholder="Select expiry date"
+                  placeholder={t("products.selectExpiryDate", "Select expiry date")}
                 />
               </div>
             </CardContent>
@@ -1273,7 +1272,7 @@ export function ProductForm({
               <CardTitle className="text-base font-bold flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="size-4.5 text-primary" />
-                  <span>Warranty & Guarantee Coverage</span>
+                  <span>{t("products.warrantyCoverage", "Warranty & Guarantee Coverage")}</span>
                 </div>
                 <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
                   <input
@@ -1296,7 +1295,7 @@ export function ProductForm({
                     }
                     className="rounded border-primary text-primary size-4 cursor-pointer"
                   />
-                  <span>Enable Warranty Card</span>
+                  <span>{t("products.enableWarrantyCard", "Enable Warranty Card")}</span>
                 </label>
               </CardTitle>
             </CardHeader>
@@ -1304,7 +1303,7 @@ export function ProductForm({
               <CardContent className="p-4 sm:p-5 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold">Warranty Period (Months)</Label>
+                    <Label className="text-xs font-bold">{t("products.warrantyPeriod", "Warranty Period (Months)")}</Label>
                     <Input
                       type="number"
                       min="0"
@@ -1323,7 +1322,7 @@ export function ProductForm({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold">Guarantee Period (Months)</Label>
+                    <Label className="text-xs font-bold">{t("products.guaranteePeriod", "Guarantee Period (Months)")}</Label>
                     <Input
                       type="number"
                       min="0"
@@ -1342,7 +1341,7 @@ export function ProductForm({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold">Service Claim Mode</Label>
+                    <Label className="text-xs font-bold">{t("products.serviceClaimMode", "Service Claim Mode")}</Label>
                     <Select
                       value={formData.metadata?.warrantyType ?? "carry-in"}
                       onValueChange={(val) =>
@@ -1359,17 +1358,17 @@ export function ProductForm({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="carry-in">Store Carry-In</SelectItem>
-                        <SelectItem value="onsite">On-Site / Home Visit</SelectItem>
-                        <SelectItem value="replacement">Instant Replacement</SelectItem>
-                        <SelectItem value="brand-service">Brand Service Center</SelectItem>
+                        <SelectItem value="carry-in">{t("products.storeCarryIn", "Store Carry-In")}</SelectItem>
+                        <SelectItem value="onsite">{t("products.onSiteVisit", "On-Site / Home Visit")}</SelectItem>
+                        <SelectItem value="replacement">{t("products.instantReplacement", "Instant Replacement")}</SelectItem>
+                        <SelectItem value="brand-service">{t("products.brandServiceCenter", "Brand Service Center")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold">
-                    Warranty Terms & Policy (Printed on Receipts)
+                    {t("products.warrantyTerms", "Warranty Terms & Policy (Printed on Receipts)")}
                   </Label>
                   <Input
                     value={formData.metadata?.warrantyPolicy ?? ""}
@@ -1397,7 +1396,7 @@ export function ProductForm({
                 <CardTitle className="text-base font-bold flex items-center justify-between text-amber-700 dark:text-amber-400">
                   <div className="flex items-center gap-2">
                     <Gem className="size-4.5" />
-                    <span>Jewellery Bullion Specs & Making Charges</span>
+                    <span>{t("products.jewellerySpecs", "Jewellery Bullion Specs & Making Charges")}</span>
                   </div>
                   <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer text-foreground">
                     <input
@@ -1422,7 +1421,7 @@ export function ProductForm({
                       }
                       className="rounded border-amber-500 text-amber-600 size-4 cursor-pointer"
                     />
-                    <span>Jewellery Item</span>
+                    <span>{t("products.jewelleryItem", "Jewellery Item")}</span>
                   </label>
                 </CardTitle>
               </CardHeader>
@@ -1430,7 +1429,7 @@ export function ProductForm({
                 <CardContent className="p-4 sm:p-5 space-y-4">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold">Metal Type</Label>
+                      <Label className="text-xs font-bold">{t("products.metalType", "Metal Type")}</Label>
                       <Select
                         value={formData.metadata?.metalType ?? "gold"}
                         onValueChange={(val) =>
@@ -1444,14 +1443,14 @@ export function ProductForm({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="gold">Gold</SelectItem>
-                          <SelectItem value="silver">Silver</SelectItem>
-                          <SelectItem value="platinum">Platinum</SelectItem>
+                          <SelectItem value="gold">{t("products.gold", "Gold")}</SelectItem>
+                          <SelectItem value="silver">{t("products.silver", "Silver")}</SelectItem>
+                          <SelectItem value="platinum">{t("products.platinum", "Platinum")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold">Purity / Karat</Label>
+                      <Label className="text-xs font-bold">{t("products.purityKarat", "Purity / Karat")}</Label>
                       <Select
                         value={formData.metadata?.purityKarat ?? "22K"}
                         onValueChange={(val) =>
@@ -1474,7 +1473,7 @@ export function ProductForm({
                       </Select>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold">Gross Weight (Grams)</Label>
+                      <Label className="text-xs font-bold">{t("products.grossWeight", "Gross Weight (Grams)")}</Label>
                       <Input
                         type="number"
                         step="0.001"
@@ -1497,7 +1496,7 @@ export function ProductForm({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold">Stone / Bead Wt (g)</Label>
+                      <Label className="text-xs font-bold">{t("products.stoneWeight", "Stone / Bead Wt (g)")}</Label>
                       <Input
                         type="number"
                         step="0.001"
@@ -1523,13 +1522,13 @@ export function ProductForm({
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold">Net Gold Weight</Label>
+                      <Label className="text-xs font-bold">{t("products.netGoldWeight", "Net Gold Weight")}</Label>
                       <div className="h-10 rounded-xl border bg-muted/40 px-3 flex items-center font-mono font-black text-sm text-foreground">
-                        {(formData.metadata?.netWeight ?? 0).toFixed(3)} grams
+                        {(formData.metadata?.netWeight ?? 0).toFixed(3)} {t("products.grams", "grams")}
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold">Making Charge Type</Label>
+                      <Label className="text-xs font-bold">{t("products.makingChargeType", "Making Charge Type")}</Label>
                       <Select
                         value={formData.metadata?.makingChargeType ?? "percent"}
                         onValueChange={(val) =>
@@ -1543,14 +1542,14 @@ export function ProductForm({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="percent">Percentage (%)</SelectItem>
-                          <SelectItem value="per_gram">Per Gram Rate</SelectItem>
-                          <SelectItem value="fixed">Fixed Lump Sum</SelectItem>
+                          <SelectItem value="percent">{t("products.percentage", "Percentage (%)")}</SelectItem>
+                          <SelectItem value="per_gram">{t("products.perGramRate", "Per Gram Rate")}</SelectItem>
+                          <SelectItem value="fixed">{t("products.fixedLumpSum", "Fixed Lump Sum")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold">Making Charge Value</Label>
+                      <Label className="text-xs font-bold">{t("products.makingChargeValue", "Making Charge Value")}</Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -1584,7 +1583,7 @@ export function ProductForm({
                 <CardTitle className="text-base font-bold flex items-center justify-between text-blue-700 dark:text-blue-400">
                   <div className="flex items-center gap-2">
                     <Car className="size-4.5" />
-                    <span>Auto Parts OEM & Vehicle Fitment</span>
+                    <span>{t("products.autoPartsSpecs", "Auto Parts OEM & Vehicle Fitment")}</span>
                   </div>
                   <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer text-foreground">
                     <input
@@ -1605,7 +1604,7 @@ export function ProductForm({
                       }
                       className="rounded border-blue-500 text-blue-600 size-4 cursor-pointer"
                     />
-                    <span>Automotive Part</span>
+                    <span>{t("products.automotivePart", "Automotive Part")}</span>
                   </label>
                 </CardTitle>
               </CardHeader>
@@ -1613,7 +1612,7 @@ export function ProductForm({
                 <CardContent className="p-4 sm:p-5 space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold">Manufacturer Part Number (MPN)</Label>
+                      <Label className="text-xs font-bold">{t("products.manufacturerPartNumber", "Manufacturer Part Number (MPN)")}</Label>
                       <Input
                         value={formData.metadata?.partNumber ?? ""}
                         onChange={(e) =>
@@ -1630,7 +1629,7 @@ export function ProductForm({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold">OEM Reference Number</Label>
+                      <Label className="text-xs font-bold">{t("products.oemReferenceNumber", "OEM Reference Number")}</Label>
                       <Input
                         value={formData.metadata?.oemNumber ?? ""}
                         onChange={(e) =>
@@ -1648,7 +1647,7 @@ export function ProductForm({
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold">Compatible Vehicles / Models</Label>
+                    <Label className="text-xs font-bold">{t("products.compatibleVehicles", "Compatible Vehicles / Models")}</Label>
                     <Input
                       value={formData.metadata?.compatibleVehicles ?? ""}
                       onChange={(e) =>
@@ -1661,13 +1660,12 @@ export function ProductForm({
                       className="h-10 rounded-xl"
                     />
                     <p className="text-[11px] text-muted-foreground">
-                      Cashiers can search by vehicle make, model, or year in POS to locate this part
-                      instantly.
+                      {t("products.autoSearchDesc", "Cashiers can search by vehicle make, model, or year in POS to locate this part instantly.")}
                     </p>
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-bold">
-                      Cross-Reference / Alternate Part Numbers
+                      {t("products.alternatePartNumbers", "Cross-Reference / Alternate Part Numbers")}
                     </Label>
                     <Input
                       value={formData.metadata?.alternatePartNumbers ?? ""}

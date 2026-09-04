@@ -17,6 +17,7 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { appName } from "@/lib/env";
 import { IconPicker } from "@/components/ui/icon-picker";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { PersistStore } from "@/lib/session-store";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -103,6 +104,7 @@ const PREDEFINED_COLORS = [
 ];
 
 function CategoriesPage() {
+  const { t } = useLanguage();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
 
@@ -263,11 +265,11 @@ function CategoriesPage() {
     <div className="page-container space-y-6">
       {/* Standard PageHeader */}
       <PageHeader
-        title="Product Categories"
-        description="Group inventory items into structured departments and color-coded touch buttons for POS terminal registers."
+        title={t("productCategories", "Product Categories")}
+        description={t("manageCategoriesDesc", "Group inventory items into structured departments and color-coded touch buttons for POS terminal registers.")}
         actions={
           <Button size="sm" onClick={openNew} className="gap-1.5">
-            <Plus className="size-4" /> Add Category
+            <Plus className="size-4" /> {t("addCategory", "Add Category")}
           </Button>
         }
       />
@@ -275,30 +277,30 @@ function CategoriesPage() {
       {/* Standard StatCard Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Total Categories"
+          label={t("totalCategories", "Total Categories")}
           value={String(totalCategories)}
-          hint="Taxonomy departments"
+          hint={t("taxonomyDepartments", "Taxonomy departments")}
           icon={Layers}
           accent="primary"
         />
         <StatCard
-          label="In-Use Departments"
+          label={t("inUseDepartments", "In-Use Departments")}
           value={String(inUseCount)}
-          hint="Has linked SKUs"
+          hint={t("hasLinkedSkus", "Has linked SKUs")}
           icon={CheckCircle2}
           accent="success"
         />
         <StatCard
-          label="Linked Products"
-          value={`${totalLinkedProducts} items`}
-          hint="Assigned in catalog"
+          label={t("linkedProducts", "Linked Products")}
+          value={`${totalLinkedProducts} ${t("items", "items")}`}
+          hint={t("assignedInCatalog", "Assigned in catalog")}
           icon={Package}
           accent="info"
         />
         <StatCard
-          label="POS Quick Tiles"
+          label={t("posQuickTiles", "POS Quick Tiles")}
           value="100% Configured"
-          hint="Color-coded buttons"
+          hint={t("colorCodedButtons", "Color-coded buttons")}
           icon={Palette}
           accent="warning"
         />
@@ -311,7 +313,7 @@ function CategoriesPage() {
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search categories..."
+              placeholder={t("searchCategories", "Search categories...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-9 text-sm rounded-lg"
@@ -327,12 +329,12 @@ function CategoriesPage() {
               }}
             >
               <SelectTrigger className="h-9 w-44 text-xs rounded-lg">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder={t("filterByStatus", "Filter by status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories ({totalCategories})</SelectItem>
-                <SelectItem value="in_use">In Use ({inUseCount})</SelectItem>
-                <SelectItem value="unused">Unused ({totalCategories - inUseCount})</SelectItem>
+                <SelectItem value="all">{t("allCategoriesCount", "All Categories")} ({totalCategories})</SelectItem>
+                <SelectItem value="in_use">{t("inUse", "In Use")} ({inUseCount})</SelectItem>
+                <SelectItem value="unused">{t("unused", "Unused")} ({totalCategories - inUseCount})</SelectItem>
               </SelectContent>
             </Select>
 
@@ -377,13 +379,13 @@ function CategoriesPage() {
         ) : filteredCategories.length === 0 ? (
           <EmptyState
             icon={Tag}
-            title="No categories found"
+            title={t("noCategoriesFound", "No categories found")}
             description={
               search
-                ? "Try adjusting your search criteria."
-                : "You haven't created any product categories yet."
+                ? t("adjustSearch", "Try adjusting your search criteria.")
+                : t("noCategoriesYet", "You haven't created any product categories yet.")
             }
-            actionLabel="Add Category"
+            actionLabel={t("addCategory", "Add Category")}
             onAction={openNew}
           />
         ) : viewMode === "grid" ? (
@@ -468,10 +470,10 @@ function CategoriesPage() {
               <Table className="min-w-[700px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Category Name</TableHead>
-                    <TableHead>POS Color & Icon</TableHead>
-                    <TableHead>Linked Products</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("categoryName", "Category Name")}</TableHead>
+                    <TableHead>{t("posColorIcon", "POS Color & Icon")}</TableHead>
+                    <TableHead>{t("linkedProducts", "Linked Products")}</TableHead>
+                    <TableHead className="text-right">{t("actions", "Actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -511,7 +513,7 @@ function CategoriesPage() {
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="text-xs font-semibold">
-                            {c.count} items
+                            {c.count} {t("items", "items")}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -522,7 +524,7 @@ function CategoriesPage() {
                               onClick={() => openEdit(c)}
                               className="h-8 text-xs font-semibold"
                             >
-                              <Pencil className="size-3.5 mr-1" /> Edit
+                              <Pencil className="size-3.5 mr-1" /> {t("edit", "Edit")}
                             </Button>
                             <Button
                               variant="ghost"
@@ -565,10 +567,10 @@ function CategoriesPage() {
           <div className="flex flex-col h-full overflow-hidden">
             <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
               <SheetTitle className="text-xl font-bold text-foreground">
-                {editingCat ? "Edit Category" : "Add New Category"}
+                {editingCat ? t("editCategory", "Edit Category") : t("addCategory", "Add Category")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Configure taxonomy department details and POS register touch styles.
+                {t("manageCategoriesDesc", "Configure taxonomy department details and POS register touch styles.")}
               </SheetDescription>
             </SheetHeader>
 
@@ -579,7 +581,7 @@ function CategoriesPage() {
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="category-name" className="text-xs font-semibold">
-                    Category Name <span className="text-destructive">*</span>
+                    {t("categoryName", "Category Name")} <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="category-name"
@@ -595,12 +597,12 @@ function CategoriesPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Category Icon (optional)</Label>
+                  <Label className="text-xs font-semibold">{t("categoryIcon", "Category Icon")} (optional)</Label>
                   <IconPicker value={icon} onChange={setIcon} />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">POS Touch Button Color (optional)</Label>
+                  <Label className="text-xs font-semibold">{t("buttonColor", "POS Touch Button Color")} (optional)</Label>
                   <div className="grid grid-cols-4 gap-2 pt-1">
                     <button
                       type="button"
@@ -640,11 +642,11 @@ function CategoriesPage() {
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
                 <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
-                  Cancel
+                  {t("cancel", "Cancel")}
                 </Button>
                 <Button type="submit" disabled={isSaving} className="font-semibold shadow-sm">
                   {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
-                  {editingCat ? "Update Category" : "Create Category"}
+                  {editingCat ? t("saveCategory", "Update Category") : t("saveCategory", "Create Category")}
                 </Button>
               </SheetFooter>
             </form>
@@ -662,7 +664,7 @@ function CategoriesPage() {
               </div>
               <div>
                 <DialogTitle className="text-lg font-bold text-foreground">
-                  Delete Category
+                  {t("deleteCategory", "Delete Category")}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                   Are you sure you want to delete this category? Products assigned to it will remain
@@ -673,10 +675,10 @@ function CategoriesPage() {
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button type="button" variant="destructive" onClick={handleDelete}>
-              Delete
+              {t("delete", "Delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

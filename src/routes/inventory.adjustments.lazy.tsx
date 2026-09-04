@@ -1,6 +1,7 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useAppFormatter } from "@/hooks/useAppFormatter";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -61,6 +62,7 @@ export const Route = createLazyFileRoute("/inventory/adjustments")({
 });
 
 function AdjustmentsPage() {
+  const { t } = useLanguage();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
   const { formatAppDate } = useAppFormatter();
@@ -138,12 +140,12 @@ function AdjustmentsPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!productId) {
-      toast.error("Please select a target product");
+      toast.error(t("pleaseSelectTargetProduct", "Please select a target product"));
       return;
     }
     const quantityNum = parseInt(qty, 10);
     if (!quantityNum || quantityNum <= 0) {
-      toast.error("Adjustment quantity must be greater than 0");
+      toast.error(t("adjustmentQtyGreaterThanZero", "Adjustment quantity must be greater than 0"));
       return;
     }
 
@@ -168,7 +170,7 @@ function AdjustmentsPage() {
       })) as any;
 
       if (res?.success) {
-        toast.success("Stock adjustment successfully logged");
+        toast.success(t("stockAdjustmentLoggedSuccess", "Stock adjustment successfully logged"));
         setOpen(false);
         setProductId("");
         setQty("1");
@@ -192,11 +194,11 @@ function AdjustmentsPage() {
     <div className="page-container space-y-6">
       {/* Standard PageHeader */}
       <PageHeader
-        title="Stock Adjustments & Audit"
-        description="Record inventory write-offs, physical count reconciliations, shrinkage losses, and restock increments."
+        title={t("stockAdjustmentsAuditTitle", "Stock Adjustments & Audit")}
+        description={t("stockAdjustmentsAuditDesc", "Record inventory write-offs, physical count reconciliations, shrinkage losses, and restock increments.")}
         actions={
           <Button size="sm" onClick={() => setOpen(true)} className="gap-1.5">
-            <Plus className="size-4" /> New Adjustment
+            <Plus className="size-4" /> {t("newAdjustment", "New Adjustment")}
           </Button>
         }
       />
@@ -204,30 +206,30 @@ function AdjustmentsPage() {
       {/* Standard StatCard Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Total Audit Records"
+          label={t("totalAuditRecords", "Total Audit Records")}
           value={String(totalAdjustments)}
-          hint="Reconciliation entries"
+          hint={t("reconciliationEntries", "Reconciliation entries")}
           icon={ClipboardList}
           accent="primary"
         />
         <StatCard
-          label="Stock Additions"
-          value={`+${totalAdditions} units`}
-          hint="Found stock & surplus"
+          label={t("stockAdditions", "Stock Additions")}
+          value={`+${totalAdditions} ${t("units", "units")}`}
+          hint={t("foundStockSurplus", "Found stock & surplus")}
           icon={TrendingUp}
           accent="success"
         />
         <StatCard
-          label="Deductions & Losses"
-          value={`-${totalDeductions} units`}
-          hint="Damage, expired, shrinkage"
+          label={t("deductionsLosses", "Deductions & Losses")}
+          value={`-${totalDeductions} ${t("units", "units")}`}
+          hint={t("damageExpiredShrinkage", "Damage, expired, shrinkage")}
           icon={TrendingDown}
           accent="destructive"
         />
         <StatCard
-          label="Net Audit Impact"
-          value={`${totalAdditions - totalDeductions > 0 ? "+" : ""}${totalAdditions - totalDeductions} units`}
-          hint="Total physical balance delta"
+          label={t("netAuditImpact", "Net Audit Impact")}
+          value={`${totalAdditions - totalDeductions > 0 ? "+" : ""}${totalAdditions - totalDeductions} ${t("units", "units")}`}
+          hint={t("totalPhysicalBalanceDelta", "Total physical balance delta")}
           icon={Package}
           accent="info"
         />
@@ -240,7 +242,7 @@ function AdjustmentsPage() {
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search adjustments by product or reason..."
+              placeholder={t("searchAdjustmentsPlaceholder", "Search adjustments by product or reason...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-9 text-sm rounded-lg"
@@ -256,16 +258,16 @@ function AdjustmentsPage() {
               }}
             >
               <SelectTrigger className="h-9 w-48 text-xs rounded-lg">
-                <SelectValue placeholder="Filter by type" />
+                <SelectValue placeholder={t("filterByType", "Filter by type")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Adjustments ({totalAdjustments})</SelectItem>
+                <SelectItem value="all">{t("allAdjustments", "All Adjustments")} ({totalAdjustments})</SelectItem>
                 <SelectItem value="additions">
-                  Additions (
+                  {t("additions", "Additions")} (
                   {totalAdjustments && adjustments.filter((a: any) => (a.net || 0) > 0).length})
                 </SelectItem>
                 <SelectItem value="deductions">
-                  Deductions (
+                  {t("deductions", "Deductions")} (
                   {totalAdjustments && adjustments.filter((a: any) => (a.net || 0) < 0).length})
                 </SelectItem>
               </SelectContent>
@@ -310,13 +312,13 @@ function AdjustmentsPage() {
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={ClipboardList}
-            title="No adjustment records found"
+            title={t("noAdjustmentRecordsFound", "No adjustment records found")}
             description={
               search
-                ? "Try adjusting your search criteria."
-                : "No manual inventory adjustments have been recorded yet."
+                ? t("noAdjustmentSearchDesc", "Try adjusting your search criteria.")
+                : t("noAdjustmentDefaultDesc", "No manual inventory adjustments have been recorded yet.")
             }
-            actionLabel="New Adjustment"
+            actionLabel={t("newAdjustment", "New Adjustment")}
             onAction={() => setOpen(true)}
           />
         ) : viewMode === "grid" ? (
@@ -341,7 +343,7 @@ function AdjustmentsPage() {
                               : "bg-destructive/15 text-destructive border-destructive/30"
                           }`}
                         >
-                          {isPos ? `+${a.net} units` : `${a.net} units`}
+                          {isPos ? `+${a.net} ${t("units", "units")}` : `${a.net} ${t("units", "units")}`}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
                           {formatAppDate(a.date)}
@@ -353,15 +355,15 @@ function AdjustmentsPage() {
                           {a.productName}
                         </h3>
                         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                          {a.reason || "Manual Audit Entry"}
+                          {a.reason || t("manualAuditEntry", "Manual Audit Entry")}
                         </p>
                       </div>
                     </div>
 
                     <div className="pt-3 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground">
-                      <span>Recorded By Manager</span>
+                      <span>{t("recordedByManager", "Recorded By Manager")}</span>
                       <Badge variant="outline" className="text-[10px]">
-                        Synchronized
+                        {t("synchronized", "Synchronized")}
                       </Badge>
                     </div>
                   </div>
@@ -388,10 +390,10 @@ function AdjustmentsPage() {
               <Table className="min-w-[700px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Product Name</TableHead>
-                    <TableHead>Adjustment Delta</TableHead>
-                    <TableHead>Reason & Audit Notes</TableHead>
-                    <TableHead className="text-right">Timestamp</TableHead>
+                    <TableHead>{t("productName", "Product Name")}</TableHead>
+                    <TableHead>{t("adjustmentDelta", "Adjustment Delta")}</TableHead>
+                    <TableHead>{t("reasonAuditNotes", "Reason & Audit Notes")}</TableHead>
+                    <TableHead className="text-right">{t("timestamp", "Timestamp")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -412,11 +414,11 @@ function AdjustmentsPage() {
                                 : "bg-destructive/15 text-destructive border-destructive/30"
                             }`}
                           >
-                            {isPos ? `+${a.net} units` : `${a.net} units`}
+                            {isPos ? `+${a.net} ${t("units", "units")}` : `${a.net} ${t("units", "units")}`}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground max-w-md truncate">
-                          {a.reason || "Manual Audit Entry"}
+                          {a.reason || t("manualAuditEntry", "Manual Audit Entry")}
                         </TableCell>
                         <TableCell className="text-right text-xs text-muted-foreground">
                           {formatAppDate(a.date)}
@@ -452,11 +454,10 @@ function AdjustmentsPage() {
           <div className="flex flex-col h-full overflow-hidden">
             <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
               <SheetTitle className="text-xl font-bold text-foreground">
-                Record Stock Adjustment
+                {t("recordStockAdjustment", "Record Stock Adjustment")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Adjust on-hand inventory levels for physical audit reconciliation, wastage, or
-                counts.
+                {t("recordStockAdjustmentDesc", "Adjust on-hand inventory levels for physical audit reconciliation, wastage, or counts.")}
               </SheetDescription>
             </SheetHeader>
 
@@ -466,26 +467,26 @@ function AdjustmentsPage() {
             >
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Select Target Product *</Label>
+                  <Label className="text-xs font-semibold">{t("selectTargetProduct", "Select Target Product")} *</Label>
                   <SearchableSelect
                     options={products.map((p: any) => ({
                       value: p.id,
-                      label: `${p.name} (Stock: ${p.stock ?? 0})`,
+                      label: `${p.name} (${t("stock", "Stock")}: ${p.stock ?? 0})`,
                     }))}
                     value={productId}
                     onChange={setProductId}
-                    placeholder="Search SKU or product name..."
+                    placeholder={t("searchSkuOrProductName", "Search SKU or product name...")}
                   />
                 </div>
 
                 {selectedProduct && (
                   <div className="p-3 rounded-xl bg-muted/40 border border-border/60 text-xs space-y-1">
                     <div className="text-muted-foreground">
-                      Current On-Hand Stock:{" "}
-                      <strong className="text-foreground">{selectedProduct.stock} units</strong>
+                      {t("currentOnHandStock", "Current On-Hand Stock")}:{" "}
+                      <strong className="text-foreground">{selectedProduct.stock} {t("units", "units")}</strong>
                     </div>
                     <div className="text-muted-foreground">
-                      After Adjustment:{" "}
+                      {t("afterAdjustment", "After Adjustment")}:{" "}
                       <strong className="text-primary font-bold">
                         {Math.max(
                           0,
@@ -494,14 +495,14 @@ function AdjustmentsPage() {
                               ? parseInt(qty || "0", 10)
                               : -parseInt(qty || "0", 10)),
                         )}{" "}
-                        units
+                        {t("units", "units")}
                       </strong>
                     </div>
                   </div>
                 )}
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Adjustment Type</Label>
+                  <Label className="text-xs font-semibold">{t("adjustmentType", "Adjustment Type")}</Label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
@@ -512,7 +513,7 @@ function AdjustmentsPage() {
                           : "border-border/60 hover:bg-muted/50 text-muted-foreground"
                       }`}
                     >
-                      + Stock Addition
+                      {t("stockAddition", "+ Stock Addition")}
                     </button>
                     <button
                       type="button"
@@ -523,14 +524,14 @@ function AdjustmentsPage() {
                           : "border-border/60 hover:bg-muted/50 text-muted-foreground"
                       }`}
                     >
-                      - Stock Deduction
+                      {t("stockDeduction", "- Stock Deduction")}
                     </button>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
                   <Label htmlFor="qty" className="text-xs font-semibold">
-                    Quantity Delta *
+                    {t("quantityDelta", "Quantity Delta")} *
                   </Label>
                   <Input
                     id="qty"
@@ -544,46 +545,46 @@ function AdjustmentsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Reason Category</Label>
+                  <Label className="text-xs font-semibold">{t("reasonCategory", "Reason Category")}</Label>
                   <Select value={reasonCategory} onValueChange={setReasonCategory}>
                     <SelectTrigger className="h-9 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Audit Reconciliation">
-                        Physical Count Reconciliation
+                        {t("physicalCountReconciliation", "Physical Count Reconciliation")}
                       </SelectItem>
-                      <SelectItem value="Damaged Goods">Damaged / Broken in Transit</SelectItem>
-                      <SelectItem value="Expired Product">Expired / Perished</SelectItem>
+                      <SelectItem value="Damaged Goods">{t("damagedBrokenInTransit", "Damaged / Broken in Transit")}</SelectItem>
+                      <SelectItem value="Expired Product">{t("expiredPerished", "Expired / Perished")}</SelectItem>
                       <SelectItem value="Stock Shrinkage / Theft">
-                        Shrinkage / Unaccounted
+                        {t("shrinkageUnaccounted", "Shrinkage / Unaccounted")}
                       </SelectItem>
-                      <SelectItem value="Found Surplus Stock">Found Unrecorded Stock</SelectItem>
-                      <SelectItem value="Internal Consumption">Internal Testing / Demo</SelectItem>
+                      <SelectItem value="Found Surplus Stock">{t("foundUnrecordedStock", "Found Unrecorded Stock")}</SelectItem>
+                      <SelectItem value="Internal Consumption">{t("internalTestingDemo", "Internal Testing / Demo")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-1.5">
                   <Label htmlFor="notes" className="text-xs font-semibold">
-                    Audit Notes
+                    {t("auditNotes", "Audit Notes")}
                   </Label>
                   <Input
                     id="notes"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="e.g. Broken packaging discovered in shelf A4"
+                    placeholder={t("auditNotesPlaceholder", "e.g. Broken packaging discovered in shelf A4")}
                   />
                 </div>
               </div>
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
                 <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                  Cancel
+                  {t("cancel", "Cancel")}
                 </Button>
                 <Button type="submit" disabled={isSaving} className="font-semibold shadow-sm">
                   {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
-                  Save Adjustment
+                  {t("saveAdjustment", "Save Adjustment")}
                 </Button>
               </SheetFooter>
             </form>

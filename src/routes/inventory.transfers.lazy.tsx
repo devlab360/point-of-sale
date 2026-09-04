@@ -28,6 +28,7 @@ import { getProductsFn } from "@/api/products";
 import { getSuppliersFn } from "@/api/suppliers";
 import { getLocationsFn } from "@/api/locations";
 import { useAppFormatter } from "@/hooks/useAppFormatter";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { PersistStore } from "@/lib/session-store";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
@@ -65,6 +66,7 @@ export const Route = createLazyFileRoute("/inventory/transfers")({
 });
 
 function TransfersPage() {
+  const { t } = useLanguage();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
   const { formatAppDate } = useAppFormatter();
@@ -165,29 +167,29 @@ function TransfersPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!productId) {
-      toast.error("Please select a product");
+      toast.error(t("pleaseSelectProduct", "Please select a product"));
       return;
     }
 
     if (transferType === "branch") {
       if (!destinationLocationId) {
-        toast.error("Please select a destination branch");
+        toast.error(t("pleaseSelectDestinationBranch", "Please select a destination branch"));
         return;
       }
       if (sourceLocationId && sourceLocationId === destinationLocationId) {
-        toast.error("Source and destination branch cannot be the same");
+        toast.error(t("sourceDestBranchSameError", "Source and destination branch cannot be the same"));
         return;
       }
     } else {
       if (!supplierId) {
-        toast.error("Please select a supplier / vendor");
+        toast.error(t("pleaseSelectSupplierVendor", "Please select a supplier / vendor"));
         return;
       }
     }
 
     const q = parseInt(transferQty, 10);
     if (!q || q <= 0) {
-      toast.error("Quantity must be greater than 0");
+      toast.error(t("qtyGreaterThanZero", "Quantity must be greater than 0"));
       return;
     }
 
@@ -196,7 +198,7 @@ function TransfersPage() {
     const supp = suppliers.find((s: any) => s.id === supplierId);
 
     if (prod && Number(prod.stock) < q) {
-      toast.error(`Insufficient stock! Only ${prod.stock} units available.`);
+      toast.error(t("insufficientStockOnlyUnitsAvailable", "Insufficient stock! Only {stock} units available.").replace("{stock}", String(prod.stock)));
       return;
     }
 
@@ -233,8 +235,8 @@ function TransfersPage() {
       if (res?.success) {
         toast.success(
           transferType === "branch"
-            ? `Stock transferred to ${destLoc?.name || "Branch"}`
-            : "Stock return registered",
+            ? `${t("stockTransferredTo", "Stock transferred to")} ${destLoc?.name || "Branch"}`
+            : t("stockReturnRegistered", "Stock return registered"),
         );
         setOpen(false);
         setProductId("");
@@ -261,11 +263,11 @@ function TransfersPage() {
     <div className="page-container space-y-6">
       {/* Standard PageHeader */}
       <PageHeader
-        title="Stock Transfers & Branch Dispatches"
-        description="Dispatch inventory between store locations, satellite warehouse nodes, and return items to suppliers."
+        title={t("stockTransfersBranchDispatches", "Stock Transfers & Branch Dispatches")}
+        description={t("stockTransfersBranchDispatchesDesc", "Dispatch inventory between store locations, satellite warehouse nodes, and return items to suppliers.")}
         actions={
           <Button size="sm" onClick={handleOpenModal} className="gap-1.5 cursor-pointer">
-            <Plus className="size-4" /> New Transfer
+            <Plus className="size-4" /> {t("newTransfer", "New Transfer")}
           </Button>
         }
       />
@@ -273,30 +275,30 @@ function TransfersPage() {
       {/* Standard StatCard Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Total Transfers"
+          label={t("totalTransfers", "Total Transfers")}
           value={String(totalTransferCount)}
-          hint="Dispatch records"
+          hint={t("dispatchRecords", "Dispatch records")}
           icon={Truck}
           accent="primary"
         />
         <StatCard
-          label="Units Transferred"
-          value={`${totalUnitsTransferred} units`}
-          hint="Inventory moved"
+          label={t("unitsTransferred", "Units Transferred")}
+          value={`${totalUnitsTransferred} ${t("units", "units")}`}
+          hint={t("inventoryMoved", "Inventory moved")}
           icon={Package}
           accent="info"
         />
         <StatCard
-          label="Transfer Asset Value"
+          label={t("transferAssetValue", "Transfer Asset Value")}
           value={formatCurrency(totalTransferAssetValue)}
-          hint="Total manifest valuation"
+          hint={t("totalManifestValuation", "Total manifest valuation")}
           icon={DollarSign}
           accent="success"
         />
         <StatCard
-          label="Partner / Branch Nodes"
-          value={`${suppliers.length} Destinations`}
-          hint="Active dispatch routes"
+          label={t("partnerBranchNodes", "Partner / Branch Nodes")}
+          value={`${suppliers.length} ${t("destinationsCount", "Destinations")}`}
+          hint={t("activeDispatchRoutes", "Active dispatch routes")}
           icon={Building2}
           accent="warning"
         />
@@ -309,7 +311,7 @@ function TransfersPage() {
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search transfers..."
+              placeholder={t("searchTransfersPlaceholder", "Search transfers...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-9 text-sm rounded-lg"
@@ -325,20 +327,20 @@ function TransfersPage() {
               }}
             >
               <SelectTrigger className="h-9 w-48 text-xs rounded-lg">
-                <SelectValue placeholder="Filter by settlement" />
+                <SelectValue placeholder={t("filterBySettlement", "Filter by settlement")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Settlements ({totalTransferCount})</SelectItem>
+                <SelectItem value="all">{t("allSettlements", "All Settlements")} ({totalTransferCount})</SelectItem>
                 <SelectItem value="cash">
-                  Cash (
+                  {t("cash", "Cash")} (
                   {transfers.filter((t: any) => (t.paymentMethod || "cash") === "cash").length})
                 </SelectItem>
                 <SelectItem value="bank">
-                  Bank (
+                  {t("bank", "Bank")} (
                   {transfers.filter((t: any) => (t.paymentMethod || "cash") === "bank").length})
                 </SelectItem>
                 <SelectItem value="credit">
-                  Credit (
+                  {t("credit", "Credit")} (
                   {transfers.filter((t: any) => (t.paymentMethod || "cash") === "credit").length})
                 </SelectItem>
               </SelectContent>
@@ -383,41 +385,41 @@ function TransfersPage() {
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={Truck}
-            title="No transfers found"
+            title={t("noTransfersFound", "No transfers found")}
             description={
               search
-                ? "Try adjusting your search criteria."
-                : "You haven't recorded any inventory transfers yet."
+                ? t("noTransfersSearchDesc", "Try adjusting your search criteria.")
+                : t("noTransfersDefaultDesc", "You haven't recorded any inventory transfers yet.")
             }
-            actionLabel="New Transfer"
+            actionLabel={t("newTransfer", "New Transfer")}
             onAction={() => setOpen(true)}
           />
         ) : viewMode === "grid" ? (
           /* Grid View */
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {paginatedTransfers.map((t: any) => (
+              {paginatedTransfers.map((tItem: any) => (
                 <div
-                  key={t.id}
+                  key={tItem.id}
                   className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft flex flex-col justify-between space-y-4 hover:border-border transition-all group"
                 >
                   <div className="space-y-3">
                     <div className="flex items-start justify-between">
                       <Badge variant="outline" className="font-mono text-xs font-bold">
-                        {t.quantity} units
+                        {tItem.quantity} {t("units", "units")}
                       </Badge>
-                      <span className="text-xs text-muted-foreground">{formatAppDate(t.date)}</span>
+                      <span className="text-xs text-muted-foreground">{formatAppDate(tItem.date)}</span>
                     </div>
 
                     <div>
                       <h3 className="font-bold text-base text-foreground group-hover:text-primary transition-colors truncate">
-                        {t.productName}
+                        {tItem.productName}
                       </h3>
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-                        <span>Central Store</span>
+                        <span>{t("centralStore", "Central Store")}</span>
                         <ArrowRight className="size-3 text-primary" />
                         <span className="font-semibold text-foreground truncate">
-                          {t.supplierName}
+                          {tItem.supplierName}
                         </span>
                       </div>
                     </div>
@@ -426,14 +428,14 @@ function TransfersPage() {
                   <div className="pt-3 border-t border-border/60 flex items-center justify-between text-xs">
                     <div>
                       <span className="text-[10px] text-muted-foreground block uppercase">
-                        Asset Value
+                        {t("assetValue", "Asset Value")}
                       </span>
                       <span className="font-bold text-foreground">
-                        {formatCurrency(Number(t.totalAmount) || 0)}
+                        {formatCurrency(Number(tItem.totalAmount) || 0)}
                       </span>
                     </div>
                     <Badge variant="outline" className="text-[10px]">
-                      {t.paymentMethod || "Cash"}
+                      {tItem.paymentMethod || "Cash"}
                     </Badge>
                   </div>
                 </div>
@@ -459,36 +461,36 @@ function TransfersPage() {
               <Table className="min-w-[750px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Product Name</TableHead>
-                    <TableHead>Destination Route</TableHead>
-                    <TableHead>Units</TableHead>
-                    <TableHead className="text-right">Valuation</TableHead>
-                    <TableHead className="text-right">Dispatch Date</TableHead>
+                    <TableHead>{t("productName", "Product Name")}</TableHead>
+                    <TableHead>{t("destinationRoute", "Destination Route")}</TableHead>
+                    <TableHead>{t("units", "Units")}</TableHead>
+                    <TableHead className="text-right">{t("valuation", "Valuation")}</TableHead>
+                    <TableHead className="text-right">{t("dispatchDate", "Dispatch Date")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedTransfers.map((t: any) => (
-                    <TableRow key={t.id} className="hover:bg-muted/30 transition-colors">
+                  {paginatedTransfers.map((tItem: any) => (
+                    <TableRow key={tItem.id} className="hover:bg-muted/30 transition-colors">
                       <TableCell>
-                        <span className="font-semibold text-foreground">{t.productName}</span>
+                        <span className="font-semibold text-foreground">{tItem.productName}</span>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1.5 text-xs">
-                          <span className="text-muted-foreground">Main Store</span>
+                          <span className="text-muted-foreground">{t("mainStore", "Main Store")}</span>
                           <ArrowRight className="size-3 text-primary" />
-                          <span className="font-semibold text-foreground">{t.supplierName}</span>
+                          <span className="font-semibold text-foreground">{tItem.supplierName}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="font-mono text-xs font-bold">
-                          {t.quantity} units
+                          {tItem.quantity} {t("units", "units")}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right font-bold text-foreground">
-                        {formatCurrency(Number(t.totalAmount) || 0)}
+                        {formatCurrency(Number(tItem.totalAmount) || 0)}
                       </TableCell>
                       <TableCell className="text-right text-xs text-muted-foreground">
-                        {formatAppDate(t.date)}
+                        {formatAppDate(tItem.date)}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -520,10 +522,10 @@ function TransfersPage() {
           <div className="flex flex-col h-full overflow-hidden">
             <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
               <SheetTitle className="text-xl font-bold text-foreground">
-                Dispatch Stock Transfer
+                {t("dispatchStockTransfer", "Dispatch Stock Transfer")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Transfer on-hand inventory units to branch nodes or return to suppliers.
+                {t("dispatchStockTransferDesc", "Transfer on-hand inventory units to branch nodes or return to suppliers.")}
               </SheetDescription>
             </SheetHeader>
 
@@ -534,7 +536,7 @@ function TransfersPage() {
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 {/* Transfer Type Pill Selector */}
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Transfer Type</Label>
+                  <Label className="text-xs font-semibold">{t("transferType", "Transfer Type")}</Label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
@@ -546,7 +548,7 @@ function TransfersPage() {
                       }`}
                     >
                       <Building2 className="size-3.5" />
-                      <span>Branch to Branch</span>
+                      <span>{t("branchToBranch", "Branch to Branch")}</span>
                     </button>
                     <button
                       type="button"
@@ -558,22 +560,22 @@ function TransfersPage() {
                       }`}
                     >
                       <Truck className="size-3.5" />
-                      <span>Vendor Return</span>
+                      <span>{t("vendorReturn", "Vendor Return")}</span>
                     </button>
                   </div>
                 </div>
 
                 {/* Origin Branch (Source) */}
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Origin Location / Branch (Source) *</Label>
+                  <Label className="text-xs font-semibold">{t("originLocationBranch", "Origin Location / Branch (Source)")} *</Label>
                   <Select value={sourceLocationId} onValueChange={setSourceLocationId}>
                     <SelectTrigger className="h-10 text-xs rounded-xl bg-card">
-                      <SelectValue placeholder="Select Origin Branch..." />
+                      <SelectValue placeholder={t("selectOriginBranch", "Select Origin Branch...")} />
                     </SelectTrigger>
                     <SelectContent>
                       {locations.map((loc: any) => (
                         <SelectItem key={loc.id} value={loc.id} className="text-xs">
-                          {loc.name} {loc.isHeadOffice ? "(Head Office / Central)" : ""}
+                          {loc.name} {loc.isHeadOffice ? t("headOfficeCentral", "(Head Office / Central)") : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -583,10 +585,10 @@ function TransfersPage() {
                 {/* Destination Branch OR Vendor */}
                 {transferType === "branch" ? (
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Destination Branch (Target) *</Label>
+                    <Label className="text-xs font-semibold">{t("destinationBranchTarget", "Destination Branch (Target)")} *</Label>
                     <Select value={destinationLocationId} onValueChange={setDestinationLocationId}>
                       <SelectTrigger className="h-10 text-xs rounded-xl bg-card">
-                        <SelectValue placeholder="Select Target Branch..." />
+                        <SelectValue placeholder={t("selectTargetBranch", "Select Target Branch...")} />
                       </SelectTrigger>
                       <SelectContent>
                         {locations
@@ -601,7 +603,7 @@ function TransfersPage() {
                   </div>
                 ) : (
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Destination Supplier / Vendor *</Label>
+                    <Label className="text-xs font-semibold">{t("destinationSupplierVendor", "Destination Supplier / Vendor")} *</Label>
                     <SearchableSelect
                       options={suppliers.map((s: any) => ({
                         value: s.id,
@@ -609,17 +611,17 @@ function TransfersPage() {
                       }))}
                       value={supplierId}
                       onChange={setSupplierId}
-                      placeholder="Select vendor..."
+                      placeholder={t("selectVendor", "Select vendor...")}
                     />
                   </div>
                 )}
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Select Product *</Label>
+                  <Label className="text-xs font-semibold">{t("selectProduct", "Select Product")} *</Label>
                   <SearchableSelect
                     options={products.map((p: any) => ({
                       value: p.id,
-                      label: `${p.name} (Total Stock: ${p.stock ?? 0})`,
+                      label: `${p.name} (${t("totalStock", "Total Stock")}: ${p.stock ?? 0})`,
                     }))}
                     value={productId}
                     onChange={(val) => {
@@ -631,13 +633,13 @@ function TransfersPage() {
                         );
                       }
                     }}
-                    placeholder="Search product SKU..."
+                    placeholder={t("searchProductSku", "Search product SKU...")}
                   />
                 </div>
 
                 <div className="space-y-1.5">
                   <Label htmlFor="t-qty" className="text-xs font-semibold">
-                    Transfer Units *
+                    {t("transferUnits", "Transfer Units")} *
                   </Label>
                   <Input
                     id="t-qty"
@@ -662,7 +664,7 @@ function TransfersPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="t-total" className="text-xs font-semibold">
-                      Transfer Valuation ({currencySymbol})
+                      {t("transferValuation", "Transfer Valuation")} ({currencySymbol})
                     </Label>
                     <Input
                       id="t-total"
@@ -674,7 +676,7 @@ function TransfersPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="t-paid" className="text-xs font-semibold">
-                      Settled Amount ({currencySymbol})
+                      {t("settledAmount", "Settled Amount")} ({currencySymbol})
                     </Label>
                     <Input
                       id="t-paid"
@@ -687,15 +689,15 @@ function TransfersPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Settlement Method</Label>
+                  <Label className="text-xs font-semibold">{t("settlementMethod", "Settlement Method")}</Label>
                   <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                     <SelectTrigger className="h-9 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="cash">Direct Cash</SelectItem>
-                      <SelectItem value="bank">Bank Transfer</SelectItem>
-                      <SelectItem value="credit">Store Credit / Khata</SelectItem>
+                      <SelectItem value="cash">{t("directCash", "Direct Cash")}</SelectItem>
+                      <SelectItem value="bank">{t("bankTransfer", "Bank Transfer")}</SelectItem>
+                      <SelectItem value="credit">{t("storeCreditKhata", "Store Credit / Khata")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -703,11 +705,11 @@ function TransfersPage() {
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
                 <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                  Cancel
+                  {t("cancel", "Cancel")}
                 </Button>
                 <Button type="submit" disabled={isSaving} className="font-semibold shadow-sm">
                   {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
-                  Confirm Dispatch
+                  {t("confirmDispatch", "Confirm Dispatch")}
                 </Button>
               </SheetFooter>
             </form>

@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2, X, Sparkles, Building2, Copy, Layers, Check } from "lucide-react";
 import { useCurrency } from "@/lib/currency";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 
 export interface Variant {
@@ -62,6 +63,7 @@ export function VariantManager({
   basePrice,
   baseCost,
 }: VariantManagerProps) {
+  const { t } = useLanguage();
   const { currencySymbol } = useCurrency();
   const [options, setOptions] = useState<VariantOption[]>(() => {
     const extracted = extractOptionsFromVariants(variants);
@@ -203,11 +205,10 @@ export function VariantManager({
         <div>
           <Label className="text-lg font-bold flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
-            Auto-Generate Variants
+            {t("products.autoGenerateVariants", "Auto-Generate Variants")}
           </Label>
           <p className="text-xs text-muted-foreground mt-1">
-            Define your options (e.g. Size, Color) and values (e.g. S, M, Red). We'll automatically
-            generate the combinations.
+            {t("products.autoGenerateVariantsDesc", "Define your options (e.g. Size, Color) and values (e.g. S, M, Red). We'll automatically generate the combinations.")}
           </p>
         </div>
       </div>
@@ -252,7 +253,7 @@ export function VariantManager({
                 <Input
                   size={1}
                   className="h-8 text-sm w-40 bg-muted/50"
-                  placeholder={`Add ${opt.name} value...`}
+                  placeholder={`${t("products.addValueTo", "Add")} ${opt.name}...`}
                   value={inputValue[optIndex] || ""}
                   onChange={(e) => setInputValue({ ...inputValue, [optIndex]: e.target.value })}
                   onKeyDown={(e) => {
@@ -269,7 +270,7 @@ export function VariantManager({
                   className="h-8 px-3 text-xs"
                   onClick={() => addValueToOption(optIndex)}
                 >
-                  Add Value
+                  {t("products.addValue", "Add Value")}
                 </Button>
               </div>
             </div>
@@ -279,13 +280,13 @@ export function VariantManager({
         {/* Add New Option */}
         <div className="flex items-center gap-2 max-w-sm pt-2">
           <Input
-            placeholder="New option type (e.g. Color, Material)"
+            placeholder={t("products.newOptionTypePlaceholder", "New option type (e.g. Color, Material)")}
             value={newOptionName}
             onChange={(e) => setNewOptionName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addOption())}
           />
           <Button type="button" onClick={addOption} variant="outline" className="shrink-0">
-            <Plus className="w-4 h-4 mr-2" /> Add Option Type
+            <Plus className="w-4 h-4 mr-2" /> {t("products.addOptionType", "Add Option Type")}
           </Button>
         </div>
       </div>
@@ -296,13 +297,13 @@ export function VariantManager({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <Label className="text-sm font-bold flex items-center gap-2">
-                Generated Variant Matrix{" "}
+                {t("products.generatedVariantMatrix", "Generated Variant Matrix")}{" "}
                 <span className="bg-primary/10 text-primary px-2.5 py-0.5 rounded-full text-xs font-black">
-                  {variants.length} Variants
+                  {variants.length} {t("products.variants", "Variants")}
                 </span>
               </Label>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Configure prices, SKUs, and allocate branch stock across {locations.length > 0 ? locations.length : 1} outlet(s).
+                {t("products.configureVariantsDesc", "Configure prices, SKUs, and allocate branch stock across outlets.")}
               </p>
             </div>
           </div>
@@ -310,7 +311,7 @@ export function VariantManager({
           {/* Bulk Variant Management Toolbar */}
           <div className="p-3 bg-muted/40 rounded-xl border border-border/60 space-y-2.5">
             <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-              <Sparkles className="size-3.5 text-primary" /> Rapid Bulk Allocator for All {variants.length} Variants
+              <Sparkles className="size-3.5 text-primary" /> {t("products.rapidBulkAllocator", "Rapid Bulk Allocator for All Variants")}
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -320,7 +321,7 @@ export function VariantManager({
                   type="number"
                   min="0"
                   step="0.01"
-                  placeholder="Price"
+                  placeholder={t("common.price", "Price")}
                   value={bulkPrice}
                   onChange={(e) => setBulkPrice(e.target.value)}
                   className="h-7 text-xs font-mono w-20"
@@ -337,7 +338,7 @@ export function VariantManager({
                     toast.success(`Applied ${currencySymbol}${bulkPrice} to all variants`);
                   }}
                 >
-                  Set Price
+                  {t("products.setPrice", "Set Price")}
                 </Button>
               </div>
 
@@ -349,7 +350,7 @@ export function VariantManager({
                     onChange={(e) => setBulkTargetLoc(e.target.value)}
                     className="h-7 text-xs rounded-md bg-muted px-2 font-medium border-0 focus:ring-1 focus:ring-primary"
                   >
-                    <option value="all">All Outlets</option>
+                    <option value="all">{t("products.allOutlets", "All Outlets")}</option>
                     {locations.map((loc) => (
                       <option key={loc.id} value={loc.id}>
                         {loc.name}
@@ -359,7 +360,7 @@ export function VariantManager({
                   <Input
                     type="number"
                     min="0"
-                    placeholder="Stock Qty"
+                    placeholder={t("products.stockQty", "Stock Qty")}
                     value={bulkStockVal}
                     onChange={(e) => setBulkStockVal(e.target.value)}
                     className="h-7 text-xs font-mono w-20"
@@ -390,7 +391,7 @@ export function VariantManager({
                       toast.success(`Allocated ${qty} units across ${bulkTargetLoc === "all" ? "all outlets" : "selected outlet"}`);
                     }}
                   >
-                    Set Stock
+                    {t("products.setStock", "Set Stock")}
                   </Button>
                 </div>
               )}
@@ -402,11 +403,11 @@ export function VariantManager({
               <table className="w-full text-sm text-left">
                 <thead className="bg-muted/60 text-muted-foreground text-[11px] uppercase font-bold tracking-wider border-b border-border/80">
                   <tr>
-                    <th className="px-4 py-3">Variant Combo</th>
-                    <th className="px-4 py-3 w-36">Price ({currencySymbol})</th>
-                    <th className="px-4 py-3 w-32">Cost ({currencySymbol})</th>
-                    {mode === "product" && <th className="px-4 py-3 w-40">SKU (Optional)</th>}
-                    {mode === "service" && <th className="px-4 py-3 w-36">Duration (Mins)</th>}
+                    <th className="px-4 py-3">{t("products.variantCombo", "Variant Combo")}</th>
+                    <th className="px-4 py-3 w-36">{t("common.price", "Price")} ({currencySymbol})</th>
+                    <th className="px-4 py-3 w-32">{t("common.cost", "Cost")} ({currencySymbol})</th>
+                    {mode === "product" && <th className="px-4 py-3 w-40">{t("products.skuOptional", "SKU (Optional)")}</th>}
+                    {mode === "service" && <th className="px-4 py-3 w-36">{t("products.durationMins", "Duration (Mins)")}</th>}
                     {mode === "product" &&
                       locations.length > 0 &&
                       locations.map((loc) => (
@@ -415,10 +416,10 @@ export function VariantManager({
                         </th>
                       ))}
                     {mode === "product" && locations.length > 0 && (
-                      <th className="px-3 py-3 w-24 text-center">Total Stock</th>
+                      <th className="px-3 py-3 w-24 text-center">{t("products.totalStock", "Total Stock")}</th>
                     )}
                     {mode === "product" && locations.length > 0 && (
-                      <th className="px-3 py-3 w-20 text-center">Actions</th>
+                      <th className="px-3 py-3 w-20 text-center">{t("common.actions", "Actions")}</th>
                     )}
                   </tr>
                 </thead>
@@ -457,7 +458,7 @@ export function VariantManager({
                           <td className="px-4 py-2">
                             <Input
                               className="h-8 text-xs bg-background"
-                              placeholder="SKU"
+                              placeholder={t("products.sku", "SKU")}
                               value={variant.sku || ""}
                               onChange={(e) => updateVariant(vIndex, "sku", e.target.value)}
                             />
@@ -514,7 +515,7 @@ export function VariantManager({
                               type="button"
                               variant="ghost"
                               size="icon"
-                              title="Copy this variant's stock to all other variants"
+                              title={t("products.copyStockTooltip", "Copy this variant's stock to all other variants")}
                               className="h-7 w-7 text-muted-foreground hover:text-primary"
                               onClick={() => {
                                 const targetStocks = variant.locationStocks || [];

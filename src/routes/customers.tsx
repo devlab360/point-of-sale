@@ -375,27 +375,27 @@ function CustomersPage() {
           <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
             <div className="flex-1 space-y-4">
               <div className="space-y-2">
-                <Label>Customer Type</Label>
+                <Label>{t("customerType", "Customer Type")}</Label>
                 <SearchableSelect
                   options={[
-                    { value: "", label: "All Types" },
-                    ...CUSTOMER_TYPES.map((t) => ({ value: t.value, label: t.label })),
+                    { value: "", label: t("allTypes", "All Types") },
+                    ...CUSTOMER_TYPES.map((typeObj) => ({ value: typeObj.value, label: t(typeObj.value, typeObj.label) })),
                   ]}
                   value={draftFilters.type}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, type: val }))}
-                  placeholder="Filter by Type"
+                  placeholder={t("filterByType", "Filter by Type")}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Account Status</Label>
+                <Label>{t("accountStatus", "Account Status")}</Label>
                 <SearchableSelect
                   options={[
-                    { value: "", label: "All Statuses" },
-                    ...CUSTOMER_STATUSES.map((s) => ({ value: s.value, label: s.label })),
+                    { value: "", label: t("allStatuses", "All Statuses") },
+                    ...CUSTOMER_STATUSES.map((s) => ({ value: s.value, label: t(s.value, s.label) })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder="Filter by Status"
+                  placeholder={t("filterByStatus", "Filter by Status")}
                 />
               </div>
             </div>
@@ -407,7 +407,7 @@ function CustomersPage() {
                   close();
                 }}
               >
-                Apply Filters
+                {t("applyFilters", "Apply Filters")}
               </Button>
             </div>
           </div>
@@ -425,9 +425,9 @@ function CustomersPage() {
                 <Table className="min-w-[1000px]">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t("customer") || "Customer Name"}</TableHead>
-                      <TableHead>{t("contact") || "Mobile Phone"}</TableHead>
-                      <TableHead className="text-right">{t("visits") || "Visits"}</TableHead>
+                      <TableHead>{t("customerName", "Customer Name")}</TableHead>
+                      <TableHead>{t("mobilePhone", "Mobile Phone")}</TableHead>
+                      <TableHead className="text-right">{t("visits", "Visits")}</TableHead>
                       <TableHead className="text-right">
                         {t("spent") || "Total Purchases"}
                       </TableHead>
@@ -686,10 +686,10 @@ function CustomersPage() {
         >
           <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
             <SheetTitle className="text-xl font-bold text-foreground">
-              {editItem ? "Edit Customer Profile" : "Add New Customer"}
+              {editItem ? t("editCustomer", "Edit Customer Profile") : t("addNewCustomer", "Add New Customer")}
             </SheetTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Manage client details, credit limits, khata balance, and contact information.
+              {t("manageClientDetailsDesc", "Manage client details, credit limits, khata balance, and contact information.")}
             </p>
           </SheetHeader>
           <form
@@ -701,7 +701,7 @@ function CustomersPage() {
             <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="name">
-                  Full Name <span className="text-destructive">*</span>
+                  {t("fullName", "Full Name")} <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="name"
@@ -717,7 +717,7 @@ function CustomersPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t("email", "Email")}</Label>
                   <Input
                     id="email"
                     name="email"
@@ -732,7 +732,7 @@ function CustomersPage() {
                   <FieldError message={custErrors.email} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="phone">Phone</Label>
+                  <Label htmlFor="phone">{t("phone", "Phone")}</Label>
                   <PhoneInput
                     id="phone"
                     name="phone"
@@ -748,7 +748,7 @@ function CustomersPage() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="address">Address</Label>
+                <Label htmlFor="address">{t("address", "Address")}</Label>
                 <Input
                   id="address"
                   name="address"
@@ -758,7 +758,7 @@ function CustomersPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="city">City</Label>
+                  <Label htmlFor="city">{t("city", "City")}</Label>
                   <Input
                     id="city"
                     name="city"
@@ -767,7 +767,7 @@ function CustomersPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="zipCode">Zip / Postal Code</Label>
+                  <Label htmlFor="zipCode">{t("zipCode", "Zip / Postal Code")}</Label>
                   <Input
                     id="zipCode"
                     name="zipCode"
@@ -778,9 +778,9 @@ function CustomersPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="type">{t("customerType") || "Customer Type"}</Label>
+                  <Label htmlFor="type">{t("customerType", "Customer Type")}</Label>
                   <SearchableSelect
-                    options={CUSTOMER_TYPES.map((t) => ({ value: t.value, label: t.label }))}
+                    options={CUSTOMER_TYPES.map((tItem) => ({ value: tItem.value, label: t(tItem.value, tItem.label) }))}
                     value={editItem?.type || "retail"}
                     onChange={(val) => {
                       const input = document.createElement("input");
@@ -790,13 +790,13 @@ function CustomersPage() {
                       document.getElementById("customer-form")?.appendChild(input);
                       if (editItem) setEditItem({ ...editItem, type: val as any });
                     }}
-                    placeholder="Select Type"
+                    placeholder={t("selectType", "Select Type")}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="status">{t("status") || "Status"}</Label>
+                  <Label htmlFor="status">{t("status", "Status")}</Label>
                   <SearchableSelect
-                    options={CUSTOMER_STATUSES.map((s) => ({ value: s.value, label: s.label }))}
+                    options={CUSTOMER_STATUSES.map((s) => ({ value: s.value, label: t(s.value, s.label) }))}
                     value={editItem?.status || "active"}
                     onChange={(val) => {
                       const input = document.createElement("input");
@@ -806,12 +806,12 @@ function CustomersPage() {
                       document.getElementById("customer-form")?.appendChild(input);
                       if (editItem) setEditItem({ ...editItem, status: val });
                     }}
-                    placeholder="Select Status"
+                    placeholder={t("selectStatus", "Select Status")}
                   />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="creditLimit">Credit Limit ({currencySymbol})</Label>
+                <Label htmlFor="creditLimit">{t("creditLimit", "Credit Limit")} ({currencySymbol})</Label>
                 <Input
                   id="creditLimit"
                   name="creditLimit"
@@ -840,11 +840,11 @@ function CustomersPage() {
                   clearCustAll();
                 }}
               >
-                Cancel
+                {t("cancel", "Cancel")}
               </Button>
               <Button type="submit" disabled={isSaving} className="min-w-[140px]">
                 {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
-                Save Customer
+                {t("saveCustomer", "Save Customer")}
               </Button>
             </div>
           </form>
@@ -854,18 +854,18 @@ function CustomersPage() {
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>{t("areYouSure", "Are you sure?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the customer record.
+              {t("deleteCustomerConfirmDesc", "This action cannot be undone. This will permanently delete the customer record.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel", "Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {t("delete", "Delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -874,15 +874,15 @@ function CustomersPage() {
       <Dialog open={!!settleItem} onOpenChange={(open) => !open && setSettleItem(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Settle Balance</DialogTitle>
+            <DialogTitle>{t("settleBalance", "Settle Balance")}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSettle} className="space-y-4">
             <div className="text-sm text-muted-foreground">
-              Outstanding Balance for <strong>{settleItem?.name}</strong> is{" "}
+              {t("outstandingBalanceFor", "Outstanding Balance for")} <strong>{settleItem?.name}</strong> is{" "}
               <strong className="text-destructive">{formatCurrency(settleItem?.credit)}</strong>.
             </div>
             <div className="space-y-2">
-              <Label>Payment Amount</Label>
+              <Label>{t("paymentAmount", "Payment Amount")}</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -894,11 +894,11 @@ function CustomersPage() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setSettleItem(null)}>
-                Cancel
+                {t("cancel", "Cancel")}
               </Button>
               <Button type="submit" disabled={isSettling}>
                 {isSettling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Record Payment
+                {t("recordPayment", "Record Payment")}
               </Button>
             </DialogFooter>
           </form>
@@ -913,7 +913,7 @@ function CustomersPage() {
           <SheetHeader className="flex flex-col sm:flex-row items-start justify-between gap-3 border-b pb-4 pr-6 sm:pr-8 text-left">
             <div className="w-full sm:w-auto text-left">
               <SheetTitle className="text-lg sm:text-xl font-bold flex items-center gap-2 text-left">
-                <span>Khata Statement (লেজার খাতা)</span>
+                <span>{t("khataStatement", "Khata Statement (লেজার খাতা)")}</span>
               </SheetTitle>
               <p className="text-xs text-muted-foreground mt-0.5 text-left">
                 {ledgerCustomer?.name} · {ledgerCustomer?.phone}
@@ -934,7 +934,7 @@ function CustomersPage() {
                     )
                   }
                 >
-                  🤖 Send AI Reminder
+                  🤖 {t("sendAiReminder", "Send AI Reminder")}
                 </Button>
               )}
               <Button
@@ -943,7 +943,7 @@ function CustomersPage() {
                 className="flex-1 sm:flex-none"
                 onClick={() => window.print()}
               >
-                Print
+                {t("print", "Print")}
               </Button>
               <Button
                 size="sm"
@@ -955,7 +955,7 @@ function CustomersPage() {
                   }
                 }}
               >
-                + Settle Due
+                {t("settleDue", "+ Settle Due")}
               </Button>
             </div>
           </SheetHeader>
@@ -965,21 +965,21 @@ function CustomersPage() {
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-center">
                 <div className="text-[11px] text-muted-foreground font-medium">
-                  Total Outstanding Due
+                  {t("totalOutstandingDue", "Total Outstanding Due")}
                 </div>
                 <div className="text-xl font-bold text-destructive mt-0.5">
                   {formatCurrency(ledgerCustomer?.credit || 0)}
                 </div>
               </div>
               <div className="rounded-xl border border-border bg-muted/40 p-3 text-center">
-                <div className="text-[11px] text-muted-foreground font-medium">Credit Limit</div>
+                <div className="text-[11px] text-muted-foreground font-medium">{t("creditLimit", "Credit Limit")}</div>
                 <div className="text-xl font-bold mt-0.5">
                   {formatCurrency(ledgerCustomer?.creditLimit || 5000)}
                 </div>
               </div>
               <div className="rounded-xl border border-success/20 bg-success/10 p-3 text-center">
                 <div className="text-[11px] text-muted-foreground font-medium">
-                  Available Credit
+                  {t("availableCredit", "Available Credit")}
                 </div>
                 <div className="text-xl font-bold text-success mt-0.5">
                   {formatCurrency(
@@ -995,18 +995,18 @@ function CustomersPage() {
             {/* Ledger Table */}
             <div className="space-y-3">
               <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Transaction History Statement
+                {t("transactionHistoryStatement", "Transaction History Statement")}
               </h4>
               <div className="overflow-x-auto rounded-xl border border-border shadow-soft">
                 <Table className="min-w-[700px]">
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="px-3 py-2.5 text-left">Date</TableHead>
-                      <TableHead className="px-3 py-2.5 text-left">Type</TableHead>
-                      <TableHead className="px-3 py-2.5 text-left">Ref #</TableHead>
-                      <TableHead className="px-3 py-2.5 text-right">Debit (+Due)</TableHead>
-                      <TableHead className="px-3 py-2.5 text-right">Credit (-Paid)</TableHead>
-                      <TableHead className="px-3 py-2.5 text-right">Balance</TableHead>
+                      <TableHead className="px-3 py-2.5 text-left">{t("date", "Date")}</TableHead>
+                      <TableHead className="px-3 py-2.5 text-left">{t("type", "Type")}</TableHead>
+                      <TableHead className="px-3 py-2.5 text-left">{t("refNo", "Ref #")}</TableHead>
+                      <TableHead className="px-3 py-2.5 text-right">{t("debitDue", "Debit (+Due)")}</TableHead>
+                      <TableHead className="px-3 py-2.5 text-right">{t("creditPaid", "Credit (-Paid)")}</TableHead>
+                      <TableHead className="px-3 py-2.5 text-right">{t("balance", "Balance")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1016,7 +1016,7 @@ function CustomersPage() {
                           colSpan={6}
                           className="py-8 text-center text-xs text-muted-foreground"
                         >
-                          No transactions recorded in ledger yet.
+                          {t("noTransactionsInLedger", "No transactions recorded in ledger yet.")}
                         </TableCell>
                       </TableRow>
                     ) : (

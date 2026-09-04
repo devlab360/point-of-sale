@@ -373,7 +373,7 @@ function SalesReturnsPage() {
                     <TableHead>{t("date") || "Date"}</TableHead>
                     <TableHead>{t("status") || "Status"}</TableHead>
                     <TableHead className="text-right">{t("refund") || "Refund"}</TableHead>
-                    <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">{t("common.actions", "Actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

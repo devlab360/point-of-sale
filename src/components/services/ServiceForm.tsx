@@ -182,12 +182,12 @@ export function ServiceForm({
       <div className="sticky top-0 z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-background/90 backdrop-blur-xl pb-3 pt-2 border-b border-border/80 shadow-sm -mx-4 px-4 sm:-mx-6 sm:px-6">
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
-            {initialData ? "Edit Service" : "Add New Service"}
+            {initialData ? t("editService", "Edit Service") : t("addNewService", "Add New Service")}
           </h1>
           <p className="text-xs text-muted-foreground hidden sm:block">
             {initialData
-              ? "Update service details, pricing, and variants."
-              : "Configure a new service with pricing and optional variants."}
+              ? t("editServiceDesc", "Update service details, pricing, and variants.")
+              : t("addServiceDesc", "Configure a new service with pricing and optional variants.")}
           </p>
         </div>
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
@@ -196,7 +196,7 @@ export function ServiceForm({
             onClick={() => navigate({ to: "/services" })}
             className="flex-1 sm:flex-none h-10 rounded-xl text-xs font-semibold"
           >
-            Discard
+            {t("discard", "Discard")}
           </Button>
           <Button
             onClick={handleSubmit}
@@ -204,7 +204,7 @@ export function ServiceForm({
             className="flex-1 sm:flex-none min-w-[140px] h-10 rounded-xl font-bold text-xs shadow-soft"
           >
             {isSaving && <Loader2 className="size-4 animate-spin mr-1.5" />}
-            {initialData ? "Save Service" : "Create Service"}
+            {initialData ? t("saveService", "Save Service") : t("createService", "Create Service")}
           </Button>
         </div>
       </div>
@@ -215,17 +215,17 @@ export function ServiceForm({
           <Card className="shadow-card border-border/80 rounded-2xl overflow-hidden">
             <CardHeader className="border-b border-border/60 bg-muted/20 pb-3.5">
               <CardTitle className="text-base font-bold flex items-center gap-2">
-                <Package className="size-4 text-primary" /> Service Information
+                <Package className="size-4 text-primary" /> {t("serviceInformation", "Service Information")}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="grid gap-6">
                 <div className="grid gap-1.5">
                   <Label className="text-sm font-semibold">
-                    Service Name <span className="text-destructive">*</span>
+                    {t("serviceName", "Service Name")} <span className="text-destructive">*</span>
                   </Label>
                   <Input
-                    placeholder="e.g. Basic Haircut"
+                    placeholder={t("serviceNamePlaceholder", "e.g. Basic Haircut")}
                     value={formData.name}
                     onChange={(e) => {
                       setFormData({ ...formData, name: e.target.value });
@@ -238,13 +238,13 @@ export function ServiceForm({
 
                 <div className="space-y-1.5">
                   <Label htmlFor="category" className="text-sm font-semibold">
-                    {t("category") || "Category"}
+                    {t("category", "Category")}
                   </Label>
                   <SearchableSelect
                     options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
                     value={formData.category}
                     onChange={(val) => setFormData({ ...formData, category: val })}
-                    placeholder={t("selectCategory") || "Select category..."}
+                    placeholder={t("selectCategory", "Select category...")}
                     onCreate={async (name) => {
                       const res = await createCategoryFn({ data: { category: { name } } });
                       if (res?.success) {
@@ -261,14 +261,14 @@ export function ServiceForm({
           <Card className="shadow-card border-border/80 rounded-2xl overflow-hidden">
             <CardHeader className="border-b border-border/60 bg-muted/20 pb-3.5">
               <CardTitle className="text-base font-bold flex items-center gap-2">
-                <DollarSign className="size-4 text-primary" /> Pricing & Duration
+                <DollarSign className="size-4 text-primary" /> {t("pricingAndDuration", "Pricing & Duration")}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6 space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="grid gap-1.5">
                   <Label className="text-xs font-bold">
-                    Retail Price ({currencySymbol}) <span className="text-destructive">*</span>
+                    {t("retailPrice", "Retail Price")} ({currencySymbol}) <span className="text-destructive">*</span>
                   </Label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -294,7 +294,7 @@ export function ServiceForm({
                 </div>
                 <div className="grid gap-1.5">
                   <Label className="text-xs font-bold">
-                    Cost / Service Overhead ({currencySymbol})
+                    {t("costServiceOverhead", "Cost / Service Overhead")} ({currencySymbol})
                   </Label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -323,7 +323,7 @@ export function ServiceForm({
               <div className="grid gap-1.5">
                 <Label className="text-sm font-semibold">
                   <Clock className="inline size-3.5 mr-1.5 text-muted-foreground -mt-0.5" />
-                  Estimated Duration (Optional)
+                  {t("estimatedDurationOptional", "Estimated Duration (Optional)")}
                 </Label>
                 <div className="flex gap-2">
                   <Input
@@ -339,13 +339,13 @@ export function ServiceForm({
                     onValueChange={(val) => setFormData({ ...formData, durationUnit: val })}
                   >
                     <SelectTrigger className="h-11 w-1/2">
-                      <SelectValue placeholder="Unit" />
+                      <SelectValue placeholder={t("unit", "Unit")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="mins">Minutes</SelectItem>
-                      <SelectItem value="hours">Hours</SelectItem>
-                      <SelectItem value="days">Days</SelectItem>
-                      <SelectItem value="session">Session</SelectItem>
+                      <SelectItem value="mins">{t("minutes", "Minutes")}</SelectItem>
+                      <SelectItem value="hours">{t("hours", "Hours")}</SelectItem>
+                      <SelectItem value="days">{t("days", "Days")}</SelectItem>
+                      <SelectItem value="session">{t("session", "Session")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -356,7 +356,7 @@ export function ServiceForm({
           <Card className="shadow-sm border-border/60 overflow-hidden">
             <CardHeader className="border-b bg-muted/20 pb-3.5">
               <CardTitle className="text-base font-bold flex items-center gap-2">
-                <Layers className="size-4 text-primary" /> Variants
+                <Layers className="size-4 text-primary" /> {t("variants", "Variants")}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6 space-y-6">
@@ -373,10 +373,10 @@ export function ServiceForm({
                     htmlFor="hasVariants"
                     className="font-semibold cursor-pointer text-base text-foreground"
                   >
-                    This service has variants (e.g. 30 Min vs 60 Min)
+                    {t("serviceHasVariants", "This service has variants (e.g. 30 Min vs 60 Min)")}
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Offer the same service at different durations or price points.
+                    {t("serviceVariantsDesc", "Offer the same service at different durations or price points.")}
                   </p>
                 </div>
               </div>
@@ -401,10 +401,10 @@ export function ServiceForm({
               <CardHeader className="border-b border-border/60 bg-muted/20 pb-3.5 flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-base font-bold flex items-center gap-2">
-                    <Building2 className="size-4 text-primary" /> Outlet Availability & Custom Branch Pricing
+                    <Building2 className="size-4 text-primary" /> {t("outletAvailabilityAndPricing", "Outlet Availability & Custom Branch Pricing")}
                   </CardTitle>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Control which outlets offer this service and configure location-specific pricing.
+                    {t("outletAvailabilityDesc", "Control which outlets offer this service and configure location-specific pricing.")}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -423,10 +423,10 @@ export function ServiceForm({
                         };
                       });
                       setLocationSettings(updated);
-                      toast.success("Service enabled for all outlets");
+                      toast.success(t("serviceEnabledAllOutlets", "Service enabled for all outlets"));
                     }}
                   >
-                    Enable All
+                    {t("enableAll", "Enable All")}
                   </Button>
                 </div>
               </CardHeader>
@@ -481,7 +481,7 @@ export function ServiceForm({
                               </span>
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              {isAvail ? "Active & Bookable at this outlet" : "Service Disabled at this outlet"}
+                              {isAvail ? t("activeAndBookableAtOutlet", "Active & Bookable at this outlet") : t("serviceDisabledAtOutlet", "Service Disabled at this outlet")}
                             </p>
                           </div>
                         </div>
@@ -490,13 +490,13 @@ export function ServiceForm({
                           <div className="flex items-center gap-3 self-end sm:self-center">
                             <div className="w-32">
                               <Label className="text-[11px] font-semibold text-muted-foreground mb-1 block">
-                                Custom Price ({currencySymbol})
+                                {t("customPrice", "Custom Price")} ({currencySymbol})
                               </Label>
                               <Input
                                 type="number"
                                 min="0"
                                 step="0.01"
-                                placeholder={formData.price ? String(formData.price) : "Default"}
+                                placeholder={formData.price ? String(formData.price) : t("default", "Default")}
                                 value={current.price}
                                 onChange={(e) => {
                                   setLocationSettings((prev) => ({
@@ -512,12 +512,12 @@ export function ServiceForm({
                             </div>
                             <div className="w-28">
                               <Label className="text-[11px] font-semibold text-muted-foreground mb-1 block">
-                                Duration (Mins)
+                                {t("durationMins", "Duration (Mins)")}
                               </Label>
                               <Input
                                 type="number"
                                 min="0"
-                                placeholder={formData.durationValue ? String(formData.durationValue) : "Default"}
+                                placeholder={formData.durationValue ? String(formData.durationValue) : t("default", "Default")}
                                 value={current.duration}
                                 onChange={(e) => {
                                   setLocationSettings((prev) => ({
@@ -547,7 +547,7 @@ export function ServiceForm({
           <Card className="shadow-sm border-border/60 overflow-hidden">
             <CardHeader className="border-b bg-muted/20 pb-3.5">
               <CardTitle className="text-base font-bold flex items-center gap-2">
-                <ImageIcon className="size-4 text-primary" /> Media
+                <ImageIcon className="size-4 text-primary" /> {t("media", "Media")}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
@@ -570,7 +570,7 @@ export function ServiceForm({
                 allowedTypes={["image/jpeg", "image/png", "image/webp", "image/gif"]}
                 maxSizeMB={3}
                 label=""
-                description="PNG, JPG, WEBP or GIF • Max 3MB"
+                description={t("mediaUploadDesc", "PNG, JPG, WEBP or GIF • Max 3MB")}
               />
             </CardContent>
           </Card>

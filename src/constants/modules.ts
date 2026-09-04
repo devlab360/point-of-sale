@@ -147,6 +147,16 @@ export const SYSTEM_MODULES: SystemModule[] = [
     defaultRoute: "/services",
     description: "Chargeable services, labor rates & recurring service items.",
   },
+  {
+    id: "price-books",
+    key: "price-books",
+    name: "Multi-Branch Price Books",
+    label: "Price Books",
+    category: "Catalog & Stock",
+    icon: BookOpen,
+    defaultRoute: "/price-books",
+    description: "Tiered pricing, wholesale rate charts & branch-specific price books.",
+  },
 
   // Purchases & Vendors
   {

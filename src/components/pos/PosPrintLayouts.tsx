@@ -1,5 +1,6 @@
 import { useCurrency, getCurrencyDecimals } from "@/lib/currency";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import QRCode from "react-qr-code";
 
 function formatMoney(val: any, currencyCode?: string): string {
@@ -40,6 +41,7 @@ function BankDetailsDisplay({ data, className = "" }: { data: string; className?
 }
 
 export function PosPrintLayouts({ state, preview = false }: { state: any; preview?: boolean }) {
+  const { t } = useLanguage();
   const { printData, printFormat, settings } = state;
   const { currencySymbol: hookCurrencySymbol } = useCurrency();
   const { formatDateTime } = usePreferences();
@@ -143,9 +145,9 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
             <table className="w-full mb-2">
               <thead>
                 <tr className="text-left text-[11px] border-b-2 border-black border-dashed">
-                  <th className="pb-1.5 font-bold w-[55%]">ITEM</th>
-                  <th className="pb-1.5 text-center font-bold w-[15%]">QTY</th>
-                  <th className="pb-1.5 text-right font-bold w-[30%]">AMOUNT</th>
+                  <th className="pb-1.5 font-bold w-[55%]">{t("pos.itemUpper", "ITEM")}</th>
+                  <th className="pb-1.5 text-center font-bold w-[15%]">{t("pos.qtyUpper", "QTY")}</th>
+                  <th className="pb-1.5 text-right font-bold w-[30%]">{t("pos.amountUpper", "AMOUNT")}</th>
                 </tr>
               </thead>
               <tbody className="text-[11px]">
@@ -551,10 +553,10 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
               <thead>
                 <tr className="bg-black text-white text-xs">
                   <th className="px-3 py-2.5 text-left font-semibold w-10">#</th>
-                  <th className="px-3 py-2.5 text-left font-semibold">Item Description</th>
-                  <th className="px-3 py-2.5 text-center font-semibold w-16">Qty</th>
-                  <th className="px-3 py-2.5 text-right font-semibold w-24">Rate</th>
-                  <th className="px-3 py-2.5 text-right font-semibold w-28">Amount</th>
+                  <th className="px-3 py-2.5 text-left font-semibold">{t("pos.itemDescription", "Item Description")}</th>
+                  <th className="px-3 py-2.5 text-center font-semibold w-16">{t("pos.qty", "Qty")}</th>
+                  <th className="px-3 py-2.5 text-right font-semibold w-24">{t("pos.rate", "Rate")}</th>
+                  <th className="px-3 py-2.5 text-right font-semibold w-28">{t("pos.amount", "Amount")}</th>
                 </tr>
               </thead>
               <tbody>

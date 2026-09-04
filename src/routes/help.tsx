@@ -43,6 +43,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/layout/StatCard";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/help")({
   head: () => ({ meta: [{ title: `Help & Knowledge Center · ${appName}` }] }),
@@ -50,6 +51,7 @@ export const Route = createFileRoute("/help")({
 });
 
 function HelpPage() {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<"docs" | "videos" | "faqs" | "warranty">("docs");
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
@@ -87,11 +89,11 @@ function HelpPage() {
     mutationFn: async (data: any) => createSupportTicketFn({ data }),
     onSuccess: (res: any) => {
       if (res.success) {
-        toast.success("Support ticket logged successfully! Our team will respond shortly.");
+        toast.success(t("supportTicketLoggedSuccess", "Support ticket logged successfully! Our team will respond shortly."));
         setIsChatOpen(false);
         setChatSubject("");
         setChatMessage("");
-      } else toast.error(res.error || "Failed to submit ticket");
+      } else toast.error(res.error || t("failedToSubmitTicket", "Failed to submit ticket"));
     },
   });
 
@@ -99,11 +101,11 @@ function HelpPage() {
     mutationFn: async (data: any) => createReviewFn({ data }),
     onSuccess: (res: any) => {
       if (res.success) {
-        toast.success("Thank you for your rating & feedback!");
+        toast.success(t("thankYouFeedback", "Thank you for your rating & feedback!"));
         setIsReviewOpen(false);
         setReviewRating(5);
         setReviewComment("");
-      } else toast.error(res.error || "Failed to submit review");
+      } else toast.error(res.error || t("failedToSubmitReview", "Failed to submit review"));
     },
   });
 
@@ -133,8 +135,8 @@ function HelpPage() {
     <div className="page-container space-y-6">
       {/* Standard PageHeader */}
       <PageHeader
-        title="Help & Knowledge Center"
-        description="Search setup manuals, watch video walkthroughs, browse FAQs, or open a technical support ticket."
+        title={t("helpKnowledgeCenter", "Help & Knowledge Center")}
+        description={t("helpKnowledgeCenterDesc", "Search setup manuals, watch video walkthroughs, browse FAQs, or open a technical support ticket.")}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -143,10 +145,10 @@ function HelpPage() {
               onClick={() => setIsReviewOpen(true)}
               className="gap-1.5"
             >
-              <Star className="size-4 text-warning fill-warning" /> Rate App
+              <Star className="size-4 text-warning fill-warning" /> {t("rateApp", "Rate App")}
             </Button>
             <Button size="sm" onClick={() => setIsChatOpen(true)} className="gap-1.5">
-              <Headphones className="size-4" /> Support Ticket
+              <Headphones className="size-4" /> {t("supportTicket", "Support Ticket")}
             </Button>
           </div>
         }
@@ -159,9 +161,9 @@ function HelpPage() {
           className="cursor-pointer transition-all hover:scale-[1.02]"
         >
           <StatCard
-            label="Documentation Guides"
-            value={`${filteredDocs.length} Guides`}
-            hint="Step-by-step manuals"
+            label={t("documentationGuides", "Documentation Guides")}
+            value={`${filteredDocs.length} ${t("guidesCount", "Guides")}`}
+            hint={t("stepByStepManuals", "Step-by-step manuals")}
             icon={Book}
             accent="primary"
           />
@@ -171,9 +173,9 @@ function HelpPage() {
           className="cursor-pointer transition-all hover:scale-[1.02]"
         >
           <StatCard
-            label="Video Tutorials"
-            value={`${filteredVideos.length} Masterclasses`}
-            hint="Hands-on walkthroughs"
+            label={t("videoTutorials", "Video Tutorials")}
+            value={`${filteredVideos.length} ${t("masterclassesCount", "Masterclasses")}`}
+            hint={t("handsOnWalkthroughs", "Hands-on walkthroughs")}
             icon={Video}
             accent="info"
           />
@@ -183,9 +185,9 @@ function HelpPage() {
           className="cursor-pointer transition-all hover:scale-[1.02]"
         >
           <StatCard
-            label="Frequently Asked Questions"
-            value={`${filteredFaqs.length} Answers`}
-            hint="Immediate solutions"
+            label={t("frequentlyAskedQuestions", "Frequently Asked Questions")}
+            value={`${filteredFaqs.length} ${t("answersCount", "Answers")}`}
+            hint={t("immediateSolutions", "Immediate solutions")}
             icon={HelpCircle}
             accent="warning"
           />
@@ -195,9 +197,9 @@ function HelpPage() {
           className="cursor-pointer transition-all hover:scale-[1.02]"
         >
           <StatCard
-            label="Technical Support"
-            value="24/7 Available"
-            hint="Direct engineer escalation"
+            label={t("technicalSupport", "Technical Support")}
+            value={t("available247", "24/7 Available")}
+            hint={t("directEngineerEscalation", "Direct engineer escalation")}
             icon={Headphones}
             accent="success"
           />
@@ -209,7 +211,7 @@ function HelpPage() {
         <div className="relative w-full sm:w-80">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
-            placeholder="Search articles, setup tutorials, FAQs..."
+            placeholder={t("searchArticlesPlaceholder", "Search articles, setup tutorials, FAQs...")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 h-9 text-sm rounded-lg"
@@ -226,7 +228,7 @@ function HelpPage() {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            Documentation ({filteredDocs.length})
+            {t("documentation", "Documentation")} ({filteredDocs.length})
           </button>
           <button
             type="button"
@@ -237,7 +239,7 @@ function HelpPage() {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            Video Guides ({filteredVideos.length})
+            {t("videoGuides", "Video Guides")} ({filteredVideos.length})
           </button>
           <button
             type="button"
@@ -248,7 +250,7 @@ function HelpPage() {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            FAQs ({filteredFaqs.length})
+            {t("faqs", "FAQs")} ({filteredFaqs.length})
           </button>
           <button
             type="button"
@@ -260,7 +262,7 @@ function HelpPage() {
             }`}
           >
             <ShieldCheck className="size-3.5" />
-            Warranty Check
+            {t("warrantyCheck", "Warranty Check")}
           </button>
         </div>
       </div>
@@ -289,8 +291,8 @@ function HelpPage() {
                   </p>
                 </div>
                 <div className="pt-3 border-t border-border/60 text-xs text-muted-foreground flex items-center justify-between">
-                  <span>Help Manual</span>
-                  <span className="font-semibold text-primary">Read Guide →</span>
+                  <span>{t("helpManual", "Help Manual")}</span>
+                  <span className="font-semibold text-primary">{t("readGuide", "Read Guide →")}</span>
                 </div>
               </div>
             ))}
@@ -364,11 +366,10 @@ function HelpPage() {
                 </div>
                 <div>
                   <h3 className="text-base sm:text-lg font-bold text-foreground">
-                    Digital Warranty & Guarantee Verification
+                    {t("digitalWarrantyVerification", "Digital Warranty & Guarantee Verification")}
                   </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Look up product purchase dates, registered serials/IMEIs, and live warranty
-                    coverage status.
+                    {t("digitalWarrantyVerificationDesc", "Look up product purchase dates, registered serials/IMEIs, and live warranty coverage status.")}
                   </p>
                 </div>
               </div>
@@ -377,7 +378,7 @@ function HelpPage() {
             <div className="relative">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input
-                placeholder="Enter Serial Number (SN-xxx), IMEI, or Invoice ID (e.g. INV-2026-001)..."
+                placeholder={t("enterSerialPlaceholder", "Enter Serial Number (SN-xxx), IMEI, or Invoice ID (e.g. INV-2026-001)...")}
                 value={serialSearchQuery}
                 onChange={(e) => setSerialSearchQuery(e.target.value)}
                 className="pl-10 h-12 text-sm sm:text-base font-medium rounded-2xl bg-card border-border/80 shadow-xs"
@@ -389,7 +390,7 @@ function HelpPage() {
           {/* Results List */}
           {loadingSales ? (
             <div className="p-12 text-center text-muted-foreground text-xs flex items-center justify-center gap-2">
-              <Loader2 className="size-4 animate-spin text-primary" /> Searching warranty records...
+              <Loader2 className="size-4 animate-spin text-primary" /> {t("searchingWarrantyRecords", "Searching warranty records...")}
             </div>
           ) : (
             (() => {
@@ -456,12 +457,12 @@ function HelpPage() {
                   <div className="p-12 text-center border border-dashed border-border/80 rounded-3xl bg-muted/10 space-y-2">
                     <ShieldCheck className="size-10 text-muted-foreground/40 mx-auto" />
                     <h4 className="font-bold text-sm text-foreground">
-                      {serialSearchQuery ? "No Warranty Record Found" : "Search to Verify Warranty"}
+                      {serialSearchQuery ? t("noWarrantyRecordFound", "No Warranty Record Found") : t("searchToVerifyWarranty", "Search to Verify Warranty")}
                     </h4>
                     <p className="text-xs text-muted-foreground max-w-sm mx-auto">
                       {serialSearchQuery
-                        ? `No serialized sale matched "${serialSearchQuery}". Check if the serial or invoice number is typed correctly.`
-                        : "Type any product serial number, customer mobile, or receipt number above to check warranty validity."}
+                        ? `${t("noSerializedSaleMatched", "No serialized sale matched")} "${serialSearchQuery}". ${t("checkSerialInvoiceCorrect", "Check if the serial or invoice number is typed correctly.")}`
+                        : t("typeSerialToVerifyDesc", "Type any product serial number, customer mobile, or receipt number above to check warranty validity.")}
                     </p>
                   </div>
                 );
@@ -478,15 +479,15 @@ function HelpPage() {
                       <div className="flex items-start justify-between gap-3 border-b border-border/60 pb-3">
                         <div>
                           <h4 className="font-extrabold text-sm sm:text-base text-foreground">
-                            {item.line.product.name}
+                            {item.line.product?.name}
                           </h4>
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            Invoice:{" "}
+                            {t("invoice", "Invoice")}:{" "}
                             <strong className="text-foreground">
                               #{String(item.sale.invoiceNumber || item.sale.id).slice(0, 12)}
                             </strong>
                             {" • "}
-                            Sold on:{" "}
+                            {t("soldOn", "Sold on")}:{" "}
                             {item.saleDate.toLocaleDateString(undefined, {
                               year: "numeric",
                               month: "short",
@@ -503,8 +504,8 @@ function HelpPage() {
                           }
                         >
                           {item.isWarrantyValid
-                            ? `Active (${item.daysRemaining}d left)`
-                            : "Expired"}
+                            ? `${t("activeStatus", "Active")} (${item.daysRemaining}d ${t("left", "left")})`
+                            : t("expired", "Expired")}
                         </Badge>
                       </div>
 
@@ -512,33 +513,33 @@ function HelpPage() {
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60">
                           <span className="text-[10px] text-muted-foreground uppercase font-bold block">
-                            Serial / IMEI No.
+                            {t("serialImeiNo", "Serial / IMEI No.")}
                           </span>
                           <span className="font-mono font-bold text-foreground">
-                            {item.serial || "Standard Sku Sale"}
+                            {item.serial || t("standardSkuSale", "Standard Sku Sale")}
                           </span>
                         </div>
                         <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60">
                           <span className="text-[10px] text-muted-foreground uppercase font-bold block">
-                            Customer
+                            {t("customer", "Customer")}
                           </span>
                           <span className="font-semibold text-foreground truncate block">
                             {item.sale.customer?.name ||
                               item.sale.customerName ||
-                              "Walk-in Customer"}
+                              t("walkInCustomer", "Walk-in Customer")}
                           </span>
                         </div>
                         <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60">
                           <span className="text-[10px] text-muted-foreground uppercase font-bold block">
-                            Warranty Period
+                            {t("warrantyPeriod", "Warranty Period")}
                           </span>
                           <span className="font-bold text-foreground">
-                            {item.warrantyMonths} Months ({item.meta.warrantyType || "Carry-In"})
+                            {item.warrantyMonths} {t("months", "Months")} ({item.meta.warrantyType || "Carry-In"})
                           </span>
                         </div>
                         <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60">
                           <span className="text-[10px] text-muted-foreground uppercase font-bold block">
-                            Valid Until
+                            {t("validUntil", "Valid Until")}
                           </span>
                           <span
                             className={`font-bold ${item.isWarrantyValid ? "text-emerald-600" : "text-destructive"}`}
@@ -554,16 +555,16 @@ function HelpPage() {
 
                       {item.guaranteeMonths > 0 && (
                         <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between">
-                          <span>Replacement Guarantee: {item.guaranteeMonths} Months</span>
+                          <span>{t("replacementGuarantee", "Replacement Guarantee")}: {item.guaranteeMonths} {t("months", "Months")}</span>
                           <span className="font-bold">
-                            {item.isGuaranteeValid ? "Active ✓" : "Guarantee Expired"}
+                            {item.isGuaranteeValid ? t("activeCheck", "Active ✓") : t("guaranteeExpired", "Guarantee Expired")}
                           </span>
                         </div>
                       )}
 
                       {item.meta.warrantyPolicy && (
                         <p className="text-[11px] text-muted-foreground italic">
-                          Policy: {item.meta.warrantyPolicy}
+                          {t("policy", "Policy")}: {item.meta.warrantyPolicy}
                         </p>
                       )}
                     </div>
@@ -584,10 +585,10 @@ function HelpPage() {
           <div className="flex flex-col h-full overflow-hidden">
             <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
               <SheetTitle className="text-xl font-bold text-foreground">
-                Open Support Ticket
+                {t("openSupportTicket", "Open Support Ticket")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Submit your inquiry or issue directly to our technical support team.
+                {t("openSupportTicketDesc", "Submit your inquiry or issue directly to our technical support team.")}
               </SheetDescription>
             </SheetHeader>
 
@@ -605,7 +606,7 @@ function HelpPage() {
             >
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Inquiry Subject *</Label>
+                  <Label className="text-xs font-semibold">{t("inquirySubject", "Inquiry Subject")} *</Label>
                   <Input
                     value={chatSubject}
                     onChange={(e) => setChatSubject(e.target.value)}
@@ -615,25 +616,25 @@ function HelpPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Priority</Label>
+                  <Label className="text-xs font-semibold">{t("priority", "Priority")}</Label>
                   <select
                     value={chatPriority}
                     onChange={(e) => setChatPriority(e.target.value)}
                     className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs"
                   >
-                    <option value="low">Low - General Question</option>
-                    <option value="normal">Normal - Operational Inquiry</option>
-                    <option value="urgent">Urgent - Register Blocked</option>
+                    <option value="low">{t("priorityLow", "Low - General Question")}</option>
+                    <option value="normal">{t("priorityNormal", "Normal - Operational Inquiry")}</option>
+                    <option value="urgent">{t("priorityUrgent", "Urgent - Register Blocked")}</option>
                   </select>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Detailed Description *</Label>
+                  <Label className="text-xs font-semibold">{t("detailedDescription", "Detailed Description")} *</Label>
                   <Textarea
                     rows={4}
                     value={chatMessage}
                     onChange={(e) => setChatMessage(e.target.value)}
-                    placeholder="Describe what happened and any steps to reproduce..."
+                    placeholder={t("describeWhatHappenedPlaceholder", "Describe what happened and any steps to reproduce...")}
                     required
                   />
                 </div>
@@ -641,11 +642,11 @@ function HelpPage() {
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
                 <Button type="button" variant="outline" onClick={() => setIsChatOpen(false)}>
-                  Cancel
+                  {t("cancel", "Cancel")}
                 </Button>
                 <Button type="submit" disabled={chatMutation.isPending}>
                   {chatMutation.isPending && <Loader2 className="size-4 animate-spin mr-2" />}
-                  Submit Ticket
+                  {t("submitTicket", "Submit Ticket")}
                 </Button>
               </SheetFooter>
             </form>
@@ -662,10 +663,10 @@ function HelpPage() {
           <div className="flex flex-col h-full overflow-hidden">
             <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
               <SheetTitle className="text-xl font-bold text-foreground">
-                Rate Experience & Feedback
+                {t("rateExperienceFeedback", "Rate Experience & Feedback")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Help us enhance your POS and retail workflows with your valuable feedback.
+                {t("rateExperienceDesc", "Help us enhance your POS and retail workflows with your valuable feedback.")}
               </SheetDescription>
             </SheetHeader>
 
@@ -681,7 +682,7 @@ function HelpPage() {
             >
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Rating</Label>
+                  <Label className="text-xs font-semibold">{t("rating", "Rating")}</Label>
                   <div className="flex items-center gap-2">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
@@ -703,23 +704,23 @@ function HelpPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Comments & Feedback</Label>
+                  <Label className="text-xs font-semibold">{t("commentsFeedback", "Comments & Feedback")}</Label>
                   <Textarea
                     rows={3}
                     value={reviewComment}
                     onChange={(e) => setReviewComment(e.target.value)}
-                    placeholder="What features or improvements would you love to see?"
+                    placeholder={t("feedbackPlaceholder", "What features or improvements would you love to see?")}
                   />
                 </div>
               </div>
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
                 <Button type="button" variant="outline" onClick={() => setIsReviewOpen(false)}>
-                  Cancel
+                  {t("cancel", "Cancel")}
                 </Button>
                 <Button type="submit" disabled={reviewMutation.isPending}>
                   {reviewMutation.isPending && <Loader2 className="size-4 animate-spin mr-2" />}
-                  Submit Feedback
+                  {t("submitFeedback", "Submit Feedback")}
                 </Button>
               </SheetFooter>
             </form>

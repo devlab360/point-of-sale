@@ -54,6 +54,7 @@ import { PersistStore } from "@/lib/session-store";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/delivery-challans")({
   head: () => ({ meta: [{ title: `Delivery Challans · ${appName}` }] }),
@@ -69,6 +70,7 @@ type ChallanLineItem = {
 };
 
 function DeliveryChallansPage() {
+  const { t } = useLanguage();
   const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
@@ -411,10 +413,10 @@ function DeliveryChallansPage() {
   return (
     <>
       <DataPage
-        title="Delivery Challans"
-        description="Issue goods dispatch slips, track vehicle deliveries, and convert challans to invoices."
-        primaryAction={{ label: "Create Delivery Challan", onClick: () => setIsAddOpen(true) }}
-        searchPlaceholder="Search challans..."
+        title={t("deliveryChallans", "Delivery Challans")}
+        description={t("deliveryChallansDesc", "Issue goods dispatch slips, track vehicle deliveries, and convert challans to invoices.")}
+        primaryAction={{ label: t("createDeliveryChallan", "Create Delivery Challan"), onClick: () => setIsAddOpen(true) }}
+        searchPlaceholder={t("searchChallans", "Search challans...")}
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={false}
@@ -425,15 +427,15 @@ function DeliveryChallansPage() {
           <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
             <div className="flex-1 space-y-4">
               <div className="space-y-2">
-                <Label>Status</Label>
+                <Label>{t("status", "Status")}</Label>
                 <SearchableSelect
                   options={[
-                    { value: "", label: "All Statuses" },
+                    { value: "", label: t("allStatuses", "All Statuses") },
                     ...CHALLAN_STATUSES.map((c) => ({ value: c.value, label: c.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder="Filter by Status"
+                  placeholder={t("filterByStatus", "Filter by Status")}
                 />
               </div>
             </div>
@@ -445,7 +447,7 @@ function DeliveryChallansPage() {
                   close();
                 }}
               >
-                Apply Filters
+                {t("applyFilters", "Apply Filters")}
               </Button>
             </div>
           </div>
@@ -454,7 +456,7 @@ function DeliveryChallansPage() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
               <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Total Challans
+                {t("totalChallans", "Total Challans")}
               </div>
               <div className="mt-1 text-xl sm:text-2xl font-black text-foreground">
                 {rawChallans.length}
@@ -462,7 +464,7 @@ function DeliveryChallansPage() {
             </div>
             <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
               <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Invoiced
+                {t("invoiced", "Invoiced")}
               </div>
               <div className="mt-1 text-xl sm:text-2xl font-black text-success">
                 {rawChallans.filter((c) => c.status === "invoiced").length}
@@ -470,7 +472,7 @@ function DeliveryChallansPage() {
             </div>
             <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
               <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Dispatched
+                {t("dispatched", "Dispatched")}
               </div>
               <div className="mt-1 text-xl sm:text-2xl font-black text-primary">
                 {
@@ -481,7 +483,7 @@ function DeliveryChallansPage() {
             </div>
             <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
               <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Pending Conversion
+                {t("pendingConversion", "Pending Conversion")}
               </div>
               <div className="mt-1 text-xl sm:text-2xl font-black text-amber-500">
                 {rawChallans.filter((c) => c.status !== "invoiced").length}
@@ -497,12 +499,12 @@ function DeliveryChallansPage() {
               <Table className="min-w-[700px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Challan #</TableHead>
-                    <TableHead>Customer Name</TableHead>
-                    <TableHead>Dispatch Date</TableHead>
-                    <TableHead>Transport / Vehicle</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("challanNo", "Challan #")}</TableHead>
+                    <TableHead>{t("customerName", "Customer Name")}</TableHead>
+                    <TableHead>{t("dispatchDate", "Dispatch Date")}</TableHead>
+                    <TableHead>{t("transportVehicle", "Transport / Vehicle")}</TableHead>
+                    <TableHead>{t("status", "Status")}</TableHead>
+                    <TableHead className="text-right">{t("actions", "Actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -511,13 +513,13 @@ function DeliveryChallansPage() {
                       <TableCell colSpan={6} className="h-64 text-center">
                         <EmptyState
                           icon={Truck}
-                          title="No delivery challans found"
+                          title={t("noChallansFound", "No delivery challans found")}
                           description={
                             search
-                              ? "Try adjusting your search query."
-                              : "Create your first delivery challan to dispatch goods."
+                              ? t("tryAdjustingSearchQuery", "Try adjusting your search query.")
+                              : t("noChallansCreatedYet", "Create your first delivery challan to dispatch goods.")
                           }
-                          actionLabel="Create Challan"
+                          actionLabel={t("createChallan", "Create Challan")}
                           onAction={() => setIsAddOpen(true)}
                           className="border-none bg-transparent my-0 py-8 shadow-none"
                         />
@@ -541,16 +543,16 @@ function DeliveryChallansPage() {
                         <TableCell className="text-xs whitespace-nowrap font-medium text-muted-foreground">
                           {c.transportName
                             ? `${c.transportName} (${c.vehicleNo || "N/A"})`
-                            : "Self / Local Dispatch"}
+                            : t("selfLocalDispatch", "Self / Local Dispatch")}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                           {c.status === "invoiced" ? (
                             <Badge className="bg-success/12 text-success border-success/25 text-[10px] font-bold">
-                              Invoiced
+                              {t("invoiced", "Invoiced")}
                             </Badge>
                           ) : (
                             <Badge className="bg-warning/15 text-warning-foreground border-warning/25 text-[10px] font-bold">
-                              Dispatched / Out
+                              {t("dispatchedOut", "Dispatched / Out")}
                             </Badge>
                           )}
                         </TableCell>
@@ -566,21 +568,21 @@ function DeliveryChallansPage() {
                                 onClick={() => setViewItem(c)}
                                 className="text-xs font-semibold"
                               >
-                                <Truck className="mr-2 size-3.5 text-primary" /> View / Print Slip
+                                <Truck className="mr-2 size-3.5 text-primary" /> {t("viewPrintSlip", "View / Print Slip")}
                               </DropdownMenuItem>
                               {c.status !== "invoiced" && (
                                 <DropdownMenuItem
                                   onClick={() => convertChallanToInvoice(c)}
                                   className="text-xs font-bold text-success"
                                 >
-                                  <ArrowRightLeft className="mr-2 size-3.5" /> Convert to Invoice
+                                  <ArrowRightLeft className="mr-2 size-3.5" /> {t("convertToInvoice", "Convert to Invoice")}
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuItem
                                 className="text-destructive text-xs font-semibold"
                                 onClick={() => deleteChallan(c.id)}
                               >
-                                <Trash2 className="mr-2 size-3.5" /> Delete
+                                <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -597,13 +599,13 @@ function DeliveryChallansPage() {
               {paginated.length === 0 ? (
                 <EmptyState
                   icon={Truck}
-                  title="No delivery challans found"
+                  title={t("noChallansFound", "No delivery challans found")}
                   description={
                     search
-                      ? "Try adjusting your search query."
-                      : "Create your first delivery challan to dispatch goods."
+                      ? t("tryAdjustingSearchQuery", "Try adjusting your search query.")
+                      : t("noChallansCreatedYet", "Create your first delivery challan to dispatch goods.")
                   }
-                  actionLabel="Create Challan"
+                  actionLabel={t("createChallan", "Create Challan")}
                   onAction={() => setIsAddOpen(true)}
                   className="border-none bg-transparent my-0 py-6 shadow-none"
                 />
@@ -629,7 +631,7 @@ function DeliveryChallansPage() {
                       <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
                         {c.transportName
                           ? `${c.transportName} · ${c.vehicleNo || "N/A"}`
-                          : "Local Dispatch"}
+                          : t("localDispatch", "Local Dispatch")}
                       </p>
                     </div>
 
@@ -641,7 +643,7 @@ function DeliveryChallansPage() {
                             : "bg-warning/15 text-warning-foreground text-[9px] font-bold py-0"
                         }
                       >
-                        {c.status === "invoiced" ? "Invoiced" : "Out"}
+                        {c.status === "invoiced" ? t("invoiced", "Invoiced") : t("out", "Out")}
                       </Badge>
                       {c.status !== "invoiced" ? (
                         <Button
@@ -652,7 +654,7 @@ function DeliveryChallansPage() {
                             convertChallanToInvoice(c);
                           }}
                         >
-                          <ArrowRightLeft className="size-3" /> Invoice
+                          <ArrowRightLeft className="size-3" /> {t("invoice", "Invoice")}
                         </Button>
                       ) : null}
                     </div>
@@ -691,10 +693,10 @@ function DeliveryChallansPage() {
         >
           <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
             <SheetTitle className="text-xl font-bold text-foreground">
-              Dispatch Delivery Challan
+              {t("dispatchDeliveryChallan", "Dispatch Delivery Challan")}
             </SheetTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Issue goods dispatch notes with driver, carrier, and vehicle verification.
+              {t("dispatchDeliveryChallanDesc", "Issue goods dispatch notes with driver, carrier, and vehicle verification.")}
             </p>
           </SheetHeader>
           <form
@@ -705,7 +707,7 @@ function DeliveryChallansPage() {
             <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
               <div className="space-y-1.5">
                 <Label>
-                  Customer / Consignee <span className="text-destructive">*</span>
+                  {t("customerConsignee", "Customer / Consignee")} <span className="text-destructive">*</span>
                 </Label>
                 <div
                   className={
@@ -719,7 +721,7 @@ function DeliveryChallansPage() {
                       setSelectedCustomerId(val);
                       clearChError("selectedCustomerId");
                     }}
-                    placeholder="Select a customer..."
+                    placeholder={t("selectCustomer", "Select a customer...")}
                     onCreate={async (name) => {
                       const res = await createCustomerFn({ data: { customer: { name } } });
                       if (res?.success) {
@@ -734,38 +736,38 @@ function DeliveryChallansPage() {
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div className="space-y-1.5">
-                  <Label>Transport / Carrier</Label>
+                  <Label>{t("transportCarrier", "Transport / Carrier")}</Label>
                   <Input
                     value={transportName}
                     onChange={(e) => setTransportName(e.target.value)}
-                    placeholder="e.g. FedEx / Own Vehicle"
+                    placeholder={t("transportPlaceholder", "e.g. FedEx / Own Vehicle")}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Vehicle No.</Label>
+                  <Label>{t("vehicleNo", "Vehicle No.")}</Label>
                   <Input
                     value={vehicleNo}
                     onChange={(e) => setVehicleNo(e.target.value)}
-                    placeholder="e.g. MH-12-XX-9999"
+                    placeholder={t("vehicleNoPlaceholder", "e.g. MH-12-XX-9999")}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Driver Name & Contact</Label>
+                  <Label>{t("driverNameAndContact", "Driver Name & Contact")}</Label>
                   <Input
                     value={driverName}
                     onChange={(e) => setDriverName(e.target.value)}
-                    placeholder="e.g. John Doe (555-0101)"
+                    placeholder={t("driverPlaceholder", "e.g. John Doe (555-0101)")}
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5 border-t pt-4">
-                <Label>Search & Add Products</Label>
+                <Label>{t("searchAndAddProducts", "Search & Add Products")}</Label>
                 <SearchableSelect
                   options={products.map((p) => ({
                     value: p.id,
                     label: p.name,
-                    sublabel: `Stock: ${p.stock} ${p.unit} | Price: ${formatCurrency(p.price)}`,
+                    sublabel: `${t("stock", "Stock")}: ${p.stock} ${p.unit} | ${t("price", "Price")}: ${formatCurrency(p.price)}`,
                   }))}
                   value=""
                   onChange={(val) => {
@@ -774,7 +776,7 @@ function DeliveryChallansPage() {
                       clearChError("lineItems");
                     }
                   }}
-                  placeholder="Search products by name or code..."
+                  placeholder={t("searchProductsPlaceholder", "Search products by name or code...")}
                 />
                 <FieldError message={chErrors.lineItems} />
               </div>
@@ -783,7 +785,7 @@ function DeliveryChallansPage() {
               {lineItems.length > 0 && (
                 <div className="space-y-2.5 pt-2">
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-                    <span>Dispatched Items</span>
+                    <span>{t("dispatchedItems", "Dispatched Items")}</span>
                     <Badge variant="secondary" className="rounded-full text-[10px] px-2">
                       {lineItems.length}
                     </Badge>
@@ -848,11 +850,11 @@ function DeliveryChallansPage() {
                   clearChAll();
                 }}
               >
-                Cancel
+                {t("cancel", "Cancel")}
               </Button>
               <Button type="submit" disabled={isSubmitting} className="min-w-[180px]">
                 {isSubmitting && <Loader2 className="size-4 animate-spin mr-2" />}
-                Dispatch Delivery Challan
+                {t("dispatchDeliveryChallan", "Dispatch Delivery Challan")}
               </Button>
             </div>
           </form>
@@ -871,7 +873,7 @@ function DeliveryChallansPage() {
                 {viewItem?.challanNo}
               </SheetTitle>
               <p className="text-xs text-muted-foreground mt-0.5 text-left">
-                Delivery Slip for {viewItem?.customerName}
+                {t("deliverySlipFor", "Delivery Slip for")} {viewItem?.customerName}
               </p>
             </div>
             <div className="flex w-full sm:w-auto gap-2 mt-2 sm:mt-0">
@@ -881,7 +883,7 @@ function DeliveryChallansPage() {
                 className="flex-1 sm:flex-none"
                 onClick={() => window.print()}
               >
-                <Printer className="mr-1 size-3.5" /> Print Challan
+                <Printer className="mr-1 size-3.5" /> {t("printChallan", "Print Challan")}
               </Button>
               {viewItem?.status !== "invoiced" && (
                 <Button
@@ -889,7 +891,7 @@ function DeliveryChallansPage() {
                   className="flex-1 sm:flex-none"
                   onClick={() => viewItem && convertChallanToInvoice(viewItem)}
                 >
-                  <CheckCircle2 className="mr-1 size-3.5" /> Convert to Invoice
+                  <CheckCircle2 className="mr-1 size-3.5" /> {t("convertToInvoice", "Convert to Invoice")}
                 </Button>
               )}
             </div>
@@ -899,21 +901,21 @@ function DeliveryChallansPage() {
             <div className="space-y-6 pt-4 text-sm">
               <div className="grid grid-cols-2 gap-4 rounded-xl border p-4 bg-muted/20">
                 <div>
-                  <h4 className="font-bold text-xs uppercase text-muted-foreground">Deliver To</h4>
+                  <h4 className="font-bold text-xs uppercase text-muted-foreground">{t("deliverTo", "Deliver To")}</h4>
                   <div className="font-semibold text-base mt-1">{viewItem.customerName}</div>
                 </div>
                 <div className="text-right">
                   <h4 className="font-bold text-xs uppercase text-muted-foreground">
-                    Transport Details
+                    {t("transportDetails", "Transport Details")}
                   </h4>
                   <div className="text-xs mt-1">
-                    Carrier: <strong>{viewItem.transportName || "Direct / Local"}</strong>
+                    {t("carrier", "Carrier")}: <strong>{viewItem.transportName || t("directLocal", "Direct / Local")}</strong>
                   </div>
                   <div className="text-xs">
-                    Vehicle #: <strong>{viewItem.vehicleNo || "N/A"}</strong>
+                    {t("vehicleNo", "Vehicle No.")}: <strong>{viewItem.vehicleNo || "N/A"}</strong>
                   </div>
                   <div className="text-xs">
-                    Driver: <strong>{viewItem.driverName || "N/A"}</strong>
+                    {t("driver", "Driver")}: <strong>{viewItem.driverName || "N/A"}</strong>
                   </div>
                 </div>
               </div>
@@ -921,16 +923,16 @@ function DeliveryChallansPage() {
               {/* Items */}
               <div className="space-y-2">
                 <h4 className="font-bold text-xs uppercase text-muted-foreground">
-                  Dispatched Goods List
+                  {t("dispatchedGoodsList", "Dispatched Goods List")}
                 </h4>
                 <div className="overflow-x-auto rounded-xl border">
                   <Table className="text-xs min-w-[500px]">
                     <TableHeader className="bg-muted/50 font-semibold uppercase text-muted-foreground">
                       <TableRow>
                         <TableHead className="p-2.5 text-left">#</TableHead>
-                        <TableHead className="p-2.5 text-left">Description of Goods</TableHead>
-                        <TableHead className="p-2.5 text-right">Quantity</TableHead>
-                        <TableHead className="p-2.5 text-left">Unit</TableHead>
+                        <TableHead className="p-2.5 text-left">{t("descriptionOfGoods", "Description of Goods")}</TableHead>
+                        <TableHead className="p-2.5 text-right">{t("quantity", "Quantity")}</TableHead>
+                        <TableHead className="p-2.5 text-left">{t("unit", "Unit")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -959,11 +961,11 @@ function DeliveryChallansPage() {
               <div className="grid grid-cols-2 gap-8 pt-10 border-t">
                 <div className="text-center">
                   <div className="border-b border-dashed border-foreground/40 pb-8"></div>
-                  <div className="text-xs font-semibold mt-2">Driver / Transport Signature</div>
+                  <div className="text-xs font-semibold mt-2">{t("driverTransportSignature", "Driver / Transport Signature")}</div>
                 </div>
                 <div className="text-center">
                   <div className="border-b border-dashed border-foreground/40 pb-8"></div>
-                  <div className="text-xs font-semibold mt-2">Receiver's Signature & Stamp</div>
+                  <div className="text-xs font-semibold mt-2">{t("receiverSignatureStamp", "Receiver's Signature & Stamp")}</div>
                 </div>
               </div>
             </div>

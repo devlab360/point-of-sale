@@ -62,6 +62,7 @@ import { toast } from "sonner";
 import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/purchases/returns")({
   head: () => ({ meta: [{ title: `Purchase Returns (Debit Notes) · ${appName}` }] }),
@@ -69,6 +70,7 @@ export const Route = createFileRoute("/purchases/returns")({
 });
 
 function PurchaseReturnsPage() {
+  const { t } = useLanguage();
   const { formatDate } = usePreferences();
   const { formatCurrency } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
@@ -254,17 +256,17 @@ function PurchaseReturnsPage() {
   return (
     <>
       <DataPage
-        title="Purchase Returns (Debit Notes)"
-        description="Record damaged, defective, or excess stock returned back to vendors."
+        title={t("purchaseReturnsTitle", "Purchase Returns (Debit Notes)")}
+        description={t("purchaseReturnsDesc", "Record damaged, defective, or excess stock returned back to vendors.")}
         primaryAction={{
-          label: "Create Return",
+          label: t("createReturn", "Create Return"),
           onClick: () => {
             setReturnItems([{ productId: "", productName: "", quantity: 1, cost: 0, total: 0 }]);
             setIsAddOpen(true);
           },
           icon: Plus,
         }}
-        searchPlaceholder="Search by return ref, supplier, or reason..."
+        searchPlaceholder={t("searchReturnsPlaceholder", "Search by return ref, supplier, or reason...")}
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={false}
@@ -274,15 +276,15 @@ function PurchaseReturnsPage() {
           <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
             <div className="flex-1 space-y-4">
               <div className="space-y-2">
-                <Label>Status</Label>
+                <Label>{t("status", "Status")}</Label>
                 <SearchableSelect
                   options={[
-                    { value: "", label: "All Statuses" },
+                    { value: "", label: t("allStatuses", "All Statuses") },
                     ...RETURN_STATUSES.map((s) => ({ value: s.value, label: s.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder="Filter by Status"
+                  placeholder={t("filterByStatus", "Filter by Status")}
                 />
               </div>
             </div>
@@ -294,7 +296,7 @@ function PurchaseReturnsPage() {
                   close();
                 }}
               >
-                Apply Filters
+                {t("applyFilters", "Apply Filters")}
               </Button>
             </div>
           </div>
@@ -303,7 +305,7 @@ function PurchaseReturnsPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
             <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
               <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Total Returns
+                {t("totalReturns", "Total Returns")}
               </span>
               <span className="text-xl sm:text-2xl font-black text-foreground">
                 {metrics.totalReturns}
@@ -312,7 +314,7 @@ function PurchaseReturnsPage() {
 
             <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
               <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Returned Value
+                {t("returnedValue", "Returned Value")}
               </span>
               <span className="text-xl sm:text-2xl font-black text-info">
                 {formatCurrency(metrics.totalValue)}
@@ -321,7 +323,7 @@ function PurchaseReturnsPage() {
 
             <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
               <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Stock Restored
+                {t("stockRestored", "Stock Restored")}
               </span>
               <span className="text-xl sm:text-2xl font-black text-success">
                 {metrics.processedCount}
@@ -330,7 +332,7 @@ function PurchaseReturnsPage() {
 
             <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
               <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Pending Adjustments
+                {t("pendingAdjustments", "Pending Adjustments")}
               </span>
               <span className="text-xl sm:text-2xl font-black text-warning">
                 {metrics.pendingCount}
@@ -346,25 +348,25 @@ function PurchaseReturnsPage() {
                 <TableHeader className="bg-muted/40">
                   <TableRow>
                     <TableHead className="font-bold text-xs uppercase tracking-wider">
-                      Debit Note Ref
+                      {t("debitNoteRef", "Debit Note Ref")}
                     </TableHead>
                     <TableHead className="font-bold text-xs uppercase tracking-wider">
-                      Supplier
+                      {t("supplier", "Supplier")}
                     </TableHead>
                     <TableHead className="font-bold text-xs uppercase tracking-wider">
-                      Return Date
+                      {t("returnDate", "Return Date")}
                     </TableHead>
                     <TableHead className="font-bold text-xs uppercase tracking-wider">
-                      Reason
+                      {t("reason", "Reason")}
                     </TableHead>
                     <TableHead className="font-bold text-xs uppercase tracking-wider">
-                      Status
+                      {t("status", "Status")}
                     </TableHead>
                     <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                      Total Credit
+                      {t("totalCredit", "Total Credit")}
                     </TableHead>
                     <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                      Actions
+                      {t("actions", "Actions")}
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -374,13 +376,13 @@ function PurchaseReturnsPage() {
                       <TableCell colSpan={7} className="h-64 text-center">
                         <EmptyState
                           icon={RotateCcw}
-                          title="No purchase returns found"
+                          title={t("noPurchaseReturnsFound", "No purchase returns found")}
                           description={
                             search
-                              ? "Try adjusting your search query."
-                              : "No purchase returns or debit notes recorded yet."
+                              ? t("tryAdjustingSearchQuery", "Try adjusting your search query.")
+                              : t("noReturnsRecordedYet", "No purchase returns or debit notes recorded yet.")
                           }
-                          actionLabel="Create Return"
+                          actionLabel={t("createReturn", "Create Return")}
                           onAction={() => {
                             setReturnItems([
                               { productId: "", productName: "", quantity: 1, cost: 0, total: 0 },
@@ -416,7 +418,7 @@ function PurchaseReturnsPage() {
                                 : "bg-warning/15 text-warning border-warning/30",
                             )}
                           >
-                            {r.status}
+                            {t(r.status, r.status)}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right font-black text-foreground text-sm">
@@ -434,7 +436,7 @@ function PurchaseReturnsPage() {
                                 onClick={() => setDeleteId(r.id)}
                                 className="text-xs font-semibold text-destructive focus:text-destructive"
                               >
-                                <Trash2 className="size-3.5 mr-2" /> Delete Record
+                                <Trash2 className="size-3.5 mr-2" /> {t("deleteRecord", "Delete Record")}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -472,7 +474,7 @@ function PurchaseReturnsPage() {
                       {formatCurrency(Number(r.total) || 0)}
                     </div>
                     <Badge className="text-[9px] font-bold mt-1 bg-success/15 text-success border-success/30">
-                      {r.status}
+                      {t(r.status, r.status)}
                     </Badge>
                   </div>
                 </div>
@@ -505,23 +507,23 @@ function PurchaseReturnsPage() {
             <div className="flex items-center gap-2">
               <RotateCcw className="size-5 text-primary" />
               <SheetTitle className="text-xl font-black text-foreground">
-                Dispatch Purchase Return (Debit Note)
+                {t("dispatchPurchaseReturn", "Dispatch Purchase Return (Debit Note)")}
               </SheetTitle>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Return stock back to supplier and deduct from current inventory counts.
+              {t("purchaseReturnDesc", "Return stock back to supplier and deduct from current inventory counts.")}
             </p>
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label>Original Purchase Invoice *</Label>
+                <Label>{t("originalPurchaseInvoice", "Original Purchase Invoice")} *</Label>
                 <SearchableSelect
                   options={purchases.map((p: any) => ({
                     value: p.id,
                     label: `${p.invoiceNo || p.id.slice(0, 8).toUpperCase()} - ${p.supplier}`,
-                    sublabel: `Date: ${p.date ? p.date.split("T")[0] : ""} · Total: ${formatCurrency(Number(p.total) || 0)}`,
+                    sublabel: `${t("date", "Date")}: ${p.date ? p.date.split("T")[0] : ""} · ${t("total", "Total")}: ${formatCurrency(Number(p.total) || 0)}`,
                   }))}
                   value={purchaseId}
                   onChange={(val) => {
@@ -531,40 +533,40 @@ function PurchaseReturnsPage() {
                       setSupplier(selected.supplier);
                     }
                   }}
-                  placeholder="Select purchase invoice..."
+                  placeholder={t("selectPurchaseInvoice", "Select purchase invoice...")}
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label>Supplier Name *</Label>
+                <Label>{t("supplierName", "Supplier Name")} *</Label>
                 <Input
                   value={supplier}
                   onChange={(e) => setSupplier(e.target.value)}
-                  placeholder="e.g. Apex Electronics Ltd"
+                  placeholder={t("supplierPlaceholder", "e.g. Apex Electronics Ltd")}
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label>Reason for Return *</Label>
+              <Label>{t("reasonForReturn", "Reason for Return")} *</Label>
               <Input
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="e.g. Defective manufacturing batch, damaged in transit, or expired stock"
+                placeholder={t("reasonPlaceholder", "e.g. Defective manufacturing batch, damaged in transit, or expired stock")}
               />
             </div>
 
             {/* Line Items */}
             <div className="space-y-3 pt-2">
               <div className="flex items-center justify-between">
-                <Label className="font-bold text-sm">Return Line Items</Label>
+                <Label className="font-bold text-sm">{t("returnLineItems", "Return Line Items")}</Label>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={addReturnItem}
                   className="h-8 text-xs font-semibold"
                 >
-                  <Plus className="size-3.5 mr-1" /> Add Product
+                  <Plus className="size-3.5 mr-1" /> {t("addProduct", "Add Product")}
                 </Button>
               </div>
 
@@ -572,15 +574,15 @@ function PurchaseReturnsPage() {
                 <Table>
                   <TableHeader className="bg-muted/40">
                     <TableRow>
-                      <TableHead className="text-xs font-bold uppercase">Product</TableHead>
+                      <TableHead className="text-xs font-bold uppercase">{t("product", "Product")}</TableHead>
                       <TableHead className="text-xs font-bold uppercase text-right w-24">
-                        Qty
+                        {t("qty", "Qty")}
                       </TableHead>
                       <TableHead className="text-xs font-bold uppercase text-right w-28">
-                        Unit Cost
+                        {t("unitCost", "Unit Cost")}
                       </TableHead>
                       <TableHead className="text-xs font-bold uppercase text-right w-28">
-                        Total
+                        {t("total", "Total")}
                       </TableHead>
                       <TableHead className="w-10"></TableHead>
                     </TableRow>
@@ -593,11 +595,11 @@ function PurchaseReturnsPage() {
                             options={products.map((p: any) => ({
                               value: p.id,
                               label: p.name,
-                              sublabel: `Stock: ${p.stock ?? 0} · Cost: ${formatCurrency(Number(p.cost) || 0)}`,
+                              sublabel: `${t("stock", "Stock")}: ${p.stock ?? 0} · ${t("cost", "Cost")}: ${formatCurrency(Number(p.cost) || 0)}`,
                             }))}
                             value={item.productId}
                             onChange={(val) => updateReturnItem(idx, "productId", val)}
-                            placeholder="Select product..."
+                            placeholder={t("selectProduct", "Select product...")}
                           />
                         </TableCell>
                         <TableCell className="text-right">
@@ -647,10 +649,10 @@ function PurchaseReturnsPage() {
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex justify-between items-center">
               <div>
                 <span className="text-xs font-bold text-muted-foreground uppercase">
-                  Estimated Debit Total
+                  {t("estimatedDebitTotal", "Estimated Debit Total")}
                 </span>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Will be credited to your supplier ledger account.
+                  {t("estimatedDebitTotalDesc", "Will be credited to your supplier ledger account.")}
                 </p>
               </div>
               <div className="text-xl font-black text-primary">
@@ -665,7 +667,7 @@ function PurchaseReturnsPage() {
               onClick={() => setIsAddOpen(false)}
               className="font-bold text-xs"
             >
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button
               onClick={handleAdd}
@@ -677,7 +679,7 @@ function PurchaseReturnsPage() {
               ) : (
                 <CheckCircle2 className="size-4 mr-2" />
               )}
-              Confirm Debit Note
+              {t("confirmDebitNote", "Confirm Debit Note")}
             </Button>
           </div>
         </SheetContent>
@@ -687,18 +689,18 @@ function PurchaseReturnsPage() {
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Purchase Return Record?</AlertDialogTitle>
+            <AlertDialogTitle>{t("deletePurchaseReturnTitle", "Delete Purchase Return Record?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this debit note? This cannot be undone.
+              {t("deletePurchaseReturnDesc", "Are you sure you want to delete this debit note? This cannot be undone.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel", "Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {t("delete", "Delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

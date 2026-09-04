@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { hasCapability } from "@/lib/business-templates";
 import { hasPermission } from "@/lib/menu-config";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { createKOTFn } from "@/api/restaurant";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
@@ -46,6 +47,7 @@ export function CartPanel({
   onCheckout?: (isQuotation?: boolean) => void;
   onPrintBill?: () => void;
 }) {
+  const { t } = useLanguage();
   const {
     mobileTab,
     drawerWidth,
@@ -200,7 +202,7 @@ export function CartPanel({
             onClick={() => setShowHeld(true)}
           >
             <Play className="size-4" />
-            <span className="hidden sm:inline text-xs font-bold">Held</span>
+            <span className="hidden sm:inline text-xs font-bold">{t("held", "Held")}</span>
             {heldInvoices.length > 0 && (
               <span className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-warning text-[9px] font-bold text-warning-foreground shadow-xs ring-1 ring-background">
                 {heldInvoices.length}
@@ -216,7 +218,7 @@ export function CartPanel({
             onClick={() => setShowAddCustomer(true)}
           >
             <Plus className="size-4" />
-            <span className="hidden lg:inline text-xs font-bold">Add Customer</span>
+            <span className="hidden lg:inline text-xs font-bold">{t("addCustomer", "Add Customer")}</span>
           </Button>
         </div>
 
@@ -227,7 +229,7 @@ export function CartPanel({
                 value={selectedTableId}
                 onChange={(val) => setSelectedTableId(val)}
                 options={[
-                  { value: "", label: "No Table (Takeaway)" },
+                  { value: "", label: t("noTableTakeaway", "No Table (Takeaway)") },
                   ...tables.map((t: any) => ({ value: t.id, label: t.name })),
                 ]}
               />
@@ -244,9 +246,9 @@ export function CartPanel({
               <div className="grid size-14 place-items-center rounded-2xl bg-muted/60 mb-3 text-muted-foreground/60 border border-border/60">
                 <Receipt className="size-7" />
               </div>
-              <span className="font-bold text-sm text-foreground">Your cart is empty</span>
+              <span className="font-bold text-sm text-foreground">{t("emptyCart", "Your cart is empty")}</span>
               <span className="text-xs mt-1 max-w-[200px]">
-                Scan a barcode or tap products in the catalog to add them here.
+                {t("emptyCartDesc", "Scan a barcode or tap products in the catalog to add them here.")}
               </span>
             </div>
           </div>
@@ -408,7 +410,7 @@ export function CartPanel({
             {appliedCoupon ? (
               <span className="text-primary truncate">{appliedCoupon.code}</span>
             ) : (
-              "Coupon"
+              t("coupon", "Coupon")
             )}
           </Button>
 
@@ -421,7 +423,7 @@ export function CartPanel({
             title="Park current cart to serve next customer immediately (F4)"
           >
             <Pause className="size-3.5 text-warning" />
-            <span>Hold</span>
+            <span>{t("hold", "Hold")}</span>
           </Button>
 
           <Button
@@ -432,7 +434,7 @@ export function CartPanel({
             onClick={() => setShowVoidConfirm(true)}
           >
             <Ban className="size-3.5 text-destructive" />
-            <span>Void</span>
+            <span>{t("void", "Void")}</span>
           </Button>
 
           {hasRepairs && (
@@ -443,7 +445,7 @@ export function CartPanel({
               onClick={() => setShowRepairDialog(true)}
             >
               <Wrench className="size-3.5 text-primary" />
-              <span>Repair</span>
+              <span>{t("repair", "Repair")}</span>
             </Button>
           )}
 
@@ -456,7 +458,7 @@ export function CartPanel({
               onClick={handleSendToKitchen}
             >
               <ChefHat className="size-3.5" />
-              <span>KOT</span>
+              <span>{t("kot", "KOT")}</span>
             </Button>
           )}
 
@@ -485,23 +487,23 @@ export function CartPanel({
         {/* Row 2: Calculation Breakdown */}
         <div className="rounded-xl bg-muted/30 px-3 py-2 border border-border/60 space-y-1">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Subtotal</span>
+            <span>{t("subtotal", "Subtotal")}</span>
             <span className="number font-semibold text-foreground">{formatCurrency(subtotal)}</span>
           </div>
           {discountAmt > 0 && (
             <div className="flex items-center justify-between text-xs text-destructive">
-              <span>Discount</span>
+              <span>{t("discount", "Discount")}</span>
               <span className="number font-semibold">−{formatCurrency(discountAmt)}</span>
             </div>
           )}
           {taxAmt > 0 && (
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Tax</span>
+              <span>{t("tax", "Tax")}</span>
               <span className="number font-semibold text-foreground">{formatCurrency(taxAmt)}</span>
             </div>
           )}
           <div className="flex items-center justify-between pt-1.5 border-t border-border/60">
-            <span className="text-sm font-bold text-foreground">Total Due</span>
+            <span className="text-sm font-bold text-foreground">{t("totalDue", "Total Due")}</span>
             <span className="number text-lg font-black text-primary">{formatCurrency(total)}</span>
           </div>
         </div>
@@ -511,7 +513,7 @@ export function CartPanel({
           <div className="space-y-2 bg-muted/30 p-2.5 rounded-xl border border-border/80">
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-foreground capitalize shrink-0 min-w-[92px]">
-                {isCreditType ? "Deposit Paid" : "Cash Given"}
+                {isCreditType ? t("depositPaid", "Deposit Paid") : t("cashGiven", "Cash Given")}
               </span>
               <input
                 type="number"
@@ -530,7 +532,7 @@ export function CartPanel({
                   onClick={() => setCashTendered(total.toFixed(2))}
                   className="rounded-xl bg-primary/15 px-3 h-11 text-sm font-black text-primary hover:bg-primary/25 transition-colors shrink-0"
                 >
-                  Exact
+                  {t("exact", "Exact")}
                 </button>
               )}
             </div>
@@ -563,7 +565,7 @@ export function CartPanel({
             {/* Return Change Banner */}
             {isCashType && changeDue > 0 && (
               <div className="flex items-center justify-between bg-success/15 border border-success/30 px-3 py-2 rounded-xl">
-                <span className="text-sm font-bold text-success">Return Change</span>
+                <span className="text-sm font-bold text-success">{t("returnChange", "Return Change")}</span>
                 <span className="number text-lg font-black text-success">
                   {formatCurrency(changeDue)}
                 </span>
@@ -572,7 +574,7 @@ export function CartPanel({
 
             {isCreditType && (parseFloat(cashTendered) || 0) > 0 && (
               <div className="flex items-center justify-between bg-warning/15 border border-warning/30 px-3 py-2 rounded-xl">
-                <span className="text-sm font-bold text-warning-foreground">Amount Due</span>
+                <span className="text-sm font-bold text-warning-foreground">{t("amountDue", "Amount Due")}</span>
                 <span className="number text-base font-black text-warning-foreground">
                   {formatCurrency(Math.max(0, total - (parseFloat(cashTendered) || 0)))}
                 </span>
@@ -587,7 +589,7 @@ export function CartPanel({
             <div className="grid grid-cols-3 gap-1.5">
               <div className="flex items-center rounded-xl border border-border/80 bg-background overflow-hidden h-10 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-xs">
                 <span className="bg-muted/50 px-2 py-1 text-[10px] font-bold uppercase text-muted-foreground border-r border-border/60 shrink-0">
-                  Cash
+                  {t("cash", "Cash")}
                 </span>
                 <input
                   type="number"
@@ -604,7 +606,7 @@ export function CartPanel({
 
               <div className="flex items-center rounded-xl border border-border/80 bg-background overflow-hidden h-10 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-xs">
                 <span className="bg-muted/50 px-2 py-1 text-[10px] font-bold uppercase text-muted-foreground border-r border-border/60 shrink-0">
-                  Card
+                  {t("card", "Card")}
                 </span>
                 <input
                   type="number"
@@ -657,7 +659,7 @@ export function CartPanel({
                     }
                   >
                     {Math.abs(remaining) < 0.01
-                      ? "✓ Settled"
+                      ? `✓ ${t("settled", "Settled")}`
                       : remaining > 0
                         ? `Remaining: ${formatCurrency(remaining)}`
                         : `Overpaid: ${formatCurrency(Math.abs(remaining))}`}
@@ -685,7 +687,7 @@ export function CartPanel({
               <PayBtn
                 key={m.id}
                 icon={Icon}
-                label={m.label}
+                label={t(m.id, m.label)}
                 active={payment === m.id}
                 onClick={() => setPayment(m.id)}
                 title={m.notes || m.label}
@@ -705,7 +707,7 @@ export function CartPanel({
             title="Create Quotation"
           >
             <FileText className="size-4" />
-            <span className="hidden sm:inline">Quote</span>
+            <span className="hidden sm:inline">{t("quote", "Quote")}</span>
           </Button>
 
           <Button
@@ -724,7 +726,7 @@ export function CartPanel({
             }}
           >
             <div className="flex items-center justify-center gap-2 w-full">
-              <span>Complete Sale</span>
+              <span>{t("completeSale", "Complete Sale")}</span>
               <span className="number text-sm font-black bg-primary-foreground/20 px-2 py-0.5 rounded-lg">
                 {formatCurrency(total)}
               </span>

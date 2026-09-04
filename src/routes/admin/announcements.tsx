@@ -58,13 +58,15 @@ import {
   Search,
 } from "lucide-react";
 import { exportToCSV } from "@/lib/export-utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/admin/announcements")({
-  head: () => ({ meta: [{ title: `Broadcast Announcements · Super Admin ${appName}` }] }),
+  head: () => ({ meta: [{ title: `System Announcements · Super Admin ${appName}` }] }),
   component: SuperAdminAnnouncementsPage,
 });
 
 function SuperAdminAnnouncementsPage() {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
@@ -317,12 +319,12 @@ function SuperAdminAnnouncementsPage() {
               <Table>
                 <TableHeader className="bg-muted/40 border-b text-xs font-bold text-muted-foreground uppercase">
                   <TableRow>
-                    <TableHead className="px-4 py-3.5">Announcement Content</TableHead>
-                    <TableHead className="px-4 py-3.5">Type</TableHead>
-                    <TableHead className="px-4 py-3.5">Audience</TableHead>
-                    <TableHead className="px-4 py-3.5">Active / Live</TableHead>
-                    <TableHead className="px-4 py-3.5">Created Date</TableHead>
-                    <TableHead className="px-4 py-3.5 text-right">Actions</TableHead>
+                    <TableHead className="px-4 py-3.5">{t("admin.announcementContent", "Announcement Content")}</TableHead>
+                    <TableHead className="px-4 py-3.5">{t("common.type", "Type")}</TableHead>
+                    <TableHead className="px-4 py-3.5">{t("admin.audience", "Audience")}</TableHead>
+                    <TableHead className="px-4 py-3.5">{t("admin.activeLive", "Active / Live")}</TableHead>
+                    <TableHead className="px-4 py-3.5">{t("admin.createdDate", "Created Date")}</TableHead>
+                    <TableHead className="px-4 py-3.5 text-right">{t("common.actions", "Actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

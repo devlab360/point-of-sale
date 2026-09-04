@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { PersistStore } from "@/lib/session-store";
 import { appName } from "@/lib/env";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -147,9 +148,10 @@ function RoleSelectCards({ value, onChange }: { value: string; onChange: (v: str
 }
 
 function UsersPage() {
+  const { t } = useLanguage();
+  const orgId = PersistStore.getOrgId() || "default";
   const { user: currentUser, saasPlan, settings } = useAuth();
   const { formatCurrency } = useCurrency();
-  const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
 
   const { data: orgData } = useQuery({
@@ -444,8 +446,8 @@ function UsersPage() {
     <div className="page-container space-y-6">
       {/* Standard PageHeader */}
       <PageHeader
-        title="Employees & Access Control"
-        description="Manage staff authorizations, cashier permissions, sales commission rates, and granular module access."
+        title={t("employeesAccessControl", "Staff & Access Control")}
+        description={t("manageUsersDesc", "Manage staff authorizations, cashier permissions, sales commission rates, and granular module access.")}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -457,14 +459,14 @@ function UsersPage() {
               }}
               className="gap-1.5 font-bold h-9 rounded-xl"
             >
-              <UserPlus className="size-4" /> Invite Link
+              <UserPlus className="size-4" /> {t("inviteLink", "Invite Link")}
             </Button>
             <Button
               size="sm"
               onClick={() => setIsDirectAddOpen(true)}
               className="gap-1.5 font-bold h-9 rounded-xl shadow-xs"
             >
-              <Plus className="size-4" /> Add Employee
+              <Plus className="size-4" /> {t("addUser", "Add Employee")}
             </Button>
           </div>
         }
@@ -473,30 +475,30 @@ function UsersPage() {
       {/* Standard StatCard Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Total Staff Members"
+          label={t("totalStaff", "Total Staff Members")}
           value={String(totalEmployees)}
-          hint="Registered accounts"
+          hint={t("registeredAccounts", "Registered accounts")}
           icon={Users}
           accent="primary"
         />
         <StatCard
-          label="POS Cashiers"
+          label={t("posCashiers", "POS Cashiers")}
           value={String(cashierCount)}
-          hint="Terminal register operators"
+          hint={t("terminalOperators", "Terminal register operators")}
           icon={CreditCard}
           accent="success"
         />
         <StatCard
-          label="Managers & Admins"
+          label={t("managersAdmins", "Managers & Admins")}
           value={String(adminCount)}
-          hint="Elevated privileges"
+          hint={t("elevatedPrivileges", "Elevated privileges")}
           icon={Crown}
           accent="info"
         />
         <StatCard
-          label="Pending / Inactive"
+          label={t("inactiveStaff", "Pending / Inactive")}
           value={String(pendingCount)}
-          hint="Awaiting activation"
+          hint={t("awaitingActivation", "Awaiting activation")}
           icon={ShieldAlert}
           accent="warning"
         />
@@ -509,7 +511,7 @@ function UsersPage() {
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search staff name, email, or role..."
+              placeholder={t("searchUsers", "Search staff name, email, or role...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-9.5 text-sm rounded-xl"
@@ -758,13 +760,13 @@ function UsersPage() {
               <Table className="min-w-[800px] text-xs">
                 <TableHeader className="bg-muted/40">
                   <TableRow>
-                    <TableHead className="font-bold">Staff Member</TableHead>
-                    <TableHead className="font-bold">Assigned Role</TableHead>
-                    <TableHead className="font-bold">Commission</TableHead>
-                    <TableHead className="font-bold">Sales Target</TableHead>
-                    <TableHead className="font-bold">Permissions</TableHead>
-                    <TableHead className="font-bold">Status</TableHead>
-                    <TableHead className="text-right font-bold">Actions</TableHead>
+                    <TableHead className="font-bold">{t("users.staffMember", "Staff Member")}</TableHead>
+                    <TableHead className="font-bold">{t("users.assignedRole", "Assigned Role")}</TableHead>
+                    <TableHead className="font-bold">{t("users.commission", "Commission")}</TableHead>
+                    <TableHead className="font-bold">{t("users.salesTarget", "Sales Target")}</TableHead>
+                    <TableHead className="font-bold">{t("users.permissions", "Permissions")}</TableHead>
+                    <TableHead className="font-bold">{t("common.status", "Status")}</TableHead>
+                    <TableHead className="text-right font-bold">{t("common.actions", "Actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-border/60">
