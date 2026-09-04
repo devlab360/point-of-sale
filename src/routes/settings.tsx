@@ -122,6 +122,7 @@ import { Input, PasswordInput } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CURRENCY_OPTIONS } from "@/lib/currency";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { CountryFlag } from "@/components/ui/country-flag";
 import { SettingsSkeleton } from "@/components/skeletons/SettingsSkeleton";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
@@ -2458,25 +2459,46 @@ function SettingsPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="GB">
-                            🇬🇧 United Kingdom (Standard VAT 20%, 5%, 0%)
+                            <div className="flex items-center gap-2">
+                              <CountryFlag countryCode="GB" className="w-4.5 h-3" />
+                              <span>United Kingdom (Standard VAT 20%, 5%, 0%)</span>
+                            </div>
                           </SelectItem>
                           <SelectItem value="US">
-                            🇺🇸 United States (Sales Tax 7.5%, 8.25%, 10%)
+                            <div className="flex items-center gap-2">
+                              <CountryFlag countryCode="US" className="w-4.5 h-3" />
+                              <span>United States (Sales Tax 7.5%, 8.25%, 10%)</span>
+                            </div>
                           </SelectItem>
                           <SelectItem value="AE">
-                            🇦🇪 United Arab Emirates (VAT 5%, 0%)
+                            <div className="flex items-center gap-2">
+                              <CountryFlag countryCode="AE" className="w-4.5 h-3" />
+                              <span>United Arab Emirates (VAT 5%, 0%)</span>
+                            </div>
                           </SelectItem>
                           <SelectItem value="SA">
-                            🇸🇦 Saudi Arabia (ZATCA VAT 15%, 0%)
+                            <div className="flex items-center gap-2">
+                              <CountryFlag countryCode="SA" className="w-4.5 h-3" />
+                              <span>Saudi Arabia (ZATCA VAT 15%, 0%)</span>
+                            </div>
                           </SelectItem>
                           <SelectItem value="CA">
-                            🇨🇦 Canada (GST / HST / PST 5%, 13%, 12%)
+                            <div className="flex items-center gap-2">
+                              <CountryFlag countryCode="CA" className="w-4.5 h-3" />
+                              <span>Canada (GST / HST / PST 5%, 13%, 12%)</span>
+                            </div>
                           </SelectItem>
                           <SelectItem value="AU">
-                            🇦🇺 Australia (GST 10%, 0%)
+                            <div className="flex items-center gap-2">
+                              <CountryFlag countryCode="AU" className="w-4.5 h-3" />
+                              <span>Australia (GST 10%, 0%)</span>
+                            </div>
                           </SelectItem>
                           <SelectItem value="IN">
-                            🇮🇳 India (GST 0%, 5%, 12%, 18%, 28%)
+                            <div className="flex items-center gap-2">
+                              <CountryFlag countryCode="IN" className="w-4.5 h-3" />
+                              <span>India (GST 0%, 5%, 12%, 18%, 28%)</span>
+                            </div>
                           </SelectItem>
                         </SelectContent>
                       </Select>

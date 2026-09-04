@@ -63,6 +63,7 @@ import { PersistStore } from "@/lib/session-store";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage, LANGUAGES } from "@/contexts/LanguageContext";
+import { CountryFlag } from "@/components/ui/country-flag";
 import { useCurrency } from "@/lib/currency";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
@@ -431,10 +432,14 @@ export function AppHeader() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-9 px-2 text-xs font-semibold gap-1 cursor-pointer"
+                  className="h-9 px-2 text-xs font-semibold gap-1.5 cursor-pointer"
                   title="Select Language"
                 >
-                  <span>{activeLanguageObj.flag}</span>
+                  <CountryFlag
+                    countryCode={activeLanguageObj.countryCode}
+                    emoji={activeLanguageObj.flag}
+                    className="w-4.5 h-3 rounded-[2px]"
+                  />
                   <span className="hidden sm:inline">{activeLanguageObj.code.toUpperCase()}</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -445,11 +450,18 @@ export function AppHeader() {
                   <DropdownMenuItem
                     key={l.code}
                     onClick={() => setLanguage(l.code)}
-                    className={`flex items-center justify-between text-xs cursor-pointer ${language === l.code ? "font-bold text-primary bg-primary/10" : ""}`}
+                    className={`flex items-center justify-between text-xs cursor-pointer gap-2 ${language === l.code ? "font-bold text-primary bg-primary/10" : ""}`}
                   >
-                    <span>
-                      {l.flag} {l.nativeName} ({l.label})
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <CountryFlag
+                        countryCode={l.countryCode}
+                        emoji={l.flag}
+                        className="w-4 h-3 rounded-[2px]"
+                      />
+                      <span>
+                        {l.nativeName} ({l.label})
+                      </span>
+                    </div>
                     {language === l.code && <span className="text-primary font-bold">✓</span>}
                   </DropdownMenuItem>
                 ))}
@@ -835,7 +847,11 @@ export function AppHeader() {
                         : "bg-muted/30 text-foreground border border-border/50 hover:bg-muted"
                     }`}
                   >
-                    <span>{l.flag}</span>
+                    <CountryFlag
+                      countryCode={l.countryCode}
+                      emoji={l.flag}
+                      className="w-4.5 h-3 rounded-[2px]"
+                    />
                     <span className="truncate">{l.nativeName}</span>
                     {language === l.code && <CheckCircle2 className="size-3.5 ml-auto text-primary-foreground shrink-0" />}
                   </button>

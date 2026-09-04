@@ -8,23 +8,24 @@ export interface LanguageOption {
   label: string;
   nativeName: string;
   flag: string;
+  countryCode?: string;
   dir: "ltr" | "rtl";
 }
 
 export const LANGUAGES: LanguageOption[] = [
-  { code: "en", label: "English", nativeName: "English", flag: "🇺🇸", dir: "ltr" },
-  { code: "es", label: "Spanish", nativeName: "Español", flag: "🇪🇸", dir: "ltr" },
-  { code: "fr", label: "French", nativeName: "Français", flag: "🇫🇷", dir: "ltr" },
-  { code: "de", label: "German", nativeName: "Deutsch", flag: "🇩🇪", dir: "ltr" },
-  { code: "pt", label: "Portuguese", nativeName: "Português", flag: "🇧🇷", dir: "ltr" },
-  { code: "ar", label: "Arabic", nativeName: "العربية", flag: "🇸🇦", dir: "rtl" },
-  { code: "hi", label: "Hindi", nativeName: "हिंदी", flag: "🇮🇳", dir: "ltr" },
-  { code: "bn", label: "Bengali", nativeName: "বাংলা", flag: "🇧🇩", dir: "ltr" },
-  { code: "zh", label: "Chinese", nativeName: "中文", flag: "🇨🇳", dir: "ltr" },
-  { code: "ja", label: "Japanese", nativeName: "日本語", flag: "🇯🇵", dir: "ltr" },
-  { code: "ru", label: "Russian", nativeName: "Русский", flag: "🇷🇺", dir: "ltr" },
-  { code: "id", label: "Indonesian", nativeName: "Bahasa Indonesia", flag: "🇮🇩", dir: "ltr" },
-  { code: "tr", label: "Turkish", nativeName: "Türkçe", flag: "🇹🇷", dir: "ltr" },
+  { code: "en", label: "English", nativeName: "English", flag: "🇺🇸", countryCode: "US", dir: "ltr" },
+  { code: "es", label: "Spanish", nativeName: "Español", flag: "🇪🇸", countryCode: "ES", dir: "ltr" },
+  { code: "fr", label: "French", nativeName: "Français", flag: "🇫🇷", countryCode: "FR", dir: "ltr" },
+  { code: "de", label: "German", nativeName: "Deutsch", flag: "🇩🇪", countryCode: "DE", dir: "ltr" },
+  { code: "pt", label: "Portuguese", nativeName: "Português", flag: "🇧🇷", countryCode: "BR", dir: "ltr" },
+  { code: "ar", label: "Arabic", nativeName: "العربية", flag: "🇸🇦", countryCode: "SA", dir: "rtl" },
+  { code: "hi", label: "Hindi", nativeName: "हिंदी", flag: "🇮🇳", countryCode: "IN", dir: "ltr" },
+  { code: "bn", label: "Bengali", nativeName: "বাংলা", flag: "🇧🇩", countryCode: "BD", dir: "ltr" },
+  { code: "zh", label: "Chinese", nativeName: "中文", flag: "🇨🇳", countryCode: "CN", dir: "ltr" },
+  { code: "ja", label: "Japanese", nativeName: "日本語", flag: "🇯🇵", countryCode: "JP", dir: "ltr" },
+  { code: "ru", label: "Russian", nativeName: "Русский", flag: "🇷🇺", countryCode: "RU", dir: "ltr" },
+  { code: "id", label: "Indonesian", nativeName: "Bahasa Indonesia", flag: "🇮🇩", countryCode: "ID", dir: "ltr" },
+  { code: "tr", label: "Turkish", nativeName: "Türkçe", flag: "🇹🇷", countryCode: "TR", dir: "ltr" },
 ];
 
 export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
