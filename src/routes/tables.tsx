@@ -21,6 +21,8 @@ import {
   Search,
   Filter,
   X,
+  TableIcon,
+  LayoutGrid,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTablesFn, createTableFn, updateTableStatusFn, deleteTableFn } from "@/api/restaurant";
@@ -30,6 +32,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import {
   Select,
   SelectContent,
@@ -87,6 +98,7 @@ function TablesPage() {
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
 
   const [filters, setFilters] = useState({ status: "" });
   const [draftFilters, setDraftFilters] = useState({ status: "" });
@@ -310,141 +322,306 @@ function TablesPage() {
               </div>
             </SheetContent>
           </Sheet>
+
+          <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm">
+            <button
+              type="button"
+              onClick={() => setViewMode("table")}
+              className={`grid size-8 place-items-center rounded-md transition-all ${
+                viewMode === "table"
+                  ? "bg-card text-foreground shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              title="Table View"
+            >
+              <TableIcon className="size-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              className={`grid size-8 place-items-center rounded-md transition-all ${
+                viewMode === "grid"
+                  ? "bg-card text-foreground shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              title="Grid View"
+            >
+              <LayoutGrid className="size-4" />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Main Grid View */}
+      {/* Content View */}
       {isLoading ? (
-        <CardGridSkeleton cards={8} columns="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" />
+        viewMode === "grid" ? (
+          <CardGridSkeleton cards={8} columns="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" />
+        ) : (
+          <TableSkeleton columns={4} rows={6} />
+        )
       ) : isError ? (
         <ErrorState onRetry={refetch} />
-      ) : filteredTables.length === 0 ? (
-        <div className="rounded-xl border border-border bg-card shadow-soft p-12 text-center">
-          <EmptyState
-            icon={Utensils}
-            title={t("noTablesFound", "No tables found")}
-            description={
-              search
-                ? t("noTablesMatchedSearch", "No tables matched your search query.")
-                : t("addFirstDiningTable", "Add your first dining table to manage floor seating.")
-            }
-            actionLabel={t("addTable", "Add Table")}
-            onAction={() => setIsCreateOpen(true)}
-            className="border-none bg-transparent my-0 py-4 shadow-none"
-          />
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredTables.map((table: any) => {
-            const isOccupied = table.status === "occupied";
-            const isReserved = table.status === "reserved";
+      ) : viewMode === "grid" ? (
+        filteredTables.length === 0 ? (
+          <div className="rounded-xl border border-border bg-card shadow-soft p-12 text-center">
+            <EmptyState
+              icon={Utensils}
+              title={t("noTablesFound", "No tables found")}
+              description={
+                search
+                  ? t("noTablesMatchedSearch", "No tables matched your search query.")
+                  : t("addFirstDiningTable", "Add your first dining table to manage floor seating.")
+              }
+              actionLabel={t("addTable", "Add Table")}
+              onAction={() => setIsCreateOpen(true)}
+              className="border-none bg-transparent my-0 py-4 shadow-none"
+            />
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredTables.map((table: any) => {
+              const isOccupied = table.status === "occupied";
+              const isReserved = table.status === "reserved";
 
-            return (
-              <div
-                key={table.id}
-                className={`relative rounded-2xl border p-5 shadow-soft flex flex-col justify-between transition-all duration-300 group ${
-                  isOccupied
-                    ? "border-rose-500/30 bg-rose-500/5 dark:bg-rose-950/20"
-                    : isReserved
-                      ? "border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/20"
-                      : "border-border/80 bg-card hover:border-primary/40 hover:-translate-y-0.5"
-                }`}
-              >
-                <div>
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className={`grid size-10 place-items-center rounded-xl font-black text-sm border ${
+              return (
+                <div
+                  key={table.id}
+                  className={`relative rounded-2xl border p-5 shadow-soft flex flex-col justify-between transition-all duration-300 group ${
+                    isOccupied
+                      ? "border-rose-500/30 bg-rose-500/5 dark:bg-rose-950/20"
+                      : isReserved
+                        ? "border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/20"
+                        : "border-border/80 bg-card hover:border-primary/40 hover:-translate-y-0.5"
+                  }`}
+                >
+                  <div>
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className={`grid size-10 place-items-center rounded-xl font-black text-sm border ${
+                            isOccupied
+                              ? "bg-rose-500/15 text-rose-500 border-rose-500/30"
+                              : isReserved
+                                ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
+                                : "bg-emerald-500/15 text-emerald-500 border-emerald-500/30"
+                          }`}
+                        >
+                          {table.name.replace(/[^0-9]/g, "") || "T"}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-base text-foreground group-hover:text-primary transition-colors">
+                            {table.name}
+                          </h3>
+                          <span className="text-xs text-muted-foreground font-medium flex items-center gap-1 mt-0.5">
+                            <Users className="size-3" /> {t("seats", "Seats")}: {table.capacity}
+                          </span>
+                        </div>
+                      </div>
+
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
                           isOccupied
-                            ? "bg-rose-500/15 text-rose-500 border-rose-500/30"
+                            ? "bg-rose-500/15 text-rose-500 border-rose-500/25"
                             : isReserved
-                              ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
-                              : "bg-emerald-500/15 text-emerald-500 border-emerald-500/30"
+                              ? "bg-amber-500/15 text-amber-500 border-amber-500/25"
+                              : "bg-emerald-500/15 text-emerald-500 border-emerald-500/25"
                         }`}
                       >
-                        {table.name.replace(/[^0-9]/g, "") || "T"}
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-base text-foreground group-hover:text-primary transition-colors">
-                          {table.name}
-                        </h3>
-                        <span className="text-xs text-muted-foreground font-medium flex items-center gap-1 mt-0.5">
-                          <Users className="size-3" /> {t("seats", "Seats")}: {table.capacity}
-                        </span>
-                      </div>
+                        {t(table.status, table.status)}
+                      </Badge>
                     </div>
+                  </div>
 
-                    <Badge
-                      variant="outline"
-                      className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
-                        isOccupied
-                          ? "bg-rose-500/15 text-rose-500 border-rose-500/25"
-                          : isReserved
-                            ? "bg-amber-500/15 text-amber-500 border-amber-500/25"
-                            : "bg-emerald-500/15 text-emerald-500 border-emerald-500/25"
-                      }`}
+                  <div className="mt-5 pt-3 border-t border-border/60 flex items-center gap-2">
+                    <Select
+                      value={table.status}
+                      onValueChange={(val: any) =>
+                        updateStatus.mutate({ id: table.id, status: val })
+                      }
+                      disabled={updateStatus.isPending}
                     >
-                      {t(table.status, table.status)}
-                    </Badge>
+                      <SelectTrigger className="h-9 text-xs flex-1 bg-background/80 rounded-xl font-bold">
+                        <SelectValue placeholder={t("changeStatus", "Change Status")} />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        <SelectItem
+                          value="available"
+                          className="text-xs font-bold text-emerald-500"
+                        >
+                          {t("availableFree", "Available (Free)")}
+                        </SelectItem>
+                        <SelectItem value="occupied" className="text-xs font-bold text-rose-500">
+                          {t("occupiedDining", "Occupied (Guest / Dining)")}
+                        </SelectItem>
+                        <SelectItem value="reserved" className="text-xs font-bold text-amber-500">
+                          {t("reserved", "Reserved")}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-9 px-2.5 rounded-xl text-xs font-bold gap-1 text-primary border-primary/30 hover:bg-primary/10"
+                      onClick={() => {
+                        setSelectedRoomForFolio(table);
+                        setGuestName(table.status === "occupied" ? "In-House Guest" : "");
+                        setGuestPhone("");
+                        setGuestNights(1);
+                        setGuestRoomRate(120);
+                        setGuestRoomServiceAmt(table.status === "occupied" ? 45.5 : 0);
+                      }}
+                      title={t("roomFolioAndGuestDetails", "Room Folio & Guest Details")}
+                    >
+                      <Receipt className="size-3.5" />
+                      <span className="hidden sm:inline">{t("folio", "Folio")}</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-9 rounded-xl text-destructive hover:bg-destructive/10 shrink-0"
+                      onClick={() => setDeleteId(table.id)}
+                      title={t("deleteTable", "Delete Table")}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
                   </div>
                 </div>
-
-                <div className="mt-5 pt-3 border-t border-border/60 flex items-center gap-2">
-                  <Select
-                    value={table.status}
-                    onValueChange={(val: any) =>
-                      updateStatus.mutate({ id: table.id, status: val })
-                    }
-                    disabled={updateStatus.isPending}
-                  >
-                    <SelectTrigger className="h-9 text-xs flex-1 bg-background/80 rounded-xl font-bold">
-                      <SelectValue placeholder={t("changeStatus", "Change Status")} />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                      <SelectItem
-                        value="available"
-                        className="text-xs font-bold text-emerald-500"
-                      >
-                        {t("availableFree", "Available (Free)")}
-                      </SelectItem>
-                      <SelectItem value="occupied" className="text-xs font-bold text-rose-500">
-                        {t("occupiedDining", "Occupied (Guest / Dining)")}
-                      </SelectItem>
-                      <SelectItem value="reserved" className="text-xs font-bold text-amber-500">
-                        {t("reserved", "Reserved")}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-9 px-2.5 rounded-xl text-xs font-bold gap-1 text-primary border-primary/30 hover:bg-primary/10"
-                    onClick={() => {
-                      setSelectedRoomForFolio(table);
-                      setGuestName(table.status === "occupied" ? "In-House Guest" : "");
-                      setGuestPhone("");
-                      setGuestNights(1);
-                      setGuestRoomRate(120);
-                      setGuestRoomServiceAmt(table.status === "occupied" ? 45.5 : 0);
-                    }}
-                    title={t("roomFolioAndGuestDetails", "Room Folio & Guest Details")}
-                  >
-                    <Receipt className="size-3.5" />
-                    <span className="hidden sm:inline">{t("folio", "Folio")}</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-9 rounded-xl text-destructive hover:bg-destructive/10 shrink-0"
-                    onClick={() => setDeleteId(table.id)}
-                    title={t("deleteTable", "Delete Table")}
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+        )
+      ) : (
+        /* Table View */
+        <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+          <div className="table-desktop overflow-x-auto">
+            <Table className="min-w-[650px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("tableName", "Table Name")}</TableHead>
+                  <TableHead>{t("seatingCapacity", "Seating Capacity")}</TableHead>
+                  <TableHead>{t("status", "Status")}</TableHead>
+                  <TableHead className="text-right">{t("actions", "Actions")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredTables.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-64 text-center">
+                      <EmptyState
+                        icon={Utensils}
+                        title={t("noTablesFound", "No tables found")}
+                        description={
+                          search
+                            ? t("noTablesMatchedSearch", "No tables matched your search query.")
+                            : t("addFirstDiningTable", "Add your first dining table to manage floor seating.")
+                        }
+                        actionLabel={t("addTable", "Add Table")}
+                        onAction={() => setIsCreateOpen(true)}
+                        className="border-none bg-transparent my-0 py-8 shadow-none"
+                      />
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredTables.map((table: any) => {
+                    const isOccupied = table.status === "occupied";
+                    const isReserved = table.status === "reserved";
+                    return (
+                      <TableRow key={table.id} className="hover:bg-muted/30 transition-colors">
+                        <TableCell>
+                          <div className="flex items-center gap-2.5">
+                            <div
+                              className={`grid size-8 place-items-center rounded-lg font-black text-xs border ${
+                                isOccupied
+                                  ? "bg-rose-500/15 text-rose-500 border-rose-500/30"
+                                  : isReserved
+                                    ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
+                                    : "bg-emerald-500/15 text-emerald-500 border-emerald-500/30"
+                              }`}
+                            >
+                              {table.name.replace(/[^0-9]/g, "") || "T"}
+                            </div>
+                            <span className="font-semibold text-foreground">{table.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm font-medium text-foreground">
+                          <span className="flex items-center gap-1.5">
+                            <Users className="size-3.5 text-muted-foreground" />
+                            {table.capacity}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                              isOccupied
+                                ? "bg-rose-500/15 text-rose-500 border-rose-500/25"
+                                : isReserved
+                                  ? "bg-amber-500/15 text-amber-500 border-amber-500/25"
+                                  : "bg-emerald-500/15 text-emerald-500 border-emerald-500/25"
+                            }`}
+                          >
+                            {t(table.status, table.status)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Select
+                              value={table.status}
+                              onValueChange={(val: any) =>
+                                updateStatus.mutate({ id: table.id, status: val })
+                              }
+                              disabled={updateStatus.isPending}
+                            >
+                              <SelectTrigger className="h-8 text-xs w-[130px] rounded-lg font-bold">
+                                <SelectValue placeholder={t("changeStatus", "Change Status")} />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl">
+                                <SelectItem value="available" className="text-xs font-bold text-emerald-500">
+                                  {t("availableFree", "Available")}
+                                </SelectItem>
+                                <SelectItem value="occupied" className="text-xs font-bold text-rose-500">
+                                  {t("occupiedDining", "Occupied")}
+                                </SelectItem>
+                                <SelectItem value="reserved" className="text-xs font-bold text-amber-500">
+                                  {t("reserved", "Reserved")}
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8 rounded-lg"
+                              onClick={() => {
+                                setSelectedRoomForFolio(table);
+                                setGuestName(table.status === "occupied" ? "In-House Guest" : "");
+                                setGuestPhone("");
+                                setGuestNights(1);
+                                setGuestRoomRate(120);
+                                setGuestRoomServiceAmt(table.status === "occupied" ? 45.5 : 0);
+                              }}
+                              title={t("roomFolioAndGuestDetails", "Room Folio & Guest Details")}
+                            >
+                              <Receipt className="size-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8 rounded-lg text-destructive hover:bg-destructive/10"
+                              onClick={() => setDeleteId(table.id)}
+                              title={t("deleteTable", "Delete Table")}
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       )}
 
