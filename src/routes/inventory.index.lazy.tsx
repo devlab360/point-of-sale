@@ -63,7 +63,7 @@ function StockList() {
     queryFn: async () => ((await getUnitsFn({ data: {} })) as any)?.data || [],
   });
   const units = unitsData || [];
-  const lowCount = products.filter((p) => Number(p.stock) <= Number(p.reorderLevel)).length;
+  const lowCount = products.filter((p) => Number(p.stock)<= Number(p.reorderLevel)).length;
   const outCount = products.filter((p) => p.stock <= 0).length;
 
   const { t } = useLanguage();
@@ -186,7 +186,7 @@ function StockList() {
           <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
             <div className="flex-1 space-y-4">
               <div className="space-y-2">
-                <Label>Stock Status</Label>
+                <Label>{t("stockStatus", "Stock Status")}</Label>
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Statuses" },
@@ -206,7 +206,7 @@ function StockList() {
                   close();
                 }}
               >
-                Apply Filters
+                {t("applyFilters", "Apply Filters")}
               </Button>
             </div>
           </div>
@@ -219,7 +219,7 @@ function StockList() {
               className="bg-primary/5 text-primary hover:bg-primary/10 border-primary/20"
               onClick={() => setShowForecast(true)}
             >
-              <Brain className="size-4 mr-1.5" /> AI Forecast
+              <Brain className="size-4 mr-1.5" /> {t("aiForecast", "AI Forecast")}
             </Button>
           </div>
         }
@@ -227,7 +227,7 @@ function StockList() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
             <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between card-interactive">
               <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Total Stock Count
+                {t("totalStockCount", "Total Stock Count")}
               </p>
               <div className="mt-2 flex items-baseline gap-1.5">
                 <span className="text-2xl sm:text-3xl font-black text-foreground">
@@ -242,31 +242,31 @@ function StockList() {
 
             <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between card-interactive">
               <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Inventory Value (Cost)
+                {t("inventoryValueCost", "Inventory Value (Cost)")}
               </p>
               <div className="mt-2 text-2xl sm:text-3xl font-black text-foreground">
                 {formatCurrency(inventorySummary?.totalValue || 0)}
               </div>
               <p className="text-xs text-muted-foreground mt-1 font-medium">
-                Cost valuation invested
+                {t("costValuationInvested", "Cost valuation invested")}
               </p>
             </div>
 
             <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between card-interactive">
               <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Retail Valuation
+                {t("retailValuation", "Retail Valuation")}
               </p>
               <div className="mt-2 text-2xl sm:text-3xl font-black text-primary">
                 {formatCurrency(inventorySummary?.totalRetailValue || 0)}
               </div>
               <p className="text-xs text-muted-foreground mt-1 font-medium">
-                Expected sales revenue
+                {t("expectedSalesRevenue", "Expected sales revenue")}
               </p>
             </div>
 
             <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between card-interactive">
               <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Stock Alerts
+                {t("stockAlerts", "Stock Alerts")}
               </p>
               <div className="mt-2 text-2xl sm:text-3xl font-black text-destructive">
                 {inventorySummary?.lowStockCount || lowCount}
@@ -359,25 +359,25 @@ function StockList() {
                           <div className="flex gap-1.5 flex-wrap items-center">
                             {isExpired(p.expiryDate) && (
                               <Badge variant="destructive" className="text-[10px] font-bold">
-                                Expired
+                                {t("expired", "Expired")}
                               </Badge>
                             )}
                             {isExpiringSoon(p.expiryDate) && (
                               <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20 text-[10px] font-bold">
-                                Expiring
+                                {t("expiring", "Expiring")}
                               </Badge>
                             )}
                             {out ? (
                               <Badge variant="destructive" className="text-[10px] font-bold">
-                                Out of stock
+                                {t("outOfStock", "Out of stock")}
                               </Badge>
                             ) : low ? (
                               <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20 text-[10px] font-bold">
-                                Low stock
+                                {t("lowStock", "Low stock")}
                               </Badge>
                             ) : (
                               <Badge className="bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold">
-                                Healthy
+                                {t("healthy", "Healthy")}
                               </Badge>
                             )}
                           </div>
@@ -431,7 +431,7 @@ function StockList() {
                         <div className="flex items-center gap-2 mt-1">
                           {out ? (
                             <span className="text-[9px] font-black text-destructive bg-destructive/10 px-1.5 py-0.2 rounded-md">
-                              Out of stock
+                              {t("outOfStock", "Out of stock")}
                             </span>
                           ) : low ? (
                             <span className="text-[9px] font-extrabold text-destructive bg-destructive/10 px-1.5 py-0.2 rounded-md">
@@ -449,7 +449,7 @@ function StockList() {
                       <div className="number text-xs font-bold text-foreground">
                         {formatCurrency(p.stock * p.cost)}
                       </div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">Valuation</div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">{t("valuation", "Valuation")}</div>
                     </div>
                   </div>
                 );
@@ -480,18 +480,17 @@ function StockList() {
           <div className="flex flex-col h-full overflow-hidden">
             <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
               <SheetTitle className="text-xl font-bold text-foreground flex items-center gap-2">
-                <Brain className="size-5 text-primary" /> AI Inventory Run-out Forecast
+                <Brain className="size-5 text-primary" /> {t("aiInventoryRunOutForecast", "AI Inventory Run-out Forecast")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Based on historical sales velocity over the last 30 days, these items are projected
-                to run out soon.
+                {t("projectedStockoutDesc", "Based on historical sales velocity over the last 30 days, these items are projected to run out soon.")}
               </SheetDescription>
             </SheetHeader>
 
             <div className="flex-1 overflow-y-auto p-5">
               {forecasts.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
-                  No immediate stockout risks detected within the next 14 days!
+                  {t("noImmediateStockoutRisksDetectedWithinTh", "No immediate stockout risks detected within the next 14 days!")}
                 </div>
               ) : (
                 <div className="divide-y divide-border/60 rounded-xl border border-border/80 bg-muted/20 overflow-hidden">
@@ -520,7 +519,7 @@ function StockList() {
                             setShowForecast(false);
                           }}
                         >
-                          Restock
+                          {t("restock", "Restock")}
                         </Button>
                       </div>
                     </div>

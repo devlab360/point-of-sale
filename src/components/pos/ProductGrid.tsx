@@ -456,9 +456,7 @@ export function ProductGrid({ state }: { state: any }) {
                                   </span>
                                 )}
                                 {p.hasVariants && (
-                                  <span className="text-[8px] sm:text-[9px] font-bold rounded bg-secondary/80 px-1 py-0.25 text-secondary-foreground uppercase tracking-wider">
-                                    Var
-                                  </span>
+                                  <span className="text-[8px] sm:text-[9px] font-bold rounded bg-secondary/80 px-1 py-0.25 text-secondary-foreground uppercase tracking-wider">{t("varShort", "Var")}</span>
                                 )}
                                 {/* Always-visible quick add button */}
                                 <span

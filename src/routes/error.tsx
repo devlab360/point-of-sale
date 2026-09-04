@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ShieldAlert, ServerCrash, SearchX, Home, ArrowLeft } from "lucide-react";
 import { z } from "zod";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/error")({
   validateSearch: z.object({
@@ -91,14 +92,14 @@ function ErrorPage() {
             className="w-full sm:w-auto font-semibold rounded-xl h-12 px-6"
             onClick={() => window.history.back()}
           >
-            <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
+            <ArrowLeft className="mr-2 h-4 w-4" /> {t("goBack", "Go Back")}
           </Button>
           <Button
             size="lg"
             className="w-full sm:w-auto font-semibold rounded-xl h-12 px-6 shadow-lg hover:shadow-xl transition-shadow"
             onClick={() => navigate({ to: "/" })}
           >
-            <Home className="mr-2 h-4 w-4" /> Return to Dashboard
+            <Home className="mr-2 h-4 w-4" /> {t("returnToDashboard", "Return to Dashboard")}
           </Button>
         </div>
       </div>

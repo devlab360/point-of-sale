@@ -196,7 +196,7 @@ function AdminLoginPage() {
                     {t("rootAuthentication", "Root Authentication")}
                   </h2>
                   <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30 text-xs font-mono font-extrabold uppercase px-2.5 py-0.5">
-                    Level 0
+                    {t("level0", "Level 0")}
                   </Badge>
                 </div>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">

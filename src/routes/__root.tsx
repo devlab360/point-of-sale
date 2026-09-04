@@ -177,7 +177,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
                 onClick={handleClearCacheAndReset}
                 className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
               >
-                <RotateCcw className="size-3 mr-1" /> Clear Storage & Reload
+                <RotateCcw className="size-3 mr-1" /> {t("clearStorageReload", "Clear Storage & Reload")}
               </Button>
             </div>
           </div>
@@ -530,11 +530,10 @@ function AppLayout() {
                 </svg>
               </div>
               <DialogTitle className="text-center text-2xl font-bold tracking-tight">
-                Account Suspended
+                {t("accountSuspended", "Account Suspended")}
               </DialogTitle>
               <DialogDescription className="text-center text-sm mt-3 text-foreground/70 leading-relaxed px-2">
-                Your account has been suspended by the administrator. Please contact support for
-                more information.
+                {t("accountSuspendedMsg", "Your account has been suspended by the administrator. Please contact support for more information.")}
               </DialogDescription>
             </DialogHeader>
           </DialogContent>

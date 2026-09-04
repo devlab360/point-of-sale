@@ -780,8 +780,7 @@ function ExpensesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t("deleteExpense", "Delete Expense Record?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this expense entry? This will permanently remove the
-              audit record.
+              {t("confirmDeleteExpense", "Are you sure you want to delete this expense entry? This will permanently remove the audit record.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

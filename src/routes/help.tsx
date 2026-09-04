@@ -310,7 +310,7 @@ function HelpPage() {
               <div className="p-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <Badge variant="outline" className="text-[10px] font-bold uppercase">
-                    Video
+                    {t("video", "Video")}
                   </Badge>
                   <Video className="size-4 text-primary" />
                 </div>

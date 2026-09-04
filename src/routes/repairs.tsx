@@ -342,7 +342,7 @@ function RepairsPage() {
             <div class="row"><span class="bold">{t("balanceDue", "Balance Due")}:</span> <span>${currencySymbol}${Math.max(0, (Number(ticket.estimatedCost) || 0) - (Number(ticket.advancePaid) || 0)).toFixed(2)}</span></div>
           </div>
           <div class="footer">
-            Terms: Backup data before repair. 30 days warranty on replaced parts. Please bring this receipt for device pickup.
+            {t("termsBackupDataBeforeRepair30DaysWarrant", "Terms: Backup data before repair. 30 days warranty on replaced parts. Please bring this receipt for device pickup.")}
           </div>
           <script>window.print();</script>
         </body>

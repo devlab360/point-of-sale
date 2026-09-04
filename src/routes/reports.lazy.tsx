@@ -452,13 +452,13 @@ function ReportsPage() {
       <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
           <div>
-            <h3 className="font-bold text-base text-foreground">Financial Performance Trends</h3>
+            <h3 className="font-bold text-base text-foreground">{t("financialPerformanceTrends", "Financial Performance Trends")}</h3>
             <p className="text-xs text-muted-foreground">
-              Monthly revenue vs gross profit performance.
+              {t("monthlyRevenueProfitDesc", "Monthly revenue vs gross profit performance.")}
             </p>
           </div>
           <Badge variant="outline" className="text-xs font-semibold w-fit">
-            6-Month Trajectory
+            {t("sixMonthTrajectory", "6-Month Trajectory")}
           </Badge>
         </div>
 
@@ -491,10 +491,10 @@ function ReportsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-bold text-base text-foreground">
-              Accounting & Operational Statements
+              {t("accountingOperationalStatements", "Accounting & Operational Statements")}
             </h3>
             <p className="text-xs text-muted-foreground">
-              Select a report module to view full tabular statements and export data.
+              {t("selectAReportModuleToViewFullTabularStat", "Select a report module to view full tabular statements and export data.")}
             </p>
           </div>
         </div>
@@ -554,16 +554,16 @@ function ReportsPage() {
                       {selectedReport.replace("-", " ")} Audit Statement
                     </SheetTitle>
                     <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                      Detailed ledger breakdown for current accounting period.
+                      {t("detailedLedgerBreakdownForCurrentAccount", "Detailed ledger breakdown for current accounting period.")}
                     </SheetDescription>
                   </div>
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => toast.success("Report data exported to CSV")}
+                    onClick={() => toast.success(t("reportExportedCsv", "Report data exported to CSV"))}
                     className="gap-1.5 text-xs font-semibold"
                   >
-                    <Download className="size-3.5" /> Export
+                    <Download className="size-3.5" /> {t("export", "Export")}
                   </Button>
                 </div>
               </SheetHeader>
@@ -625,7 +625,7 @@ function ReportsPage() {
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
                 <Button type="button" variant="outline" onClick={() => setSelectedReport(null)}>
-                  Close Statement
+                  {t("closeStatement", "Close Statement")}
                 </Button>
               </SheetFooter>
             </div>

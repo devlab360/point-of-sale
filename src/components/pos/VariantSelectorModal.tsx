@@ -53,7 +53,7 @@ export function VariantSelectorModal({ product, onClose, onSelect }: VariantSele
           {isLoading ? (
             <div className="py-12 flex flex-col items-center justify-center text-muted-foreground">
               <Loader2 className="w-8 h-8 animate-spin mb-4" />
-              <p>Loading variants...</p>
+              <p>{t("loadingVariants", "Loading variants...")}</p>
             </div>
           ) : variants.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground">
@@ -93,7 +93,7 @@ export function VariantSelectorModal({ product, onClose, onSelect }: VariantSele
               {/* Selection Summary & Action */}
               <div className="pt-3 border-t flex items-center justify-between gap-2">
                 <div>
-                  <div className="text-xs text-muted-foreground">Total Price</div>
+                  <div className="text-xs text-muted-foreground">{t("totalPrice", "Total Price")}</div>
                   <div className="text-lg sm:text-2xl font-black text-primary">
                     {formatCurrency(selectedVariant ? selectedVariant.price : 0)}
                   </div>

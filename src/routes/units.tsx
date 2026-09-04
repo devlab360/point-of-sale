@@ -599,8 +599,7 @@ function UnitsPage() {
                   {t("deleteUnit", "Delete Unit of Measurement")}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Are you sure you want to delete this unit? Linked products will keep their unit
-                  assignment.
+                  {t("confirmDeleteUnit", "Are you sure you want to delete this unit? Linked products will keep their unit assignment.")}
                 </DialogDescription>
               </div>
             </div>

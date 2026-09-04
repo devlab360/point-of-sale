@@ -299,7 +299,7 @@ function SalesPage() {
     <div className="page-container space-y-6">
       {/* Standard PageHeader */}
       <PageHeader
-        title={t("Sales History", "Sales & POS Transactions")}
+        title={t("salesTransactionsTitle", "Sales & POS Transactions")}
         description={t("manageSales", "Every customer order, split tender receipt, and register settlement across all stores.")}
         actions={
           <div className="flex flex-wrap items-center gap-2">
@@ -453,7 +453,7 @@ function SalesPage() {
                       handleResetFilters();
                     }}
                   >
-                    Reset
+                    {t("reset", "Reset")}
                   </Button>
                   <Button
                     className="flex-1 font-bold"
@@ -461,7 +461,7 @@ function SalesPage() {
                       setFilters(draftFilters);
                     }}
                   >
-                    Apply Filters
+                    {t("applyFilters", "Apply Filters")}
                   </Button>
                 </SheetFooter>
               </SheetContent>
@@ -480,7 +480,7 @@ function SalesPage() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="rounded-xl border border-border/80 bg-card p-3 shadow-xs flex flex-col gap-1">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Cash Revenue
+                  {t("cashRevenue", "Cash Revenue")}
                 </span>
                 <span className="text-lg font-black text-success">
                   {formatCurrency(summaries.cash)}
@@ -488,7 +488,7 @@ function SalesPage() {
               </div>
               <div className="rounded-xl border border-border/80 bg-card p-3 shadow-xs flex flex-col gap-1">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Card Revenue
+                  {t("cardRevenue", "Card Revenue")}
                 </span>
                 <span className="text-lg font-black text-info">
                   {formatCurrency(summaries.card)}
@@ -496,7 +496,7 @@ function SalesPage() {
               </div>
               <div className="rounded-xl border border-border/80 bg-card p-3 shadow-xs flex flex-col gap-1">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                  UPI / Digital
+                  {t("upiDigital", "UPI / Digital")}
                 </span>
                 <span className="text-lg font-black text-primary">
                   {formatCurrency(summaries.upi)}
@@ -504,7 +504,7 @@ function SalesPage() {
               </div>
               <div className="rounded-xl border border-border/80 bg-card p-3 shadow-xs flex flex-col gap-1">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Credit (Due)
+                  {t("creditDue", "Credit (Due)")}
                 </span>
                 <span className="text-lg font-black text-warning">
                   {formatCurrency(summaries.credit)}
@@ -707,7 +707,7 @@ function SalesPage() {
                           printReceipt(s);
                         }}
                       >
-                        <Printer className="size-3 mr-1" /> Print
+                        <Printer className="size-3 mr-1" /> {t("print", "Print")}
                       </Button>
                     </div>
                   </div>
@@ -742,7 +742,7 @@ function SalesPage() {
                 Invoice #{viewSale?.id.slice(0, 8).toUpperCase()}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Sale details, line items, and totals.
+                {t("saleDetailsLineItemsAndTotals", "Sale details, line items, and totals.")}
               </SheetDescription>
             </SheetHeader>
             {viewSale && (
@@ -863,7 +863,7 @@ function SalesPage() {
                         printReceipt(viewSale);
                       }}
                     >
-                      <Printer className="size-4 mr-1.5" /> Reprint Receipt
+                      <Printer className="size-4 mr-1.5" /> {t("reprintReceipt", "Reprint Receipt")}
                     </Button>
                     {canVoid && viewSale.status !== "voided" && !viewSale.metadata?.voided && (
                       <Button
@@ -875,7 +875,7 @@ function SalesPage() {
                           setViewSale(null);
                         }}
                       >
-                        <Ban className="size-4 mr-1.5" /> Void Bill
+                        <Ban className="size-4 mr-1.5" /> {t("voidBill", "Void Bill")}
                       </Button>
                     )}
                   </div>
@@ -958,7 +958,7 @@ function SalesPage() {
         <DialogContent className="sm:max-w-sm rounded-2xl">
           <DialogHeader>
             <DialogTitle className="font-bold flex items-center gap-2">
-              <Ban className="size-5 text-destructive" /> Void This Bill?
+              <Ban className="size-5 text-destructive" /> {t("voidThisBill", "Void This Bill?")}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
@@ -986,7 +986,7 @@ function SalesPage() {
               disabled={voidMutation.isPending}
               className="rounded-xl h-10 px-4 text-xs font-semibold"
             >
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button
               variant="destructive"

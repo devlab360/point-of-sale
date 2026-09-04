@@ -678,24 +678,24 @@ export function PosDialogs({
                         {/* Held Order Active Badge */}
                         {matchingHeld && (
                           <span className="inline-flex items-center gap-1 rounded-md bg-warning/15 px-1.5 py-0.5 text-[10px] font-extrabold text-warning border border-warning/30 animate-pulse">
-                            <Pause className="size-2.5" /> Held Cart
+                            <Pause className="size-2.5" /> {t("heldCart", "Held Cart")}
                           </span>
                         )}
 
                         {/* Customer Type Badges */}
                         {c.type === "wholesale" && (
                           <span className="rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">
-                            Wholesale
+                            {t("wholesale", "Wholesale")}
                           </span>
                         )}
                         {c.type === "dealer" && (
                           <span className="rounded bg-purple-500/15 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">
-                            Dealer
+                            {t("dealer", "Dealer")}
                           </span>
                         )}
                         {c.type === "corporate" && (
                           <span className="rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">
-                            Corporate
+                            {t("corporate", "Corporate")}
                           </span>
                         )}
                       </div>
@@ -728,7 +728,7 @@ export function PosDialogs({
                     {dueAmount > 0 && (
                       <div className="text-right">
                         <span className="text-[10px] uppercase font-bold text-destructive block">
-                          Udhaar Due
+                          {t("udhaarDue", "Udhaar Due")}
                         </span>
                         <span className="text-xs font-black text-destructive font-mono">
                           {formatCurrency(dueAmount)}
@@ -738,7 +738,7 @@ export function PosDialogs({
                     {walletBal > 0 && (
                       <div className="text-right">
                         <span className="text-[10px] uppercase font-bold text-success block">
-                          Wallet
+                          {t("wallet", "Wallet")}
                         </span>
                         <span className="text-xs font-black text-success font-mono">
                           {formatCurrency(walletBal)}
@@ -1258,7 +1258,7 @@ export function PosDialogs({
               </div>
             </div>
             <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-extrabold text-primary border border-primary/20">
-              Pro Mode
+              {t("proMode", "Pro Mode")}
             </span>
           </div>
 

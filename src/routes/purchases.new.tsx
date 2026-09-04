@@ -390,7 +390,7 @@ function NewPurchasePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold">
-                  Supplier / Vendor <span className="text-destructive">*</span>
+                  {t("supplierVendor", "Supplier / Vendor")}<span className="text-destructive">*</span>
                 </Label>
                 <SearchableSelect
                   options={suppliers.map((s: any) => ({
@@ -427,7 +427,7 @@ function NewPurchasePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold">
-                  Purchase Order Date <span className="text-destructive">*</span>
+                  {t("purchaseOrderDate", "Purchase Order Date")}<span className="text-destructive">*</span>
                 </Label>
                 <DatePicker
                   date={purchaseDate}
@@ -459,7 +459,7 @@ function NewPurchasePage() {
                 <div>
                   <h3 className="font-bold text-sm text-foreground">{t("inboundStockItems", "Inbound Stock Items")}</h3>
                   <p className="text-[11px] text-muted-foreground">
-                    Select products, received quantities, and unit purchase costs.
+                    {t("selectProductsReceivedQuantitiesAndUnitP", "Select products, received quantities, and unit purchase costs.")}
                   </p>
                 </div>
               </div>
@@ -469,7 +469,7 @@ function NewPurchasePage() {
                 onClick={handleAddLine}
                 className="h-8 text-xs font-bold rounded-xl gap-1.5 border-primary/30 text-primary hover:bg-primary/5"
               >
-                <Plus className="size-3.5" /> Add Product Row
+                <Plus className="size-3.5" /> {t("addProductRow", "Add Product Row")}
               </Button>
             </div>
 
@@ -587,7 +587,7 @@ function NewPurchasePage() {
                   onClick={() => setAmountPaid(total)}
                   className="text-[11px] font-bold text-primary hover:underline"
                 >
-                  Pay in Full
+                  {t("payInFull", "Pay in Full")}
                 </button>
               </div>
               <Input
@@ -606,7 +606,7 @@ function NewPurchasePage() {
               <div className="flex justify-between items-center text-xs p-3.5 rounded-xl bg-muted/40 border border-border/60">
                 <div>
                   <span className="text-muted-foreground font-semibold block text-[11px]">
-                    Vendor Due Balance (Khata):
+                    {t("vendorDueBalanceKhata", "Vendor Due Balance (Khata):")}
                   </span>
                   <span className="text-[10px] text-muted-foreground">
                     {dueVal > 0 ? "Payable on credit" : "Fully settled"}

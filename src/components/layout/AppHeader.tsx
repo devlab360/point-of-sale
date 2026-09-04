@@ -949,7 +949,7 @@ export function AppHeader() {
                   className="h-7 px-2.5 text-xs font-semibold"
                   onClick={() => setSearchQuery("")}
                 >
-                  Clear
+                  {t("clear", "Clear")}
                 </Button>
               )}
             </div>
@@ -958,7 +958,7 @@ export function AppHeader() {
                 <div className="py-8 text-center text-sm text-muted-foreground flex flex-col items-center gap-2">
                   <Command className="size-8 opacity-20" />
                   <span>
-                    Type to search across pages, products, customers, orders & finances...
+                    {t("typeToSearchAcrossPagesProductsCustomers", "Type to search across pages, products, customers, orders & finances...")}
                   </span>
                 </div>
               ) : searchModules.length === 0 &&

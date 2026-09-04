@@ -435,7 +435,7 @@ function CategoriesPage() {
                         onClick={() => openEdit(c)}
                         className="h-8 text-xs font-semibold"
                       >
-                        <Pencil className="size-3.5 mr-1" /> Edit
+                        <Pencil className="size-3.5 mr-1" /> {t("edit", "Edit")}
                       </Button>
                       <Button
                         variant="ghost"
@@ -616,7 +616,7 @@ function CategoriesPage() {
                       <span className="grid size-4 place-items-center rounded-full border border-dashed border-foreground/30">
                         <X className="size-2.5 text-muted-foreground" />
                       </span>
-                      <span className="truncate">None</span>
+                      <span className="truncate">{t("none", "None")}</span>
                     </button>
                     {PREDEFINED_COLORS.map((c) => (
                       <button
@@ -667,8 +667,7 @@ function CategoriesPage() {
                   {t("deleteCategory", "Delete Category")}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Are you sure you want to delete this category? Products assigned to it will remain
-                  in your catalog.
+                  {t("confirmDeleteCategory", "Are you sure you want to delete this category? Products assigned to it will remain in your catalog.")}
                 </DialogDescription>
               </div>
             </div>

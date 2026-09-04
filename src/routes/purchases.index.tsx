@@ -261,7 +261,7 @@ function PurchasesPage() {
                     <span>{t("filterPurchases", "Filter Purchases")}</span>
                   </SheetTitle>
                   <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                    Filter by purchase status and settlement records.
+                    {t("filterByPurchaseStatusAndSettlementRecor", "Filter by purchase status and settlement records.")}
                   </SheetDescription>
                 </SheetHeader>
                 <div className="flex-1 overflow-y-auto p-5 space-y-4">
@@ -286,7 +286,7 @@ function PurchasesPage() {
                       handleResetFilters();
                     }}
                   >
-                    Reset
+                    {t("reset", "Reset")}
                   </Button>
                   <Button
                     className="flex-1 font-bold"
@@ -294,7 +294,7 @@ function PurchasesPage() {
                       setFilters(draftFilters);
                     }}
                   >
-                    Apply Filters
+                    {t("applyFilters", "Apply Filters")}
                   </Button>
                 </SheetFooter>
               </SheetContent>
@@ -414,7 +414,7 @@ function PurchasesPage() {
                                 onClick={() => setViewPurchase(p)}
                                 className="text-xs font-semibold"
                               >
-                                <Eye className="size-3.5 mr-2 text-primary" /> View Order Sheet
+                                <Eye className="size-3.5 mr-2 text-primary" /> {t("viewOrderSheet", "View Order Sheet")}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() =>
@@ -422,13 +422,13 @@ function PurchasesPage() {
                                 }
                                 className="text-xs font-semibold"
                               >
-                                <Edit2 className="size-3.5 mr-2 text-primary" /> Edit Purchase
+                                <Edit2 className="size-3.5 mr-2 text-primary" /> {t("editPurchase", "Edit Purchase")}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => setDeleteId(p.id)}
                                 className="text-xs font-semibold text-destructive focus:text-destructive"
                               >
-                                <Trash2 className="size-3.5 mr-2" /> Delete PO
+                                <Trash2 className="size-3.5 mr-2" /> {t("deletePo", "Delete PO")}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -506,7 +506,7 @@ function PurchasesPage() {
                     variant="outline"
                     className="bg-primary/10 text-primary border-primary/20 text-[10px] font-black uppercase"
                   >
-                    Purchase Order
+                    {t("purchaseOrder", "Purchase Order")}
                   </Badge>
                   <Badge className="bg-success/15 text-success border-success/30 text-[10px] font-black uppercase">
                     {viewPurchase.status}
@@ -527,7 +527,7 @@ function PurchasesPage() {
                 <div className="grid grid-cols-3 gap-3">
                   <div className="p-3.5 rounded-xl border border-border bg-card text-center">
                     <span className="text-[10px] font-bold text-muted-foreground uppercase">
-                      Total Invoiced
+                      {t("totalInvoiced", "Total Invoiced")}
                     </span>
                     <p className="text-base font-black text-foreground mt-0.5">
                       {formatCurrency(Number(viewPurchase.total) || 0)}
@@ -535,7 +535,7 @@ function PurchasesPage() {
                   </div>
                   <div className="p-3.5 rounded-xl border border-success/20 bg-success/5 text-center">
                     <span className="text-[10px] font-bold text-success uppercase">
-                      Paid Amount
+                      {t("paidAmount", "Paid Amount")}
                     </span>
                     <p className="text-base font-black text-success mt-0.5">
                       {formatCurrency(Number(viewPurchase.paid) || Number(viewPurchase.total) || 0)}
@@ -543,7 +543,7 @@ function PurchasesPage() {
                   </div>
                   <div className="p-3.5 rounded-xl border border-destructive/20 bg-destructive/5 text-center">
                     <span className="text-[10px] font-bold text-destructive uppercase">
-                      Due Payable
+                      {t("duePayable", "Due Payable")}
                     </span>
                     <p className="text-base font-black text-destructive mt-0.5">
                       {formatCurrency(Number(viewPurchase.due) || 0)}
@@ -626,7 +626,7 @@ function PurchasesPage() {
                   onClick={() => window.print()}
                   className="font-bold text-xs"
                 >
-                  <Printer className="size-3.5 mr-1.5" /> Print PO
+                  <Printer className="size-3.5 mr-1.5" /> {t("printPo", "Print PO")}
                 </Button>
                 <div className="flex gap-2">
                   <Button
@@ -639,14 +639,14 @@ function PurchasesPage() {
                     }}
                     className="font-bold text-xs"
                   >
-                    <Edit2 className="size-3.5 mr-1.5" /> Edit Order
+                    <Edit2 className="size-3.5 mr-1.5" /> {t("editOrder", "Edit Order")}
                   </Button>
                   <Button
                     size="sm"
                     onClick={() => setViewPurchase(null)}
                     className="font-bold text-xs"
                   >
-                    Done
+                    {t("done", "Done")}
                   </Button>
                 </div>
               </div>
@@ -661,8 +661,7 @@ function PurchasesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t("deletePurchaseOrderQ", "Delete Purchase Order?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this purchase order record? This will remove the
-              recorded bill and transaction reference.
+              {t("confirmDeletePurchaseOrder", "Are you sure you want to delete this purchase order record? This will remove the recorded bill and transaction reference.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -671,7 +670,7 @@ function PurchasesPage() {
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {t("delete", "Delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

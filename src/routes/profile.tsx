@@ -174,7 +174,7 @@ function ProfilePage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-bold text-foreground">
-                    Full name <span className="text-destructive">*</span>
+                    {t("fullName", "Full name")}<span className="text-destructive">*</span>
                   </span>
                   <input
                     value={profile.name}
@@ -185,7 +185,7 @@ function ProfilePage() {
                 </label>
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
-                    Email
+                    {t("email", "Email")}
                   </span>
                   <input
                     value={profile.email}
@@ -194,12 +194,12 @@ function ProfilePage() {
                     className={`w-full rounded-lg border bg-muted text-muted-foreground cursor-not-allowed px-3 py-2 text-sm focus:outline-none ${profileErrors.email ? "border-destructive focus:border-destructive" : "border-border"}`}
                   />
                   <p className="text-[10px] text-muted-foreground mt-1">
-                    Email cannot be changed as it is used for login.
+                    {t("emailCannotBeChangedAsItIsUsedForLogin", "Email cannot be changed as it is used for login.")}
                   </p>
                 </label>
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
-                    Phone
+                    {t("phone", "Phone")}
                   </span>
                   <input
                     value={profile.phone || ""}
@@ -210,7 +210,7 @@ function ProfilePage() {
                 </label>
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
-                    Role
+                    {t("role", "Role")}
                   </span>
                   <input
                     value={profile.role}
@@ -220,7 +220,7 @@ function ProfilePage() {
                 </label>
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
-                    Location
+                    {t("location", "Location")}
                   </span>
                   <input
                     value={profile.location || ""}
@@ -230,7 +230,7 @@ function ProfilePage() {
                 </label>
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
-                    Joined
+                    {t("joined", "Joined")}
                   </span>
                   <input
                     value={profile.joined || ""}
@@ -242,7 +242,7 @@ function ProfilePage() {
                 {/* Dynamic Locale, Timezone, Date Format & Language Settings */}
                 <div className="sm:col-span-2 pt-4 border-t border-border mt-2 space-y-4">
                   <h3 className="text-sm font-bold text-foreground">
-                    Localization & Regional Preferences
+                    {t("localizationRegionalPreferences", "Localization & Regional Preferences")}
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <label className="block">

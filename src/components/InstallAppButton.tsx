@@ -126,7 +126,7 @@ export function InstallAppButton() {
           <div className="space-y-3 py-2 text-xs">
             <div className="rounded-xl border border-border/80 p-3 bg-muted/20 space-y-1.5">
               <div className="flex items-center gap-2 font-bold text-foreground">
-                <Monitor className="size-4 text-primary" /> Chrome / Edge (Desktop)
+                <Monitor className="size-4 text-primary" /> {t("chromeEdgeDesktop", "Chrome / Edge (Desktop)")}
               </div>
               <p className="text-muted-foreground">
                 {t("installDesktopHint", "Click the Install icon (⊕) on the right side of your browser address bar, or click Menu (⋮) → Install app.")}
@@ -135,7 +135,7 @@ export function InstallAppButton() {
 
             <div className="rounded-xl border border-border/80 p-3 bg-muted/20 space-y-1.5">
               <div className="flex items-center gap-2 font-bold text-foreground">
-                <Smartphone className="size-4 text-primary" /> Android / iOS (Mobile & Tablet)
+                <Smartphone className="size-4 text-primary" /> {t("androidIosMobileTablet", "Android / iOS (Mobile & Tablet)")}
               </div>
               <p className="text-muted-foreground">
                 {t("installMobileHint", "In Safari on iOS: Tap Share (⎋) → Add to Home Screen. In Chrome on Android: Tap Menu (⋮) → Install app / Add to Home screen.")}

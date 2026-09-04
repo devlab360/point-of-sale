@@ -517,7 +517,7 @@ function DeliveryChallansPage() {
                     <span>{t("filterChallans", "Filter Challans")}</span>
                   </SheetTitle>
                   <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                    Filter by status and vehicle dispatch mode.
+                    {t("filterByStatusAndVehicleDispatchMode", "Filter by status and vehicle dispatch mode.")}
                   </SheetDescription>
                 </SheetHeader>
                 <div className="flex-1 overflow-y-auto p-5 space-y-4">
@@ -542,7 +542,7 @@ function DeliveryChallansPage() {
                       handleResetFilters();
                     }}
                   >
-                    Reset
+                    {t("reset", "Reset")}
                   </Button>
                   <Button
                     className="flex-1 font-bold"
@@ -550,7 +550,7 @@ function DeliveryChallansPage() {
                       setFilters(draftFilters);
                     }}
                   >
-                    Apply Filters
+                    {t("applyFilters", "Apply Filters")}
                   </Button>
                 </SheetFooter>
               </SheetContent>

@@ -631,7 +631,7 @@ function UsersPage() {
                       <div className="grid grid-cols-3 gap-2 p-3.5 rounded-xl bg-muted/40 border border-border/60 text-xs">
                         <div className="space-y-0.5">
                           <span className="text-[10px] uppercase font-black tracking-wider text-muted-foreground block">
-                            Commission
+                            {t("commission", "Commission")}
                           </span>
                           <span className="text-xs font-black font-mono text-foreground block">
                             {u.commissionRate ? `${u.commissionRate}%` : "0%"}
@@ -639,7 +639,7 @@ function UsersPage() {
                         </div>
                         <div className="space-y-0.5 border-x border-border/50 px-2.5">
                           <span className="text-[10px] uppercase font-black tracking-wider text-muted-foreground block">
-                            Target
+                            {t("target", "Target")}
                           </span>
                           <span className="text-xs font-black font-mono text-foreground truncate block">
                             {u.monthlyTarget ? formatCurrency(u.monthlyTarget) : "None"}
@@ -647,7 +647,7 @@ function UsersPage() {
                         </div>
                         <div className="space-y-0.5 pl-1">
                           <span className="text-[10px] uppercase font-black tracking-wider text-muted-foreground block">
-                            Modules
+                            {t("modules", "Modules")}
                           </span>
                           <span className="text-xs font-black font-mono text-primary truncate block">
                             {permsCount} active
@@ -658,7 +658,7 @@ function UsersPage() {
                       {(u.locationIds || []).length > 0 && (
                         <div className="space-y-1.5">
                           <span className="text-[10px] uppercase font-black tracking-wider text-muted-foreground flex items-center gap-1">
-                            <Building2 className="size-3" /> Branches
+                            <Building2 className="size-3" /> {t("branches", "Branches")}
                           </span>
                           <div className="flex flex-wrap gap-1.5">
                             {(u.locationIds || []).map((bid: string) => {
@@ -709,7 +709,7 @@ function UsersPage() {
                               : undefined
                           }
                         >
-                          <Shield className="size-3.5" /> Access
+                          <Shield className="size-3.5" /> {t("access", "Access")}
                         </Button>
                         {u.email?.toLowerCase() !== ownerEmail ? (
                           <Button
@@ -826,7 +826,7 @@ function UsersPage() {
                                   : undefined
                               }
                             >
-                              <Shield className="size-3.5" /> Permissions
+                              <Shield className="size-3.5" /> {t("permissions", "Permissions")}
                             </Button>
                             {u.email?.toLowerCase() !== ownerEmail ? (
                               <Button
@@ -890,7 +890,7 @@ function UsersPage() {
                         <span className="text-primary truncate">{editItem.name}</span>
                       </SheetTitle>
                       <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                        Configure assigned role, sales commission, and granular module permissions.
+                        {t("configureAssignedRoleSalesCommissionAndG", "Configure assigned role, sales commission, and granular module permissions.")}
                       </SheetDescription>
                     </div>
                   </div>
@@ -923,7 +923,7 @@ function UsersPage() {
                   <section className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5 space-y-4 shadow-xs">
                     <div className="flex items-center justify-between">
                       <p className="text-[11px] font-black uppercase tracking-[0.14em] text-muted-foreground flex items-center gap-2">
-                        <Users className="size-3.5 text-primary" /> Staff Member Profile
+                        <Users className="size-3.5 text-primary" /> {t("staffMemberProfile", "Staff Member Profile")}
                       </p>
                       <span className="text-[11px] text-muted-foreground font-mono">
                         ID: {editItem.id?.slice(0, 8)}...
@@ -955,13 +955,13 @@ function UsersPage() {
                   {/* 2. Role & Financial Terms */}
                   <section className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5 space-y-4 shadow-xs">
                     <p className="text-[11px] font-black uppercase tracking-[0.14em] text-muted-foreground flex items-center gap-2">
-                      <Crown className="size-3.5 text-primary" /> Assigned Role & Performance Terms
+                      <Crown className="size-3.5 text-primary" /> {t("assignedRolePerformanceTerms", "Assigned Role & Performance Terms")}
                     </p>
                     <RoleSelectCards value={editRole} onChange={handleRoleChangeInEdit} />
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
                       <div className="space-y-1.5">
                         <Label className="text-xs font-bold text-foreground">
-                          Commission Rate (%)
+                          {t("commissionRate", "Commission Rate (%)")}
                         </Label>
                         <div className="relative">
                           <Percent className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -979,7 +979,7 @@ function UsersPage() {
                       </div>
                       <div className="space-y-1.5">
                         <Label className="text-xs font-bold text-foreground">
-                          Monthly Sales Target
+                          {t("monthlySalesTarget", "Monthly Sales Target")}
                         </Label>
                         <div className="relative">
                           <Target className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -1013,11 +1013,10 @@ function UsersPage() {
                   <section className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5 space-y-4 shadow-xs">
                     <div>
                       <p className="text-[11px] font-black uppercase tracking-[0.14em] text-muted-foreground flex items-center gap-2">
-                        <Building2 className="size-3.5 text-primary" /> Branch Assignment
+                        <Building2 className="size-3.5 text-primary" /> {t("branchAssignment", "Branch Assignment")}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Select one or more branches this staff member can work at. The first
-                        selected branch is treated as their default branch.
+                        {t("selectBranchStaffDesc", "Select one or more branches this staff member can work at. The first selected branch is treated as their default branch.")}
                       </p>
                     </div>
                     {locations.length === 0 ? (
@@ -1046,7 +1045,7 @@ function UsersPage() {
                             <Building2 className="size-4" />
                             <span>{t("allBranches", "All Branches")}</span>
                             <span className="text-[9px] font-black uppercase tracking-wider text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">
-                              All
+                              {t("all", "All")}
                             </span>
                           </span>
                         </label>
@@ -1092,12 +1091,10 @@ function UsersPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-border/60">
                       <div>
                         <p className="text-[11px] font-black uppercase tracking-[0.14em] text-foreground flex items-center gap-2">
-                          <Layers className="size-3.5 text-primary" /> Granular Module Authorization
-                          Matrix
+                          <Layers className="size-3.5 text-primary" /> {t("granularModuleAuthMatrix", "Granular Module Authorization Matrix")}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          Toggle specific business capabilities and route access for this staff
-                          member.
+                          {t("toggleStaffModuleAccessDesc", "Toggle specific business capabilities and route access for this staff member.")}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -1112,7 +1109,7 @@ function UsersPage() {
                           className="h-8 text-xs font-bold gap-1 rounded-xl"
                           onClick={handleSelectAllPermissions}
                         >
-                          <Check className="size-3.5" /> Select All
+                          <Check className="size-3.5" /> {t("selectAll", "Select All")}
                         </Button>
                         <Button
                           type="button"
@@ -1121,7 +1118,7 @@ function UsersPage() {
                           className="h-8 text-xs text-destructive hover:bg-destructive/10 font-bold rounded-xl"
                           onClick={handleClearPermissions}
                         >
-                          Clear
+                          {t("clear", "Clear")}
                         </Button>
                       </div>
                     </div>
@@ -1226,7 +1223,7 @@ function UsersPage() {
                       onClick={() => setEditItem(null)}
                       className="font-bold rounded-xl"
                     >
-                      Cancel
+                      {t("cancel", "Cancel")}
                     </Button>
                     <Button
                       type="submit"
@@ -1258,10 +1255,10 @@ function UsersPage() {
                 </div>
                 <div>
                   <SheetTitle className="text-lg sm:text-xl font-black text-foreground">
-                    Register New Employee
+                    {t("registerNewEmployee", "Register New Employee")}
                   </SheetTitle>
                   <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                    Create an active user profile with initial role and direct login credentials.
+                    {t("createAnActiveUserProfileWithInitialRole", "Create an active user profile with initial role and direct login credentials.")}
                   </SheetDescription>
                 </div>
               </div>
@@ -1315,10 +1312,10 @@ function UsersPage() {
 
                 <div className="space-y-2.5">
                   <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <Building2 className="size-4 text-primary" /> Assign Branches
+                    <Building2 className="size-4 text-primary" /> {t("assignBranches", "Assign Branches")}
                   </Label>
                   <p className="text-[11px] text-muted-foreground -mt-1">
-                    Select one or more branches this employee can work at. The first is the default.
+                    {t("selectOneOrMoreBranchesThisEmployeeCanWo", "Select one or more branches this employee can work at. The first is the default.")}
                   </p>
                   {locations.length === 0 ? (
                     <p className="text-xs text-muted-foreground">
@@ -1345,7 +1342,7 @@ function UsersPage() {
                           <Building2 className="size-4" />
                           <span>{t("allBranches", "All Branches")}</span>
                           <span className="text-[9px] font-black uppercase tracking-wider text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">
-                            All
+                            {t("all", "All")}
                           </span>
                         </span>
                       </label>
@@ -1388,7 +1385,7 @@ function UsersPage() {
 
                 <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-xs space-y-1">
                   <p className="text-[11px] font-black uppercase tracking-[0.14em] text-primary flex items-center gap-1.5">
-                    <CheckCircle2 className="size-3.5" /> Initial Module Grants
+                    <CheckCircle2 className="size-3.5" /> {t("initialModuleGrants", "Initial Module Grants")}
                   </p>
                   <p className="leading-relaxed text-muted-foreground">
                     <span className="font-bold text-foreground">
@@ -1411,7 +1408,7 @@ function UsersPage() {
                   onClick={() => setIsDirectAddOpen(false)}
                   className="font-bold rounded-xl"
                 >
-                  Cancel
+                  {t("cancel", "Cancel")}
                 </Button>
                 <Button
                   type="submit"
@@ -1441,10 +1438,10 @@ function UsersPage() {
                 </div>
                 <div>
                   <SheetTitle className="text-lg sm:text-xl font-black text-foreground">
-                    Generate Staff Onboarding Invite
+                    {t("generateStaffOnboardingInvite", "Generate Staff Onboarding Invite")}
                   </SheetTitle>
                   <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                    Generate a secure one-time registration link to onboard staff members.
+                    {t("generateASecureOneTimeRegistrationLinkTo", "Generate a secure one-time registration link to onboard staff members.")}
                   </SheetDescription>
                 </div>
               </div>
@@ -1477,7 +1474,7 @@ function UsersPage() {
                 {generatedLink ? (
                   <div className="w-full p-4 rounded-2xl bg-card border border-border/80 shadow-sm space-y-2.5">
                     <span className="text-xs font-bold text-foreground block">
-                      Generated Onboarding Link:
+                      {t("generatedOnboardingLink", "Generated Onboarding Link:")}
                     </span>
                     <div className="flex items-center gap-2">
                       <Input
@@ -1506,7 +1503,7 @@ function UsersPage() {
                       className="text-xs font-bold rounded-xl"
                       onClick={() => setIsInviteOpen(false)}
                     >
-                      Done
+                      {t("done", "Done")}
                     </Button>
                   </div>
                 ) : (
@@ -1517,7 +1514,7 @@ function UsersPage() {
                       onClick={() => setIsInviteOpen(false)}
                       className="font-bold rounded-xl"
                     >
-                      Cancel
+                      {t("cancel", "Cancel")}
                     </Button>
                     <Button type="submit" disabled={isGenerating} className="font-bold rounded-xl">
                       {isGenerating && <Loader2 className="size-4 animate-spin mr-2" />}
@@ -1541,11 +1538,10 @@ function UsersPage() {
               </div>
               <div>
                 <DialogTitle className="text-lg font-bold text-foreground">
-                  Remove Employee Account
+                  {t("removeEmployeeAccount", "Remove Employee Account")}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Are you sure you want to delete this staff member? Their POS sales and shift
-                  records will remain intact.
+                  {t("confirmDeleteStaffMember", "Are you sure you want to delete this staff member? Their POS sales and shift records will remain intact.")}
                 </DialogDescription>
               </div>
             </div>
@@ -1557,7 +1553,7 @@ function UsersPage() {
               onClick={() => setDeleteId(null)}
               className="font-bold rounded-xl"
             >
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button
               type="button"
@@ -1565,7 +1561,7 @@ function UsersPage() {
               onClick={handleDelete}
               className="font-bold rounded-xl"
             >
-              Delete Member
+              {t("deleteMember", "Delete Member")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -4,6 +4,7 @@ import "react-simple-keyboard/build/css/index.css";
 import { Keyboard as KeyboardIcon, ChevronDown, Hash, Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface VirtualKeyboardProps {
   inputName: string;
@@ -133,7 +134,7 @@ export function VirtualKeyboard({
               )}
             >
               <Type className="size-3" />
-              <span>ABC Keyboard</span>
+              <span>{t("abcKeyboard", "ABC Keyboard")}</span>
             </button>
           </div>
         </div>
@@ -144,7 +145,7 @@ export function VirtualKeyboard({
           onClick={onClose}
           className="h-7 px-2.5 text-xs font-semibold hover:bg-muted text-muted-foreground hover:text-foreground gap-1 rounded-lg"
         >
-          <ChevronDown className="size-3.5" /> Close (Esc)
+          <ChevronDown className="size-3.5" /> {t("closeEsc", "Close (Esc)")}
         </Button>
       </div>
 

@@ -446,9 +446,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
               ) : (
                 <div className="h-8" />
               )}
-              <span className="font-bold text-[10px] uppercase text-gray-800 border-t border-black px-2 pt-1  border-t border-dashed border-gray-400">
-                Authorized Signatory
-              </span>
+              <span className="font-bold text-[10px] uppercase text-gray-800 border-t border-black px-2 pt-1  border-t border-dashed border-gray-400">{t("authorizedSignatory", "Authorized Signatory")}</span>
             </div>
           </div>
         </div>

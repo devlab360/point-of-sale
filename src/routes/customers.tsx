@@ -652,14 +652,14 @@ function CustomersPage() {
                               variant="outline"
                               className="bg-primary/10 text-primary border-primary/20 text-[10px] font-semibold"
                             >
-                              Wholesale
+                              {t("wholesale", "Wholesale")}
                             </Badge>
                           ) : (
                             <Badge
                               variant="outline"
                               className="text-muted-foreground text-[10px] font-semibold"
                             >
-                              Retail
+                              {t("retail", "Retail")}
                             </Badge>
                           )}
                           {c.status === "vip" ? (
@@ -681,13 +681,13 @@ function CustomersPage() {
                               onClick={() => setEditItem(c)}
                               className="text-xs font-semibold"
                             >
-                              <Edit2 className="mr-2 size-3.5" /> Edit Details
+                              <Edit2 className="mr-2 size-3.5" /> {t("editDetails", "Edit Details")}
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => setLedgerCustomer(c)}
                               className="text-xs font-bold text-primary"
                             >
-                              <Users className="mr-2 size-3.5" /> Customer Ledger (Khata)
+                              <Users className="mr-2 size-3.5" /> {t("customerLedgerKhata", "Customer Ledger (Khata)")}
                             </DropdownMenuItem>
                             {c.credit > 0 && (
                               <DropdownMenuItem
@@ -697,14 +697,14 @@ function CustomersPage() {
                                 }}
                                 className="text-xs font-bold text-success"
                               >
-                                <Star className="mr-2 size-3.5" /> Settle Due Balance
+                                <Star className="mr-2 size-3.5" /> {t("settleDueBalance", "Settle Due Balance")}
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuItem
                               className="text-destructive text-xs font-semibold"
                               onClick={() => setDeleteId(c.id)}
                             >
-                              <Trash2 className="mr-2 size-3.5" /> Delete
+                              <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

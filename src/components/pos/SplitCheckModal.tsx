@@ -291,9 +291,7 @@ export function SplitCheckModal({
                   </span>
                 )}
               </DialogTitle>
-              <DialogDescription className="text-[11px] text-muted-foreground mt-0.5">
-                Assign ordered items to individual guests or seats for separate billing
-              </DialogDescription>
+              <DialogDescription className="text-[11px] text-muted-foreground mt-0.5">{t("assignOrderedItemsSeatsDesc", "Assign ordered items to individual guests or seats for separate billing")}</DialogDescription>
             </div>
           </div>
 

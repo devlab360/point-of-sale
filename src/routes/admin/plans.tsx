@@ -503,7 +503,7 @@ function SuperAdminPlansPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="INR">INR (₹)</SelectItem>
-                        <SelectItem value="USD">USD ($)</SelectItem>
+                        <SelectItem value="USD">{t("usd", "USD ($)")}</SelectItem>
                         <SelectItem value="EUR">EUR (€)</SelectItem>
                         <SelectItem value="GBP">GBP (£)</SelectItem>
                         <SelectItem value="AED">AED (د.إ)</SelectItem>

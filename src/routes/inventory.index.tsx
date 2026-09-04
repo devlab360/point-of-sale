@@ -510,19 +510,19 @@ function InventoryDashboard() {
         <div className="hidden sm:flex items-center gap-3 text-[11px] text-muted-foreground shrink-0 pr-1">
           <div className="flex items-center gap-1.5">
             <span className="size-2.5 rounded-full bg-emerald-500 inline-block" />
-            <span>Healthy</span>
+            <span>{t("healthy", "Healthy")}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="size-2.5 rounded-full bg-amber-500 inline-block" />
-            <span>Low Stock</span>
+            <span>{t("lowStock", "Low Stock")}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="size-2.5 rounded-full bg-rose-500 inline-block" />
-            <span>Out of Stock</span>
+            <span>{t("outOfStock", "Out of Stock")}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="size-2.5 rounded-full bg-primary inline-block animate-pulse" />
-            <span>Unsaved Edit</span>
+            <span>{t("unsavedEdit", "Unsaved Edit")}</span>
           </div>
         </div>
       </div>
@@ -698,7 +698,7 @@ function InventoryDashboard() {
                   {dirtyCount} branch stock {dirtyCount === 1 ? "point" : "points"} modified
                 </span>
                 <span className="text-[10px] text-muted-foreground">
-                  Ledger movements will be recorded upon save
+                  {t("ledgerMovementsWillBeRecordedUponSave", "Ledger movements will be recorded upon save")}
                 </span>
               </div>
             </div>
@@ -711,7 +711,7 @@ function InventoryDashboard() {
                 disabled={saveMatrixMutation.isPending}
                 className="rounded-xl h-9 text-xs font-semibold cursor-pointer"
               >
-                Discard
+                {t("discard", "Discard")}
               </Button>
               <Button
                 size="sm"
@@ -724,7 +724,7 @@ function InventoryDashboard() {
                 ) : (
                   <Save className="size-4" />
                 )}
-                <span>Save All Changes</span>
+                <span>{t("saveAllChanges", "Save All Changes")}</span>
               </Button>
             </div>
           </div>

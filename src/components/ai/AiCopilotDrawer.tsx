@@ -769,12 +769,12 @@ export function AiCopilotDrawer() {
           <div className="relative grid size-5.5 place-items-center rounded-full bg-white/20 backdrop-blur-xs">
             <Sparkles className="size-3 text-white animate-pulse" />
           </div>
-          <span className="hidden sm:inline tracking-wide font-black text-xs">AI Copilot</span>
+          <span className="hidden sm:inline tracking-wide font-black text-xs">{t("aiCopilot", "AI Copilot")}</span>
           <Badge
             variant="secondary"
             className="hidden sm:inline-flex text-[9px] font-mono font-bold bg-black/25 text-white border-0 px-1.5 py-0.5 rounded-md"
           >
-            Ctrl+J
+            {t("ctrlJ", "Ctrl+J")}
           </Badge>
         </button>
       )}
@@ -910,7 +910,7 @@ export function AiCopilotDrawer() {
                   </div>
                 ) : (
                   <div className="grid size-7 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground shadow-2xs mt-0.5 font-bold text-xs">
-                    You
+                    {t("you", "You")}
                   </div>
                 )}
 

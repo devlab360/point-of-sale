@@ -385,7 +385,7 @@ function SalesReturnsPage() {
                     <span>{t("filterReturns", "Filter Returns")}</span>
                   </SheetTitle>
                   <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                    Filter by status and settlement method.
+                    {t("filterByStatusAndSettlementMethod", "Filter by status and settlement method.")}
                   </SheetDescription>
                 </SheetHeader>
                 <div className="flex-1 overflow-y-auto p-5 space-y-4">
@@ -410,7 +410,7 @@ function SalesReturnsPage() {
                       handleResetFilters();
                     }}
                   >
-                    Reset
+                    {t("reset", "Reset")}
                   </Button>
                   <Button
                     className="flex-1 font-bold"
@@ -418,7 +418,7 @@ function SalesReturnsPage() {
                       setFilters(draftFilters);
                     }}
                   >
-                    Apply Filters
+                    {t("applyFilters", "Apply Filters")}
                   </Button>
                 </SheetFooter>
               </SheetContent>
@@ -502,7 +502,7 @@ function SalesReturnsPage() {
                               className="text-destructive text-xs font-semibold"
                               onClick={() => setDeleteId(r.id)}
                             >
-                              <Trash2 className="size-4 mr-2" /> Delete
+                              <Trash2 className="size-4 mr-2" /> {t("delete", "Delete")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -535,10 +535,10 @@ function SalesReturnsPage() {
         >
           <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
             <SheetTitle className="text-xl font-bold text-foreground">
-              Process Sales Return
+              {t("processSalesReturn", "Process Sales Return")}
             </SheetTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Select an invoice, choose items to return, and refund the customer.
+              {t("selectAnInvoiceChooseItemsToReturnAndRef", "Select an invoice, choose items to return, and refund the customer.")}
             </p>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
@@ -620,7 +620,7 @@ function SalesReturnsPage() {
           </div>
           <div className="border-t border-border p-4 bg-card/80 backdrop-blur-sm flex items-center justify-end gap-3 shrink-0">
             <Button variant="outline" onClick={() => setIsAddOpen(false)}>
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button onClick={handleAdd} disabled={isSubmitting} className="min-w-[160px]">
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -636,7 +636,7 @@ function SalesReturnsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t("deleteReturnRecordQ", "Delete Return Record?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove the return record. Stock will not be reversed.
+              {t("thisWillRemoveTheReturnRecordStockWillNo", "This will remove the return record. Stock will not be reversed.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -645,7 +645,7 @@ function SalesReturnsPage() {
               className="bg-destructive text-destructive-foreground"
               onClick={handleDelete}
             >
-              Delete
+              {t("delete", "Delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

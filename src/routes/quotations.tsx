@@ -478,7 +478,7 @@ function QuotationsPage() {
                     <span>{t("filterQuotations", "Filter Quotations")}</span>
                   </SheetTitle>
                   <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                    Filter by status and date thresholds.
+                    {t("filterByStatusAndDateThresholds", "Filter by status and date thresholds.")}
                   </SheetDescription>
                 </SheetHeader>
                 <div className="flex-1 overflow-y-auto p-5 space-y-4">
@@ -503,7 +503,7 @@ function QuotationsPage() {
                       handleResetFilters();
                     }}
                   >
-                    Reset
+                    {t("reset", "Reset")}
                   </Button>
                   <Button
                     className="flex-1 font-bold"
@@ -511,7 +511,7 @@ function QuotationsPage() {
                       setFilters(draftFilters);
                     }}
                   >
-                    Apply Filters
+                    {t("applyFilters", "Apply Filters")}
                   </Button>
                 </SheetFooter>
               </SheetContent>
@@ -663,7 +663,7 @@ function QuotationsPage() {
                     <div className="mt-1">
                       {q.status === "converted" ? (
                         <Badge className="bg-success/12 text-success text-[9px] font-bold py-0">
-                          Converted
+                          {t("converted", "Converted")}
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="text-[9px] font-bold py-0 capitalize">
@@ -686,7 +686,7 @@ function QuotationsPage() {
                           convertToInvoice(q);
                         }}
                       >
-                        <ArrowRightLeft className="size-3 mr-1" /> Invoice
+                        <ArrowRightLeft className="size-3 mr-1" /> {t("invoice", "Invoice")}
                       </Button>
                     ) : null}
                   </div>
@@ -723,10 +723,10 @@ function QuotationsPage() {
         >
           <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
             <SheetTitle className="text-xl font-bold text-foreground">
-              Create New Quotation / Estimate
+              {t("createNewQuotationEstimate", "Create New Quotation / Estimate")}
             </SheetTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Generate formal estimates and convert them into sales invoices anytime.
+              {t("generateFormalEstimatesAndConvertThemInt", "Generate formal estimates and convert them into sales invoices anytime.")}
             </p>
           </SheetHeader>
           <form
@@ -738,7 +738,7 @@ function QuotationsPage() {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label>
-                    Customer / Client <span className="text-destructive">*</span>
+                    {t("customerClient", "Customer / Client")}<span className="text-destructive">*</span>
                   </Label>
                   <div
                     className={
@@ -777,7 +777,7 @@ function QuotationsPage() {
 
               <div className="space-y-1.5 border-t pt-4">
                 <Label>
-                  Search & Add Products to Estimate <span className="text-destructive">*</span>
+                  {t("searchAddProductsToEstimate", "Search & Add Products to Estimate")}<span className="text-destructive">*</span>
                 </Label>
                 <SearchableSelect
                   options={products.map((p) => ({
@@ -890,7 +890,7 @@ function QuotationsPage() {
                   clearQuotAll();
                 }}
               >
-                Cancel
+                {t("cancel", "Cancel")}
               </Button>
               <Button type="submit" disabled={isSubmitting} className="min-w-[160px]">
                 {isSubmitting && <Loader2 className="size-4 animate-spin mr-2" />}
@@ -923,7 +923,7 @@ function QuotationsPage() {
                 className="flex-1 sm:flex-none"
                 onClick={() => window.print()}
               >
-                <Printer className="mr-1 size-3.5" /> Print PDF
+                <Printer className="mr-1 size-3.5" /> {t("printPdf", "Print PDF")}
               </Button>
               {viewItem?.status !== "converted" && (
                 <Button
@@ -931,7 +931,7 @@ function QuotationsPage() {
                   className="flex-1 sm:flex-none"
                   onClick={() => viewItem && convertToInvoice(viewItem)}
                 >
-                  <CheckCircle2 className="mr-1 size-3.5" /> Convert to Invoice
+                  <CheckCircle2 className="mr-1 size-3.5" /> {t("convertToInvoice", "Convert to Invoice")}
                 </Button>
               )}
             </div>
@@ -942,7 +942,7 @@ function QuotationsPage() {
               <div className="grid grid-cols-2 gap-4 rounded-xl border p-4 bg-muted/20">
                 <div>
                   <h4 className="font-bold text-xs uppercase text-muted-foreground">
-                    Customer Details
+                    {t("customerDetails", "Customer Details")}
                   </h4>
                   <div className="font-semibold text-base mt-1">{viewItem.customerName}</div>
                   <div className="text-xs text-muted-foreground">
@@ -951,10 +951,10 @@ function QuotationsPage() {
                 </div>
                 <div className="text-right">
                   <h4 className="font-bold text-xs uppercase text-muted-foreground">
-                    Quotation Info
+                    {t("quotationInfo", "Quotation Info")}
                   </h4>
                   <div className="text-xs mt-1">
-                    Date: <strong>{formatDate(viewItem.date)}</strong>
+                    {t("date", "Date:")}<strong>{formatDate(viewItem.date)}</strong>
                   </div>
                   <div className="text-xs">
                     Valid Until:{" "}
@@ -966,7 +966,7 @@ function QuotationsPage() {
               {/* Items */}
               <div className="space-y-2">
                 <h4 className="font-bold text-xs uppercase text-muted-foreground">
-                  Quoted Line Items
+                  {t("quotedLineItems", "Quoted Line Items")}
                 </h4>
                 <div className="overflow-x-auto rounded-xl border">
                   <Table className="text-xs min-w-[400px]">

@@ -3,6 +3,7 @@ import { AlertTriangle, RefreshCw, Home, Copy, Check, Terminal, RotateCcw } from
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Props {
   children: ReactNode;
@@ -115,12 +116,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
           <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
             <Button onClick={this.handleReset} className="gap-2 font-semibold shadow-sm">
-              <RefreshCw className="size-4" /> Try Again
+              <RefreshCw className="size-4" /> {t("tryAgain", "Try Again")}
             </Button>
 
             <Button variant="outline" asChild className="gap-2">
               <a href="/">
-                <Home className="size-4" /> Go to Dashboard
+                <Home className="size-4" /> {t("goToDashboard", "Go to Dashboard")}
               </a>
             </Button>
 
@@ -164,7 +165,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
               <div className="flex items-center justify-between pt-1">
                 <span className="text-[11px] text-muted-foreground">
-                  If this error persists, resetting local cache may resolve corrupt offline data.
+                  {t("ifThisErrorPersistsResettingLocalCacheMa", "If this error persists, resetting local cache may resolve corrupt offline data.")}
                 </span>
                 <Button
                   variant="outline"
@@ -172,7 +173,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   onClick={this.handleClearStorageAndReload}
                   className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
                 >
-                  <RotateCcw className="size-3 mr-1" /> Reset Cache & Reload
+                  <RotateCcw className="size-3 mr-1" /> {t("resetCacheReload", "Reset Cache & Reload")}
                 </Button>
               </div>
             </div>

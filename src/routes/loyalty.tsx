@@ -583,7 +583,7 @@ function LoyaltyPage() {
               <span>{t("loyaltyAndRewardsSystem", "LOYALTY & REWARDS SYSTEM")}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-foreground">
-              {t("customerRetentionVipLoyalty", "Customer Retention & VIP Loyalty")}
+              {t("customerLoyaltyTitle", "Customer Retention & VIP Loyalty")}
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
               {t(

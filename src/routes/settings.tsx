@@ -1189,7 +1189,7 @@ function SettingsPage() {
                   variant="outline"
                   className="bg-success/10 text-success border-success/20 text-xs font-semibold py-1 px-3"
                 >
-                  <CheckCircle2 className="size-3.5 mr-1" /> Active Store
+                  <CheckCircle2 className="size-3.5 mr-1" /> {t("activeStore", "Active Store")}
                 </Badge>
               </div>
 
@@ -1197,12 +1197,12 @@ function SettingsPage() {
               <SettingsCard
                 icon={Store}
                 title={t("storeBrandingContactInfo", "Store Branding & Contact Information")}
-                desc="Your brand details and registered contact info appear on printed receipts, digital invoices, and customer tickets."
+                desc={t("storeBrandingCardDesc", "Your brand details and registered contact info appear on printed receipts, digital invoices, and customer tickets.")}
               >
                 <div className="space-y-6">
                   <FileUpload
-                    label="Store Brand Logo"
-                    description="Upload your high-resolution store logo (PNG, JPG, or WEBP). Will automatically render on thermal receipts, A4 invoices, and email summaries."
+                    label={t("storeBrandLogo", "Store Brand Logo")}
+                    description={t("storeLogoUploadDesc", "Upload your high-resolution store logo (PNG, JPG, or WEBP). Will automatically render on thermal receipts, A4 invoices, and email summaries.")}
                     value={settings.logoUrl || ""}
                     onChange={(url) => handleChange("logoUrl", url)}
                     folder="store-logos"
@@ -1211,8 +1211,8 @@ function SettingsPage() {
 
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <Field
-                      label="Operating Country / Territory"
-                      description="Auto-configures your regional currency, phone prefix, timezone, and tax rules."
+                      label={t("operatingCountry", "Operating Country / Territory")}
+                      description={t("operatingCountryDesc", "Auto-configures your regional currency, phone prefix, timezone, and tax rules.")}
                     >
                       <SearchableSelect
                         value={settings.country || "US"}
@@ -1225,8 +1225,8 @@ function SettingsPage() {
                     </Field>
 
                     <Field
-                      label="Store Name"
-                      description="The public brand or trading name of your business."
+                      label={t("storeName", "Store Name")}
+                      description={t("storeNameFieldDesc", "The public brand or trading name of your business.")}
                     >
                       <Input
                         value={settings.storeName}
@@ -1237,8 +1237,8 @@ function SettingsPage() {
                     </Field>
 
                     <Field
-                      label="Tax Registration ID / VAT / GSTIN"
-                      description="Printed on receipt header for statutory compliance."
+                      label={t("taxRegIdLabel", "Tax Registration ID / VAT / GSTIN")}
+                      description={t("taxRegIdDesc", "Printed on receipt header for statutory compliance.")}
                     >
                       <Input
                         value={settings.taxId}
@@ -1248,9 +1248,9 @@ function SettingsPage() {
                     </Field>
 
                     <Field
-                      label="Physical Store Address"
+                      label={t("physicalStoreAddress", "Physical Store Address")}
                       full
-                      description="Complete street address, city, state/province, and postal code."
+                      description={t("physicalStoreAddressDesc", "Complete street address, city, state/province, and postal code.")}
                     >
                       <Input
                         value={settings.address}
@@ -1260,8 +1260,8 @@ function SettingsPage() {
                     </Field>
 
                     <Field
-                      label="Store Customer Support Phone"
-                      description="Printed on receipts for customer inquiries and returns."
+                      label={t("storeCustomerPhone", "Store Customer Support Phone")}
+                      description={t("storeCustomerPhoneDesc", "Printed on receipts for customer inquiries and returns.")}
                     >
                       <PhoneInput
                         value={settings.phone}
@@ -1273,8 +1273,8 @@ function SettingsPage() {
                     </Field>
 
                     <Field
-                      label="Registered Account Email (Read-Only)"
-                      description="Primary authentication login email."
+                      label={t("registeredAccountEmail", "Registered Account Email (Read-Only)")}
+                      description={t("registeredEmailDesc", "Primary authentication login email.")}
                     >
                       <Input
                         value={settings.email}
@@ -1285,8 +1285,8 @@ function SettingsPage() {
                     </Field>
 
                     <Field
-                      label="Business Industry & Template"
-                      description="Enables industry-tailored navigation items and POS layouts."
+                      label={t("businessIndustryTemplate", "Business Industry & Template")}
+                      description={t("businessIndustryDesc", "Enables industry-tailored navigation items and POS layouts.")}
                     >
                       <SearchableSelect
                         value={settings.businessType || "UNIVERSAL"}
@@ -1305,7 +1305,7 @@ function SettingsPage() {
               <SettingsCard
                 icon={Globe}
                 title={t("regionalLocalizationTitle", "Regional Localization & Multi-Currency Engine")}
-                desc="Configure currency display symbol, accounting timezone, and date presentation format for your jurisdiction."
+                desc={t("regionalLocalizationCardDesc", "Configure currency display symbol, accounting timezone, and date presentation format for your jurisdiction.")}
               >
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                   <Field
@@ -1329,8 +1329,8 @@ function SettingsPage() {
                   </Field>
 
                   <Field
-                    label="Custom Currency Symbol"
-                    description="Symbol rendered beside all price figures across POS and receipts."
+                    label={t("customCurrencySymbol", "Custom Currency Symbol")}
+                    description={t("customCurrencySymbolDesc", "Symbol rendered beside all price figures across POS and receipts.")}
                   >
                     <Input
                       className="font-bold text-base"
@@ -1341,8 +1341,8 @@ function SettingsPage() {
                   </Field>
 
                   <Field
-                    label="Operational Time Zone"
-                    description="Determines timestamps on invoices and sales reports."
+                    label={t("operationalTimeZone", "Operational Time Zone")}
+                    description={t("operationalTimeZoneDesc", "Determines timestamps on invoices and sales reports.")}
                   >
                     <SearchableSelect
                       value={settings.timeZone || "UTC"}
@@ -1353,8 +1353,8 @@ function SettingsPage() {
                   </Field>
 
                   <Field
-                    label="Display Date Format"
-                    description="Format used across sales reports, invoices, and logs."
+                    label={t("displayDateFormat", "Display Date Format")}
+                    description={t("displayDateFormatDesc", "Format used across sales reports, invoices, and logs.")}
                   >
                     <SearchableSelect
                       value={settings.dateFormat || "dd MMM yyyy"}
@@ -1364,8 +1364,8 @@ function SettingsPage() {
                   </Field>
 
                   <Field
-                    label="Display Time Format"
-                    description="Format used for timestamps across checkout, receipts, and logs."
+                    label={t("displayTimeFormat", "Display Time Format")}
+                    description={t("displayTimeFormatDesc", "Format used for timestamps across checkout, receipts, and logs.")}
                   >
                     <SearchableSelect
                       value={(settings.config as any)?.timeFormat || settings.timeFormat || "12h"}
@@ -1387,7 +1387,7 @@ function SettingsPage() {
               <SettingsCard
                 icon={ShieldCheck}
                 title={t("accountSecurityTitle", "Account Security & Access Credentials")}
-                desc="Update your master account login password and quick cashier POS terminal PIN."
+                desc={t("securityCardDesc", "Update your master account login password and quick cashier POS terminal PIN.")}
               >
                 <form onSubmit={handleUpdateSecurity} className="space-y-6">
                   {/* Account Summary Banner */}
@@ -1409,7 +1409,7 @@ function SettingsPage() {
                       </div>
                     </div>
                     <Badge variant="outline" className="bg-card text-xs font-semibold">
-                      Security Active
+                      {t("securityActive", "Security Active")}
                     </Badge>
                   </div>
 
@@ -1428,13 +1428,13 @@ function SettingsPage() {
                         className="bg-background"
                       />
                       <p className="text-[11px] text-muted-foreground">
-                        Required to verify identity before saving any security credential changes.
+                        {t("reqVerifyIdentityDesc", "Required to verify identity before saving any security credential changes.")}
                       </p>
                     </div>
 
                     <div className="space-y-1.5">
                       <Label className="text-xs font-bold flex items-center gap-1.5">
-                        <Lock className="size-3.5 text-muted-foreground" /> New Password (Optional)
+                        <Lock className="size-3.5 text-muted-foreground" /> {t("newPasswordOptional", "New Password (Optional)")}
                       </Label>
                       <PasswordInput
                         value={passForm.newPassword}
@@ -1450,7 +1450,7 @@ function SettingsPage() {
 
                     <div className="space-y-1.5">
                       <Label className="text-xs font-bold flex items-center gap-1.5">
-                        <Lock className="size-3.5 text-muted-foreground" /> Confirm New Password
+                        <Lock className="size-3.5 text-muted-foreground" /> {t("confirmNewPassword", "Confirm New Password")}
                       </Label>
                       <PasswordInput
                         value={passForm.confirmPassword}
@@ -1467,11 +1467,11 @@ function SettingsPage() {
                         >
                           {passForm.newPassword === passForm.confirmPassword ? (
                             <>
-                              <CheckCircle2 className="size-3" /> Passwords match
+                              <CheckCircle2 className="size-3" /> {t("passwordsMatch", "Passwords match")}
                             </>
                           ) : (
                             <>
-                              <AlertCircle className="size-3" /> Passwords do not match
+                              <AlertCircle className="size-3" /> {t("passwordsDoNotMatch", "Passwords do not match")}
                             </>
                           )}
                         </p>
@@ -1483,7 +1483,7 @@ function SettingsPage() {
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-border/80 bg-muted/20">
                         <div>
                           <Label className="text-xs font-bold flex items-center gap-1.5 text-foreground">
-                            <Key className="size-4 text-primary" /> POS Cashier Quick Access PIN
+                            <Key className="size-4 text-primary" /> {t("posCashierQuickAccessPin", "POS Cashier Quick Access PIN")}
                           </Label>
                           <p className="text-[11px] text-muted-foreground mt-0.5">
                             4-digit numeric code used for fast cashier switching on the POS checkout
@@ -1590,7 +1590,7 @@ function SettingsPage() {
                           </div>
                         ) : (
                           <span className="text-success font-semibold flex items-center gap-1.5">
-                            <CheckCircle2 className="size-3.5" /> All modules unlocked & active
+                            <CheckCircle2 className="size-3.5" /> {t("allModulesUnlockedActive", "All modules unlocked & active")}
                           </span>
                         )}
                       </div>
@@ -1615,11 +1615,10 @@ function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-base font-black text-foreground tracking-tight">
-                      Available Subscription Plans
+                      {t("availableSubscriptionPlans", "Available Subscription Plans")}
                     </h3>
                     <p className="text-xs text-muted-foreground">
-                      Upgrade or renew your plan. Submissions are verified manually via UPI QR or
-                      Bank Transfer.
+                      {t("upgradeRenewPlanDesc", "Upgrade or renew your plan. Submissions are verified manually via UPI QR or Bank Transfer.")}
                     </p>
                   </div>
                 </div>
@@ -1640,7 +1639,7 @@ function SettingsPage() {
                     ))
                   ) : saasPlans.length === 0 ? (
                     <div className="col-span-full p-8 text-center border rounded-2xl bg-muted/20 text-muted-foreground text-sm">
-                      No public subscription plans available right now.
+                      {t("noPublicSubscriptionPlansAvailableRightN", "No public subscription plans available right now.")}
                     </div>
                   ) : (
                     saasPlans.map((plan) => {
@@ -1656,7 +1655,7 @@ function SettingsPage() {
                         >
                           {isCurrent && (
                             <Badge className="absolute -top-2.5 right-4 bg-primary text-primary-foreground text-[10px] font-bold">
-                              Current Plan
+                              {t("currentPlan", "Current Plan")}
                             </Badge>
                           )}
                           <div className="space-y-4">
@@ -1769,7 +1768,7 @@ function SettingsPage() {
                     size="sm"
                     className="font-bold text-xs gap-1.5 shadow-soft h-9 cursor-pointer"
                   >
-                    <Plus className="size-4" /> Add Payment Method
+                    <Plus className="size-4" /> {t("addPaymentMethod", "Add Payment Method")}
                   </Button>
                 }
               >
@@ -1779,10 +1778,10 @@ function SettingsPage() {
                     <div className="flex items-center justify-between pb-1 border-b border-border/50">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                         <ShieldCheck className="size-3.5 text-primary" />
-                        Standard System Methods
+                        {t("standardSystemMethods", "Standard System Methods")}
                       </span>
                       <span className="text-[11px] text-muted-foreground">
-                        Always included in checkout
+                        {t("alwaysIncludedInCheckout", "Always included in checkout")}
                       </span>
                     </div>
 
@@ -1814,7 +1813,7 @@ function SettingsPage() {
                                       variant="secondary"
                                       className="text-[9px] font-mono uppercase bg-muted/80 text-muted-foreground"
                                     >
-                                      System
+                                      {t("system", "System")}
                                     </Badge>
                                   </div>
                                   <p className="text-[11px] text-muted-foreground capitalize">
@@ -1856,7 +1855,7 @@ function SettingsPage() {
                     <div className="flex items-center justify-between pb-1 border-b border-border/50">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                         <Sparkles className="size-3.5 text-primary" />
-                        Custom & Local Payment Methods
+                        {t("customLocalPaymentMethods", "Custom & Local Payment Methods")}
                       </span>
                       <span className="text-[11px] text-muted-foreground">
                         {paymentMethodsList.filter((m) => !m.isDefault).length} custom methods added
@@ -1869,7 +1868,7 @@ function SettingsPage() {
                           <Plus className="size-6" />
                         </div>
                         <p className="text-sm font-bold text-foreground">
-                          No custom payment methods added
+                          {t("noCustomPaymentMethodsAdded", "No custom payment methods added")}
                         </p>
                         <p className="text-xs text-muted-foreground max-w-sm mx-auto">
                           Need localized methods like bKash, Nagad, Rocket, Bank Wire, or Store
@@ -1905,7 +1904,7 @@ function SettingsPage() {
                                         variant="outline"
                                         className="text-[9px] font-mono uppercase bg-primary/5 text-primary border-primary/20"
                                       >
-                                        Custom
+                                        {t("custom", "Custom")}
                                       </Badge>
                                     </div>
                                     <p className="text-[11px] text-muted-foreground truncate">
@@ -1975,14 +1974,14 @@ function SettingsPage() {
                       onClick={() => setTaxTemplateModalOpen(true)}
                       className="gap-1.5 text-xs font-semibold h-9"
                     >
-                      <Globe className="size-3.5" /> Load Country Presets
+                      <Globe className="size-3.5" /> {t("loadCountryPresets", "Load Country Presets")}
                     </Button>
                     <Button
                       size="sm"
                       onClick={openNewTax}
                       className="gap-1.5 text-xs font-bold h-9 shadow-soft"
                     >
-                      <Plus className="size-3.5" /> Add Tax Rate
+                      <Plus className="size-3.5" /> {t("addTaxRate", "Add Tax Rate")}
                     </Button>
                   </div>
                 }
@@ -2010,7 +2009,7 @@ function SettingsPage() {
                       <div className="space-y-1">
                         <p className="text-xs font-bold text-foreground">{t("noTaxRateSlabsFound", "No tax rate slabs found")}</p>
                         <p className="text-[11px] text-muted-foreground">
-                          Create custom tax items or import standard statutory country presets.
+                          {t("createCustomTaxItemsOrImportStandardStat", "Create custom tax items or import standard statutory country presets.")}
                         </p>
                       </div>
                       <div className="flex items-center justify-center gap-2 pt-1">
@@ -2020,10 +2019,10 @@ function SettingsPage() {
                           onClick={() => setTaxTemplateModalOpen(true)}
                           className="text-xs gap-1"
                         >
-                          <Globe className="size-3" /> Load Presets
+                          <Globe className="size-3" /> {t("loadPresets", "Load Presets")}
                         </Button>
                         <Button size="sm" onClick={openNewTax} className="text-xs gap-1">
-                          <Plus className="size-3" /> Add Tax Rate
+                          <Plus className="size-3" /> {t("addTaxRate", "Add Tax Rate")}
                         </Button>
                       </div>
                     </div>
@@ -2090,7 +2089,7 @@ function SettingsPage() {
                                 <TableCell>
                                   {tm.isDefault ? (
                                     <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] font-bold">
-                                      <Star className="size-2.5 mr-1 fill-primary" /> Default
+                                      <Star className="size-2.5 mr-1 fill-primary" /> {t("default", "Default")}
                                     </Badge>
                                   ) : (
                                     <span className="text-muted-foreground">ΓÇö</span>
@@ -2115,7 +2114,7 @@ function SettingsPage() {
                                       onClick={() => openEditTax(tm)}
                                       className="h-7 text-xs font-semibold px-2"
                                     >
-                                      <Pencil className="size-3 mr-1" /> Edit
+                                      <Pencil className="size-3 mr-1" /> {t("edit", "Edit")}
                                     </Button>
                                     <Button
                                       variant="ghost"
@@ -2171,7 +2170,7 @@ function SettingsPage() {
                         <SelectContent>
                           {taxMasters.length === 0 && (
                             <SelectItem value="__none" disabled>
-                              No tax rates configured
+                              {t("noTaxRatesConfigured", "No tax rates configured")}
                             </SelectItem>
                           )}
                           {taxMasters
@@ -2229,7 +2228,7 @@ function SettingsPage() {
                     />
 
                     <ToggleRow
-                      label="Show Tax Breakdown on Receipts"
+                      label={t("showTaxBreakdown", "Show Tax Breakdown on Receipts")}
                       description="Prints itemized CGST / SGST / VAT line items on customer bill tickets."
                       on={settings.showTaxBreakdown}
                       onChange={() => handleChange("showTaxBreakdown", !settings.showTaxBreakdown)}
@@ -2301,8 +2300,7 @@ function SettingsPage() {
                   <SheetHeader>
                     <SheetTitle>{editingTax ? "Edit Tax Rate" : "Add Tax Rate"}</SheetTitle>
                     <SheetDescription>
-                      Configure custom tax items and rules applied dynamically to products and POS
-                      transactions.
+                      {t("configureCustomTaxDesc", "Configure custom tax items and rules applied dynamically to products and POS transactions.")}
                     </SheetDescription>
                   </SheetHeader>
                   <div className="space-y-4 py-4">
@@ -2385,8 +2383,7 @@ function SettingsPage() {
                           />
                         </div>
                         <p className="col-span-3 text-[10px] text-muted-foreground">
-                          Leave empty to auto-split rate (50% CGST + 50% SGST) for intra-state
-                          sales.
+                          {t("leaveEmptyAutoSplitTax", "Leave empty to auto-split rate (50% CGST + 50% SGST) for intra-state sales.")}
                         </p>
                       </div>
                     )}
@@ -2427,7 +2424,7 @@ function SettingsPage() {
                   </div>
                   <SheetFooter>
                     <Button variant="outline" onClick={() => setTaxModalOpen(false)}>
-                      Cancel
+                      {t("cancel", "Cancel")}
                     </Button>
                     <Button onClick={handleSaveTax} disabled={isSavingTax}>
                       {isSavingTax && <Loader2 className="size-4 mr-1 animate-spin" />}
@@ -2442,11 +2439,10 @@ function SettingsPage() {
                 <DialogContent className="max-w-md">
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                      <Sparkles className="size-5 text-primary" /> Import Country Tax Presets
+                      <Sparkles className="size-5 text-primary" /> {t("importCountryTaxPresets", "Import Country Tax Presets")}
                     </DialogTitle>
                     <DialogDescription>
-                      Instantly import standard official statutory tax slabs and rules for your
-                      country.
+                      {t("instantlyImportTaxSlabsDesc", "Instantly import standard official statutory tax slabs and rules for your country.")}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-2">
@@ -2525,7 +2521,7 @@ function SettingsPage() {
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setTaxTemplateModalOpen(false)}>
-                      Cancel
+                      {t("cancel", "Cancel")}
                     </Button>
                     <Button
                       onClick={() => loadTaxTemplateMutation.mutate(selectedTaxTemplateCountry)}
@@ -2549,13 +2545,12 @@ function SettingsPage() {
                   <DialogHeader>
                     <DialogTitle>{t("deleteTaxRateQ", "Delete Tax Rate?")}</DialogTitle>
                     <DialogDescription>
-                      This will permanently remove this tax rate slab. Products currently using it
-                      will fall back to their standard saved rate. This action cannot be undone.
+                      {t("confirmDeleteTaxRate", "This will permanently remove this tax rate slab. Products currently using it will fall back to their standard saved rate. This action cannot be undone.")}
                     </DialogDescription>
                   </DialogHeader>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setTaxDeleteId(null)}>
-                      Cancel
+                      {t("cancel", "Cancel")}
                     </Button>
                     <Button
                       variant="destructive"
@@ -2618,11 +2613,10 @@ function SettingsPage() {
                           <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
                             <div>
                               <h4 className="text-xs font-black uppercase tracking-wider text-foreground">
-                                Bank Wire & Settlement Info (International)
+                                {t("bankWireSettlementInfoInternational", "Bank Wire & Settlement Info (International)")}
                               </h4>
                               <p className="text-[11px] text-muted-foreground mt-0.5">
-                                Printed on corporate A4 invoices for direct bank transfers (supports
-                                IBAN, SWIFT/BIC).
+                                {t("printedOnA4InvoicesBankDesc", "Printed on corporate A4 invoices for direct bank transfers (supports IBAN, SWIFT/BIC).")}
                               </p>
                             </div>
                             <Landmark className="size-4 text-primary" />
@@ -2760,7 +2754,7 @@ function SettingsPage() {
                               : "text-muted-foreground hover:text-foreground"
                               }`}
                           >
-                            A4 Invoice
+                            {t("a4Invoice", "A4 Invoice")}
                           </button>
                         </div>
                       }
@@ -2843,10 +2837,10 @@ function SettingsPage() {
               </div>
               <div>
                 <DialogTitle className="text-base font-bold text-foreground">
-                  System & Storage Diagnostics
+                  {t("systemStorageDiagnostics", "System & Storage Diagnostics")}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Terminal cloud synchronization status and local offline cache maintenance.
+                  {t("terminalCloudSynchronizationStatusAndLoc", "Terminal cloud synchronization status and local offline cache maintenance.")}
                 </DialogDescription>
               </div>
             </div>
@@ -2856,10 +2850,10 @@ function SettingsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 rounded-xl border border-border/80 bg-muted/30 space-y-1">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase">
-                  Cloud Sync
+                  {t("cloudSync", "Cloud Sync")}
                 </span>
                 <p className="text-xs font-bold text-success flex items-center gap-1.5">
-                  <CheckCircle2 className="size-3.5" /> Connected
+                  <CheckCircle2 className="size-3.5" /> {t("connected", "Connected")}
                 </p>
               </div>
 
@@ -2876,10 +2870,10 @@ function SettingsPage() {
             <div className="p-4 border border-destructive/20 bg-destructive/5 rounded-xl flex items-center justify-between gap-3">
               <div className="space-y-0.5">
                 <h4 className="font-bold text-destructive text-xs">
-                  Reset Local Offline Cache
+                  {t("resetLocalOfflineCache", "Reset Local Offline Cache")}
                 </h4>
                 <p className="text-[11px] text-muted-foreground">
-                  Clear stale register cache and reload from server.
+                  {t("clearStaleRegisterCacheAndReloadFromServ", "Clear stale register cache and reload from server.")}
                 </p>
               </div>
               <Button
@@ -2891,7 +2885,7 @@ function SettingsPage() {
                 }}
                 className="font-bold text-xs h-8 px-3 shrink-0 cursor-pointer"
               >
-                <Trash2 className="size-3.5 mr-1" /> Reset Cache
+                <Trash2 className="size-3.5 mr-1" /> {t("resetCache", "Reset Cache")}
               </Button>
             </div>
           </div>
@@ -2904,7 +2898,7 @@ function SettingsPage() {
               onClick={() => setDiagnosticsOpen(false)}
               className="w-full text-xs font-semibold cursor-pointer"
             >
-              Close
+              {t("close", "Close")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2925,7 +2919,7 @@ function SettingsPage() {
               onClick={handleResetData}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold"
             >
-              Confirm Reset
+              {t("confirmReset", "Confirm Reset")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -2950,10 +2944,10 @@ function SettingsPage() {
         >
           <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
             <SheetTitle className="flex items-center gap-2">
-              <CreditCard className="size-5 text-primary" /> Subscription Payment Verification
+              <CreditCard className="size-5 text-primary" /> {t("subscriptionPaymentVerification", "Subscription Payment Verification")}
             </SheetTitle>
             <p className="text-xs text-muted-foreground">
-              Upgrading/renewing <strong>{selectedPlanForUpgrade?.name}</strong> at{" "}
+              {t("upgradingRenewing", "Upgrading/renewing")}<strong>{selectedPlanForUpgrade?.name}</strong> at{" "}
               <strong>
                 Γé╣
                 {paymentForm.billingCycle === "yearly"
@@ -2974,7 +2968,7 @@ function SettingsPage() {
                   onClick={() => setPaymentForm({ ...paymentForm, billingCycle: "monthly" })}
                   className="h-8 text-xs font-semibold"
                 >
-                  Monthly
+                  {t("monthly", "Monthly")}
                 </Button>
                 <Button
                   size="sm"
@@ -2982,7 +2976,7 @@ function SettingsPage() {
                   onClick={() => setPaymentForm({ ...paymentForm, billingCycle: "yearly" })}
                   className="h-8 text-xs font-semibold"
                 >
-                  Yearly (Save 20%)
+                  {t("yearlySave20", "Yearly (Save 20%)")}
                 </Button>
               </div>
             </div>
@@ -2999,7 +2993,7 @@ function SettingsPage() {
                   />
                 ) : (
                   <div className="size-32 bg-muted flex items-center justify-center text-xs text-muted-foreground rounded-lg">
-                    No QR Configured
+                    {t("noQrConfigured", "No QR Configured")}
                   </div>
                 )}
                 <span className="text-[10px] text-muted-foreground mt-2">{t("upiGpayPhonepe", "UPI, GPay, PhonePe")}</span>
@@ -3007,7 +3001,7 @@ function SettingsPage() {
 
               <div className="space-y-2.5 text-xs flex flex-col justify-center">
                 <span className="font-bold text-xs uppercase tracking-wider block border-b pb-1">
-                  Bank Account Information
+                  {t("bankAccountInformation", "Bank Account Information")}
                 </span>
                 <div>
                   <span className="text-muted-foreground block text-[10px]">{t("beneficiaryName", "Beneficiary Name")}</span>
@@ -3106,7 +3100,7 @@ function SettingsPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="font-bold text-foreground block">
-                        Additional Staff User Seats
+                        {t("additionalStaffUserSeats", "Additional Staff User Seats")}
                       </span>
                       <span className="text-[11px] text-muted-foreground">
                         +Γé╣{selectedPlanForUpgrade.perExtraUserPrice}/seat/mo (Base plan includes{" "}
@@ -3205,7 +3199,7 @@ function SettingsPage() {
 
               <div>
                 <Label className="text-xs font-bold">
-                  Sender Note / Bank Account Name (Optional)
+                  {t("senderNoteBankAccountNameOptional", "Sender Note / Bank Account Name (Optional)")}
                 </Label>
                 <Input
                   value={paymentForm.note}
@@ -3223,7 +3217,7 @@ function SettingsPage() {
               onClick={() => setSelectedPlanForUpgrade(null)}
               disabled={isSubmittingPayment}
             >
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button
               onClick={handlePaymentProofSubmit}
@@ -3260,8 +3254,7 @@ function SettingsPage() {
                     {editingPaymentMethodId ? "Edit Payment Method" : "Add Custom Payment Method"}
                   </SheetTitle>
                   <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                    Configure a digital wallet, bank transfer, or custom checkout option for your
-                    POS terminal.
+                    {t("configureDigitalWalletDesc", "Configure a digital wallet, bank transfer, or custom checkout option for your POS terminal.")}
                   </SheetDescription>
                 </div>
               </div>
@@ -3311,7 +3304,7 @@ function SettingsPage() {
 
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-foreground">
-                  Payment Method Name <span className="text-destructive">*</span>
+                  {t("paymentMethodName", "Payment Method Name")}<span className="text-destructive">*</span>
                 </Label>
                 <Input
                   value={paymentMethodForm.label}
@@ -3375,7 +3368,7 @@ function SettingsPage() {
 
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold text-foreground">
-                    Account / Merchant Info (Optional)
+                    {t("accountMerchantInfoOptional", "Account / Merchant Info (Optional)")}
                   </Label>
                   <Input
                     value={paymentMethodForm.notes || ""}
@@ -3400,7 +3393,7 @@ function SettingsPage() {
               }}
               className="text-xs font-semibold h-10 flex-1 sm:flex-initial"
             >
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button
               type="submit"
@@ -3564,7 +3557,7 @@ function LocationsTab() {
       headerRight={
         <Button onClick={openAdd} size="sm" className="font-bold text-xs shadow-soft gap-1.5 h-8">
           <Plus className="size-3.5" />
-          Add Location
+          {t("addLocation", "Add Location")}
         </Button>
       }
     >
@@ -3585,7 +3578,7 @@ function LocationsTab() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="loc-name" className="text-xs font-bold">
-                  Location Name <span className="text-destructive">*</span>
+                  {t("locationName", "Location Name")}<span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="loc-name"
@@ -3607,25 +3600,25 @@ function LocationsTab() {
                     <SelectItem value="store">
                       <div className="flex items-center gap-2">
                         <Store className="size-3.5 text-muted-foreground" />
-                        Retail Store
+                        {t("retailStore", "Retail Store")}
                       </div>
                     </SelectItem>
                     <SelectItem value="warehouse">
                       <div className="flex items-center gap-2">
                         <Warehouse className="size-3.5 text-muted-foreground" />
-                        Warehouse
+                        {t("warehouse", "Warehouse")}
                       </div>
                     </SelectItem>
                     <SelectItem value="outlet">
                       <div className="flex items-center gap-2">
                         <MapPin className="size-3.5 text-muted-foreground" />
-                        Outlet
+                        {t("outlet", "Outlet")}
                       </div>
                     </SelectItem>
                     <SelectItem value="kiosk">
                       <div className="flex items-center gap-2">
                         <MapPin className="size-3.5 text-muted-foreground" />
-                        Kiosk
+                        {t("kiosk", "Kiosk")}
                       </div>
                     </SelectItem>
                   </SelectContent>
@@ -3633,7 +3626,7 @@ function LocationsTab() {
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="loc-code" className="text-xs font-bold">
-                  Branch Code
+                  {t("branchCode", "Branch Code")}
                 </Label>
                 <Input
                   id="loc-code"
@@ -3667,7 +3660,7 @@ function LocationsTab() {
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="loc-manager" className="text-xs font-bold">
-                  Manager Name
+                  {t("managerName", "Manager Name")}
                 </Label>
                 <Input
                   id="loc-manager"
@@ -3678,7 +3671,7 @@ function LocationsTab() {
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="loc-address" className="text-xs font-bold">
-                  Address
+                  {t("address", "Address")}
                 </Label>
                 <Input
                   id="loc-address"
@@ -3689,7 +3682,7 @@ function LocationsTab() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="loc-city" className="text-xs font-bold">
-                  City
+                  {t("city", "City")}
                 </Label>
                 <Input
                   id="loc-city"
@@ -3700,7 +3693,7 @@ function LocationsTab() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="loc-phone" className="text-xs font-bold">
-                  Phone
+                  {t("phone", "Phone")}
                 </Label>
                 <Input
                   id="loc-phone"
@@ -3712,7 +3705,7 @@ function LocationsTab() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="loc-email" className="text-xs font-bold">
-                  Email
+                  {t("email", "Email")}
                 </Label>
                 <Input
                   id="loc-email"
@@ -3735,7 +3728,7 @@ function LocationsTab() {
                     htmlFor="loc-head-office"
                     className="text-xs font-bold cursor-pointer mb-0"
                   >
-                    Mark as Head Office
+                    {t("markAsHeadOffice", "Mark as Head Office")}
                   </Label>
                 </div>
               </div>
@@ -3747,7 +3740,7 @@ function LocationsTab() {
                 onClick={() => setShowForm(false)}
                 disabled={isSaving}
               >
-                Cancel
+                {t("cancel", "Cancel")}
               </Button>
               <Button
                 size="sm"
@@ -3765,7 +3758,7 @@ function LocationsTab() {
         <div className="rounded-2xl border border-border/80 overflow-hidden shadow-card">
           {isLoading ? (
             <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">
-              <Loader2 className="size-5 animate-spin mr-2" /> Loading branch locations...
+              <Loader2 className="size-5 animate-spin mr-2" /> {t("loadingBranchLocations", "Loading branch locations...")}
             </div>
           ) : locations.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-center px-4">
@@ -3774,7 +3767,7 @@ function LocationsTab() {
               </div>
               <p className="text-foreground font-bold text-sm">{t("noBranchLocationsYet", "No branch locations added yet")}</p>
               <p className="text-xs text-muted-foreground max-w-sm">
-                Add your store outlets or warehouses to start tracking multi-branch inventory.
+                {t("addYourStoreOutletsOrWarehousesToStartTr", "Add your store outlets or warehouses to start tracking multi-branch inventory.")}
               </p>
               <Button
                 onClick={openAdd}
@@ -3782,7 +3775,7 @@ function LocationsTab() {
                 size="sm"
                 className="mt-2 font-bold text-xs gap-1.5"
               >
-                <Plus className="size-3.5" /> Add First Location
+                <Plus className="size-3.5" /> {t("addFirstLocation", "Add First Location")}
               </Button>
             </div>
           ) : (
@@ -3870,17 +3863,17 @@ function LocationsTab() {
               </div>
               <div>
                 <DialogTitle className="text-lg font-bold text-foreground">
-                  Delete Location
+                  {t("deleteLocation", "Delete Location")}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Are you sure you want to delete this location? This action cannot be undone.
+                  {t("areYouSureYouWantToDeleteThisLocationThi", "Are you sure you want to delete this location? This action cannot be undone.")}
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setDeleteLocationId(null)}>
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button
               type="button"
@@ -3892,7 +3885,7 @@ function LocationsTab() {
             >
               {isDeleting ? (
                 <>
-                  <Loader2 className="size-3.5 animate-spin mr-2" /> Deleting...
+                  <Loader2 className="size-3.5 animate-spin mr-2" /> {t("deleting", "Deleting...")}
                 </>
               ) : (
                 "Delete"

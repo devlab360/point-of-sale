@@ -546,8 +546,7 @@ function BrandsPage() {
                   {t("deleteBrand", "Delete Brand")}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Are you sure you want to delete this brand? Products linked to this brand will
-                  remain intact.
+                  {t("confirmDeleteBrand", "Are you sure you want to delete this brand? Products linked to this brand will remain intact.")}
                 </DialogDescription>
               </div>
             </div>

@@ -359,7 +359,7 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                 <span>ONEDESK360</span>
               </div>
               <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[#B58D4C] mt-0.5 flex items-center gap-1">
-                <span>SUPER ADMIN PANEL</span>
+                <span>{t("superAdminPanel", "SUPER ADMIN PANEL")}</span>
               </div>
             </div>
           </Link>
@@ -814,7 +814,7 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
       {/* Mobile Drawer (Matching Store Admin Drawer) */}
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
         <SheetContent side="left" className="w-72 p-0 flex flex-col bg-card">
-          <SheetTitle className="sr-only">Super Admin Navigation</SheetTitle>
+          <SheetTitle className="sr-only">{t("superAdminNav", "Super Admin Navigation")}</SheetTitle>
           <div className="flex h-20 items-center px-4 border-b">
             <div className="flex items-center gap-3">
               <div className="relative grid size-10 place-items-center rounded-lg bg-black text-[#B58D4C] border border-[#B58D4C]/30 shadow-xs font-serif font-black text-sm">

@@ -154,17 +154,17 @@ function ProductsPage() {
       list = list.filter((p: any) => Number(p.stock) > Number(p.reorderLevel || 0));
     } else if (stockFilter === "low_stock") {
       list = list.filter(
-        (p: any) => Number(p.stock) <= Number(p.reorderLevel || 0) && Number(p.stock) > 0,
+        (p: any) => Number(p.stock)<= Number(p.reorderLevel || 0) && Number(p.stock) > 0,
       );
     } else if (stockFilter === "out_of_stock") {
-      list = list.filter((p: any) => Number(p.stock) <= 0);
+      list = list.filter((p: any) => Number(p.stock)<= 0);
     }
     return list;
   }, [rawProducts, brandFilter, stockFilter]);
 
   const totalSkus = totalCount || products.length;
   const lowStockCount = useMemo(
-    () => products.filter((p: any) => Number(p.stock) <= Number(p.reorderLevel || 0)).length,
+    () => products.filter((p: any) => Number(p.stock)<= Number(p.reorderLevel || 0)).length,
     [products],
   );
   const totalInventoryValue = useMemo(
@@ -584,7 +584,7 @@ function ProductsPage() {
                               }}
                               className="h-8 text-xs text-muted-foreground hover:text-foreground"
                             >
-                              <Printer className="size-3.5 mr-1" /> Label
+                              <Printer className="size-3.5 mr-1" /> {t("label", "Label")}
                             </Button>
                             <Button
                               variant="ghost"
@@ -636,21 +636,20 @@ function ProductsPage() {
               </div>
               <div>
                 <DialogTitle className="text-lg font-bold text-foreground">
-                  Delete Product
+                  {t("deleteProduct", "Delete Product")}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Are you sure you want to delete this product? All catalog mappings will be
-                  removed.
+                  {t("confirmDeleteProduct", "Are you sure you want to delete this product? All catalog mappings will be removed.")}
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button type="button" variant="destructive" onClick={confirmDelete}>
-              Delete
+              {t("delete", "Delete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -664,17 +663,17 @@ function ProductsPage() {
         <DialogContent className="sm:max-w-sm rounded-2xl p-6 border border-border shadow-soft bg-card">
           <DialogHeader className="text-left space-y-1">
             <DialogTitle className="font-bold flex items-center gap-2 text-foreground">
-              <Printer className="size-4 text-primary" /> Print Barcode Labels
+              <Printer className="size-4 text-primary" /> {t("printBarcodeLabels", "Print Barcode Labels")}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Generate ready-to-stick thermal adhesive barcode labels.
+              {t("generateReadyToStickThermalAdhesiveBarco", "Generate ready-to-stick thermal adhesive barcode labels.")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3.5 py-3">
             <div className="text-xs rounded-xl bg-muted/40 p-3 border border-border/60 space-y-1">
               <div>
-                Product: <strong className="text-foreground">{printProduct?.name}</strong>
+                {t("product", "Product:")}<strong className="text-foreground">{printProduct?.name}</strong>
               </div>
               <div>
                 Barcode:{" "}
@@ -698,10 +697,10 @@ function ProductsPage() {
 
           <DialogFooter className="gap-2 flex flex-row items-center justify-end">
             <Button variant="outline" onClick={() => setPrintProduct(null)}>
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button onClick={handlePrint}>
-              <Printer className="size-3.5 mr-1" /> Print Labels
+              <Printer className="size-3.5 mr-1" /> {t("printLabels", "Print Labels")}
             </Button>
           </DialogFooter>
         </DialogContent>

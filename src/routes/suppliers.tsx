@@ -199,7 +199,7 @@ function SuppliersPage() {
     if (balanceFilter === "has_balance") {
       list = list.filter((s) => Number(s.balance) > 0);
     } else if (balanceFilter === "settled") {
-      list = list.filter((s) => Number(s.balance) <= 0);
+      list = list.filter((s) => Number(s.balance)<= 0);
     }
     return [...list].reverse();
   }, [rawSuppliers, debouncedSearch, balanceFilter]);
@@ -212,7 +212,7 @@ function SuppliersPage() {
       0,
     );
     const withDue = rawSuppliers.filter((s) => Number(s.balance) > 0).length;
-    const settled = rawSuppliers.filter((s) => Number(s.balance) <= 0).length;
+    const settled = rawSuppliers.filter((s) => Number(s.balance)<= 0).length;
     return { totalSuppliers, totalPayable, withDue, settled };
   }, [rawSuppliers]);
 
@@ -678,7 +678,7 @@ function SuppliersPage() {
                               variant="outline"
                               className="bg-success/15 text-success border-success/30 text-[10px] font-bold uppercase"
                             >
-                              Settled
+                              {t("settled", "Settled")}
                             </Badge>
                           )}
                         </TableCell>
@@ -694,7 +694,7 @@ function SuppliersPage() {
                                 }}
                                 className="h-8 text-xs font-semibold text-destructive border-destructive/30 hover:bg-destructive/10"
                               >
-                                Settle
+                                {t("settle", "Settle")}
                               </Button>
                             )}
                             <Button
@@ -703,7 +703,7 @@ function SuppliersPage() {
                               onClick={() => setLedgerSupplier(s)}
                               className="h-8 text-xs font-semibold"
                             >
-                              Ledger
+                              {t("ledger", "Ledger")}
                             </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -716,13 +716,13 @@ function SuppliersPage() {
                                   onClick={() => openEditDrawer(s)}
                                   className="text-xs font-semibold"
                                 >
-                                  <Edit2 className="size-3.5 mr-2 text-primary" /> Edit Profile
+                                  <Edit2 className="size-3.5 mr-2 text-primary" /> {t("editProfile", "Edit Profile")}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => setDeleteId(s.id)}
                                   className="text-xs font-semibold text-destructive focus:text-destructive"
                                 >
-                                  <Trash2 className="size-3.5 mr-2" /> Delete
+                                  <Trash2 className="size-3.5 mr-2" /> {t("delete", "Delete")}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -786,19 +786,19 @@ function SuppliersPage() {
                               onClick={() => openEditDrawer(s)}
                               className="text-xs font-semibold"
                             >
-                              <Edit2 className="size-3.5 mr-2 text-primary" /> Edit
+                              <Edit2 className="size-3.5 mr-2 text-primary" /> {t("edit", "Edit")}
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => setLedgerSupplier(s)}
                               className="text-xs font-semibold"
                             >
-                              <FileText className="size-3.5 mr-2 text-blue-500" /> Khata Ledger
+                              <FileText className="size-3.5 mr-2 text-blue-500" /> {t("khataLedger", "Khata Ledger")}
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => setDeleteId(s.id)}
                               className="text-xs font-semibold text-destructive"
                             >
-                              <Trash2 className="size-3.5 mr-2" /> Delete
+                              <Trash2 className="size-3.5 mr-2" /> {t("delete", "Delete")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -826,7 +826,7 @@ function SuppliersPage() {
                       <div className="p-3 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between">
                         <div>
                           <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
-                            Khata Balance
+                            {t("khataBalance", "Khata Balance")}
                           </span>
                           <span
                             className={`text-sm font-bold ${hasDue ? "text-destructive" : "text-success"}`}
@@ -851,7 +851,7 @@ function SuppliersPage() {
                         onClick={() => setLedgerSupplier(s)}
                         className="h-8 text-xs font-semibold flex-1"
                       >
-                        Ledger Statement
+                        {t("ledgerStatement", "Ledger Statement")}
                       </Button>
                       {hasDue && (
                         <Button
@@ -862,7 +862,7 @@ function SuppliersPage() {
                           }}
                           className="h-8 text-xs font-semibold bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                          Settle
+                          {t("settle", "Settle")}
                         </Button>
                       )}
                     </div>
@@ -898,8 +898,7 @@ function SuppliersPage() {
                 {editItem ? "Edit Supplier Profile" : "Add New Supplier"}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Configure vendor contact information, tax identification, billing terms, and bank
-                routing.
+                {t("configureVendorBillingDesc", "Configure vendor contact information, tax identification, billing terms, and bank routing.")}
               </SheetDescription>
 
               {/* Form Navigation Tabs */}
@@ -961,7 +960,7 @@ function SuppliersPage() {
                   <div className="space-y-4">
                     <div className="space-y-1.5">
                       <Label htmlFor="name" className="text-xs font-semibold">
-                        Supplier / Business Name <span className="text-destructive">*</span>
+                        {t("supplierBusinessName", "Supplier / Business Name")}<span className="text-destructive">*</span>
                       </Label>
                       <Input
                         id="name"
@@ -981,7 +980,7 @@ function SuppliersPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <Label htmlFor="contact" className="text-xs font-semibold">
-                          Contact Person <span className="text-destructive">*</span>
+                          {t("contactPerson", "Contact Person")}<span className="text-destructive">*</span>
                         </Label>
                         <Input
                           id="contact"
@@ -1002,7 +1001,7 @@ function SuppliersPage() {
 
                       <div className="space-y-1.5">
                         <Label htmlFor="phone" className="text-xs font-semibold">
-                          Phone Number <span className="text-destructive">*</span>
+                          {t("phoneNumber", "Phone Number")}<span className="text-destructive">*</span>
                         </Label>
                         <PhoneInput
                           id="phone"
@@ -1024,7 +1023,7 @@ function SuppliersPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <Label htmlFor="email" className="text-xs font-semibold">
-                          Email Address
+                          {t("emailAddress", "Email Address")}
                         </Label>
                         <Input
                           id="email"
@@ -1037,7 +1036,7 @@ function SuppliersPage() {
 
                       <div className="space-y-1.5">
                         <Label htmlFor="website" className="text-xs font-semibold">
-                          Website
+                          {t("website", "Website")}
                         </Label>
                         <Input
                           id="website"
@@ -1056,7 +1055,7 @@ function SuppliersPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="space-y-1.5">
                         <Label htmlFor="gstin" className="text-xs font-semibold">
-                          GSTIN / Tax ID
+                          {t("gstinTaxId", "GSTIN / Tax ID")}
                         </Label>
                         <Input
                           id="gstin"
@@ -1069,7 +1068,7 @@ function SuppliersPage() {
 
                       <div className="space-y-1.5">
                         <Label htmlFor="pan" className="text-xs font-semibold">
-                          PAN Number
+                          {t("panNumber", "PAN Number")}
                         </Label>
                         <Input
                           id="pan"
@@ -1082,7 +1081,7 @@ function SuppliersPage() {
 
                       <div className="space-y-1.5">
                         <Label htmlFor="stateCode" className="text-xs font-semibold">
-                          State Code
+                          {t("stateCode", "State Code")}
                         </Label>
                         <Input
                           id="stateCode"
@@ -1096,7 +1095,7 @@ function SuppliersPage() {
 
                     <div className="space-y-1.5">
                       <Label htmlFor="address" className="text-xs font-semibold">
-                        Street Address
+                        {t("streetAddress", "Street Address")}
                       </Label>
                       <Input
                         id="address"
@@ -1109,7 +1108,7 @@ function SuppliersPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="space-y-1.5">
                         <Label htmlFor="city" className="text-xs font-semibold">
-                          City
+                          {t("city", "City")}
                         </Label>
                         <Input
                           id="city"
@@ -1121,7 +1120,7 @@ function SuppliersPage() {
 
                       <div className="space-y-1.5">
                         <Label htmlFor="state" className="text-xs font-semibold">
-                          State / Province
+                          {t("stateProvince", "State / Province")}
                         </Label>
                         <Input
                           id="state"
@@ -1133,7 +1132,7 @@ function SuppliersPage() {
 
                       <div className="space-y-1.5">
                         <Label htmlFor="postalCode" className="text-xs font-semibold">
-                          Postal Code
+                          {t("postalCode", "Postal Code")}
                         </Label>
                         <Input
                           id="postalCode"
@@ -1199,13 +1198,13 @@ function SuppliersPage() {
 
                     <div className="p-4 rounded-xl bg-muted/30 border border-border/60 space-y-3">
                       <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block">
-                        Bank Settlement Details
+                        {t("bankSettlementDetails", "Bank Settlement Details")}
                       </span>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
                           <Label htmlFor="bankName" className="text-xs font-semibold">
-                            Bank Name
+                            {t("bankName", "Bank Name")}
                           </Label>
                           <Input
                             id="bankName"
@@ -1217,7 +1216,7 @@ function SuppliersPage() {
 
                         <div className="space-y-1.5">
                           <Label htmlFor="accountNumber" className="text-xs font-semibold">
-                            Account Number
+                            {t("accountNumber", "Account Number")}
                           </Label>
                           <Input
                             id="accountNumber"
@@ -1232,7 +1231,7 @@ function SuppliersPage() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
                           <Label htmlFor="ifscSwift" className="text-xs font-semibold">
-                            IFSC / SWIFT Code
+                            {t("ifscSwiftCode", "IFSC / SWIFT Code")}
                           </Label>
                           <Input
                             id="ifscSwift"
@@ -1245,7 +1244,7 @@ function SuppliersPage() {
 
                         <div className="space-y-1.5">
                           <Label htmlFor="upiId" className="text-xs font-semibold">
-                            UPI ID
+                            {t("upiId", "UPI ID")}
                           </Label>
                           <Input
                             id="upiId"
@@ -1280,7 +1279,7 @@ function SuppliersPage() {
 
                     <div className="space-y-1.5">
                       <Label htmlFor="notes" className="text-xs font-semibold">
-                        Procurement Notes
+                        {t("procurementNotes", "Procurement Notes")}
                       </Label>
                       <Textarea
                         id="notes"
@@ -1309,7 +1308,7 @@ function SuppliersPage() {
                       }}
                       className="text-xs"
                     >
-                      Back
+                      {t("back", "Back")}
                     </Button>
                   )}
                   {activeFormTab !== "notes" && (
@@ -1336,7 +1335,7 @@ function SuppliersPage() {
                     className="text-xs"
                     onClick={() => setIsAddOpen(false)}
                   >
-                    Cancel
+                    {t("cancel", "Cancel")}
                   </Button>
                   <Button type="submit" disabled={isSaving} className="font-semibold shadow-sm">
                     {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
@@ -1362,7 +1361,7 @@ function SuppliersPage() {
                 <span>{t("settleVendorBalance", "Settle Vendor Balance")}</span>
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Record a direct payment settlement for <strong>{settleItem?.name}</strong>.
+                {t("recordADirectPaymentSettlementFor", "Record a direct payment settlement for")}<strong>{settleItem?.name}</strong>.
               </SheetDescription>
             </SheetHeader>
 
@@ -1373,7 +1372,7 @@ function SuppliersPage() {
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="p-4 rounded-xl border border-destructive/20 bg-destructive/5 text-center space-y-1">
                   <span className="text-xs font-semibold text-destructive uppercase tracking-wider">
-                    Current Due Balance
+                    {t("currentDueBalance", "Current Due Balance")}
                   </span>
                   <p className="text-2xl font-bold text-destructive">
                     {formatCurrency(Number(settleItem?.balance) || 0)}
@@ -1382,7 +1381,7 @@ function SuppliersPage() {
 
                 <div className="space-y-1.5">
                   <Label htmlFor="settleAmount" className="text-xs font-semibold">
-                    Settlement Amount <span className="text-destructive">*</span>
+                    {t("settlementAmount", "Settlement Amount")}<span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="settleAmount"
@@ -1399,7 +1398,7 @@ function SuppliersPage() {
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
                 <Button type="button" variant="outline" onClick={() => setSettleItem(null)}>
-                  Cancel
+                  {t("cancel", "Cancel")}
                 </Button>
                 <Button type="submit" disabled={isSettling} className="font-semibold shadow-sm">
                   {isSettling && <Loader2 className="mr-2 size-4 animate-spin" />}
@@ -1431,7 +1430,7 @@ function SuppliersPage() {
                   </div>
                   <div className="text-right">
                     <span className="text-[10px] font-semibold text-muted-foreground uppercase block">
-                      Due Balance
+                      {t("dueBalance", "Due Balance")}
                     </span>
                     <span className="text-lg font-bold text-destructive">
                       {formatCurrency(Number(ledgerSupplier.balance) || 0)}
@@ -1485,7 +1484,7 @@ function SuppliersPage() {
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
                 <Button type="button" variant="outline" onClick={() => setLedgerSupplier(null)}>
-                  Close Statement
+                  {t("closeStatement", "Close Statement")}
                 </Button>
               </SheetFooter>
             </div>
@@ -1503,20 +1502,20 @@ function SuppliersPage() {
               </div>
               <div>
                 <DialogTitle className="text-lg font-bold text-foreground">
-                  Delete Supplier
+                  {t("deleteSupplier", "Delete Supplier")}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Are you sure you want to permanently delete this supplier?
+                  {t("areYouSureYouWantToPermanentlyDeleteThis", "Are you sure you want to permanently delete this supplier?")}
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button type="button" variant="destructive" onClick={handleDelete}>
-              Delete
+              {t("delete", "Delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

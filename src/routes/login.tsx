@@ -315,7 +315,7 @@ function LoginPage() {
               rel="noopener noreferrer"
               className="hover:text-primary-foreground transition-colors underline font-semibold"
             >
-              DevLab360
+              {t("devlab360", "DevLab360")}
             </a>
           </p>
         </div>
@@ -582,7 +582,7 @@ function LoginPage() {
                 rel="noopener noreferrer"
                 className="font-bold text-muted-foreground hover:text-primary transition-colors underline decoration-dotted"
               >
-                DevLab360
+                {t("devlab360", "DevLab360")}
               </a>
               . All rights reserved.
             </p>

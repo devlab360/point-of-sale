@@ -168,7 +168,7 @@ function InvitePage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label>Full Name</Label>
+                <Label>{t("fullName", "Full Name")}</Label>
                 <Input
                   name="name"
                   value={formData.name}
@@ -180,7 +180,7 @@ function InvitePage() {
                 <FieldError message={errors.name} />
               </div>
               <div className="space-y-2">
-                <Label>Email</Label>
+                <Label>{t("email", "Email")}</Label>
                 <Input
                   type="email"
                   name="email"
@@ -195,7 +195,7 @@ function InvitePage() {
                 <FieldError message={errors.email} />
               </div>
               <div className="space-y-2">
-                <Label>Set your password</Label>
+                <Label>{t("setYourPassword", "Set your password")}</Label>
                 <PasswordInput
                   name="password"
                   value={formData.password}

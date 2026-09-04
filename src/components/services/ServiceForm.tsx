@@ -127,12 +127,12 @@ export function ServiceForm({
 
   const { errors, validate, clearError } = useFormValidation({
     name: {
-      required: "Service name is required",
+      required: t("serviceNameRequired", "Service name is required"),
       minLength: { value: 2, message: "Name must be at least 2 characters" },
     },
     price: {
-      required: "Retail price is required",
-      positive: "Price must be a valid positive number",
+      required: t("retailPriceRequired", "Retail price is required"),
+      positive: t("priceMustBePositive", "Price must be a valid positive number"),
     },
     // cost is optional — 0 overhead is valid for many services
     cost: {},
@@ -143,10 +143,10 @@ export function ServiceForm({
     const priceNum = parseFloat(String(formData.price)) || 0;
     const costNum = parseFloat(String(formData.cost)) || 0;
     if (!validate({ ...formData, price: priceNum, cost: costNum })) {
-      return toast.error("Please fill in all required fields correctly.");
+      return toast.error(t("fillRequiredFieldsCorrectly", "Please fill in all required fields correctly."));
     }
     if (!formData.hasVariants && priceNum < 0) {
-      return toast.error("Valid price is required");
+      return toast.error(t("validPriceRequired", "Valid price is required"));
     }
 
     const rawDuration = parseFloat(formData.durationValue as string) || 0;

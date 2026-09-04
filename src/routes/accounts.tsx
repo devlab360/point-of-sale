@@ -1097,7 +1097,7 @@ function AccountsPage() {
                   id="name"
                   name="name"
                   defaultValue={editingAccount?.name || ""}
-                  placeholder="e.g. Marketing & Advertising Expense"
+                  placeholder={t("accountDescPlaceholder", "e.g. Marketing & Advertising Expense")}
                   className={
                     accErrors.name ? "border-destructive focus-visible:ring-destructive" : ""
                   }

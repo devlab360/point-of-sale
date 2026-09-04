@@ -180,9 +180,7 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
               onWheel={(e) => e.stopPropagation()}
             >
               {filteredCountries.length === 0 ? (
-                <div className="text-center py-4 text-xs text-muted-foreground">
-                  No countries found
-                </div>
+                <div className="text-center py-4 text-xs text-muted-foreground">{t("noCountriesFound", "No countries found")}</div>
               ) : (
                 filteredCountries.map((c) => {
                   const isSelected = c.phoneCode === selectedCode;

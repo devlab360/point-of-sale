@@ -198,7 +198,7 @@ function RegisterPage() {
               {appName}
             </h1>
             <p className="text-xs sm:text-sm text-primary-foreground/90 font-bold uppercase tracking-wider">
-              Own the counter
+              {t("ownTheCounter", "Own the counter")}
             </p>
           </div>
         </div>
@@ -243,7 +243,7 @@ function RegisterPage() {
               rel="noopener noreferrer"
               className="hover:text-primary-foreground transition-colors underline font-semibold"
             >
-              DevLab360
+              {t("devlab360", "DevLab360")}
             </a>
           </p>
           <Link

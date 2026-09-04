@@ -598,7 +598,7 @@ function TablesPage() {
                       <span className="text-[10px] text-muted-foreground uppercase font-bold block">
                         {t("checkedIn", "Checked In")}
                       </span>
-                      <span className="font-semibold text-foreground">Today, 02:30 PM</span>
+                      <span className="font-semibold text-foreground">{t("today0230Pm", "Today, 02:30 PM")}</span>
                     </div>
                   </div>
                 </div>

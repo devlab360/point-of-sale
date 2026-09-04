@@ -406,7 +406,7 @@ function SuperAdminDashboardPage() {
               </div>
               <div>
                 <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
-                  SaaS Pricing Plans
+                  {t("saasPricingPlans", "SaaS Pricing Plans")}
                 </p>
                 <p className="text-[10px] text-muted-foreground">{plans.length} active tiers</p>
               </div>
@@ -424,7 +424,7 @@ function SuperAdminDashboardPage() {
               </div>
               <div>
                 <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
-                  Support Inbox
+                  {t("supportInbox", "Support Inbox")}
                 </p>
                 <p className="text-[10px] text-muted-foreground">
                   {openTickets.length} open tickets
@@ -446,10 +446,10 @@ function SuperAdminDashboardPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
               <div>
                 <h3 className="font-display text-base font-bold text-foreground">
-                  Platform Growth & Revenue Velocity
+                  {t("platformGrowthRevenueVelocity", "Platform Growth & Revenue Velocity")}
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Monthly recurring revenue and store provisioning trend
+                  {t("monthlyRecurringRevenueAndStoreProvision", "Monthly recurring revenue and store provisioning trend")}
                 </p>
               </div>
               <div className="flex items-center gap-1.5 p-1 bg-muted/40 rounded-xl border border-border/60">
@@ -459,7 +459,7 @@ function SuperAdminDashboardPage() {
                   className="h-7 text-xs font-bold rounded-lg"
                   onClick={() => setChartMetric("revenue")}
                 >
-                  MRR Revenue
+                  {t("mrrRevenue", "MRR Revenue")}
                 </Button>
                 <Button
                   size="sm"
@@ -467,7 +467,7 @@ function SuperAdminDashboardPage() {
                   className="h-7 text-xs font-bold rounded-lg"
                   onClick={() => setChartMetric("growth")}
                 >
-                  Store Count
+                  {t("storeCount", "Store Count")}
                 </Button>
               </div>
             </div>
@@ -539,15 +539,15 @@ function SuperAdminDashboardPage() {
             {/* SaaS Plan Distribution Donut */}
             <Card className="rounded-2xl border border-border/80 bg-card shadow-soft p-5">
               <h3 className="font-display text-base font-bold text-foreground mb-1">
-                SaaS Plan Distribution
+                {t("saasPlanDistribution", "SaaS Plan Distribution")}
               </h3>
               <p className="text-xs text-muted-foreground mb-4">
-                Active stores by subscription tier
+                {t("activeStoresBySubscriptionTier", "Active stores by subscription tier")}
               </p>
 
               {planDistribution.length === 0 ? (
                 <div className="h-44 flex items-center justify-center text-xs text-muted-foreground">
-                  No active store subscriptions assigned yet.
+                  {t("noActiveStoreSubscriptionsAssignedYet", "No active store subscriptions assigned yet.")}
                 </div>
               ) : (
                 <div className="flex items-center gap-4">
@@ -616,7 +616,7 @@ function SuperAdminDashboardPage() {
               <div className="space-y-2 text-xs">
                 <div className="flex items-center justify-between p-2 rounded-xl bg-muted/20 border border-border/40">
                   <span className="text-muted-foreground">{t("edgeSsrRuntime", "Edge SSR Runtime")}</span>
-                  <span className="font-semibold text-foreground">Nitro Cloudflare</span>
+                  <span className="font-semibold text-foreground">{t("nitroCloudflare", "Nitro Cloudflare")}</span>
                 </div>
                 <div className="flex items-center justify-between p-2 rounded-xl bg-muted/20 border border-border/40">
                   <span className="text-muted-foreground">{t("primaryDatabase", "Primary Database")}</span>
@@ -626,7 +626,7 @@ function SuperAdminDashboardPage() {
                 </div>
                 <div className="flex items-center justify-between p-2 rounded-xl bg-muted/20 border border-border/40">
                   <span className="text-muted-foreground">{t("syncPwaEngine", "Sync & PWA Engine")}</span>
-                  <span className="font-semibold text-foreground">ServiceWorker v1.3</span>
+                  <span className="font-semibold text-foreground">{t("serviceworkerV13", "ServiceWorker v1.3")}</span>
                 </div>
               </div>
             </Card>
@@ -778,7 +778,7 @@ function SuperAdminDashboardPage() {
                               disabled={approveMutation.isPending}
                               onClick={() => approveMutation.mutate(p.id)}
                             >
-                              <Check className="size-3" /> Approve
+                              <Check className="size-3" /> {t("approve", "Approve")}
                             </Button>
                             <Button
                               size="sm"
@@ -787,7 +787,7 @@ function SuperAdminDashboardPage() {
                               disabled={rejectMutation.isPending}
                               onClick={() => rejectMutation.mutate(p.id)}
                             >
-                              <XCircle className="size-3" /> Reject
+                              <XCircle className="size-3" /> {t("reject", "Reject")}
                             </Button>
                           </div>
                         </TableCell>
@@ -853,7 +853,7 @@ function SuperAdminDashboardPage() {
                           variant="outline"
                           className="h-7 text-xs font-semibold gap-1"
                         >
-                          <Eye className="size-3" /> Manage
+                          <Eye className="size-3" /> {t("manage", "Manage")}
                         </Button>
                       </Link>
                     </TableCell>
@@ -870,10 +870,10 @@ function SuperAdminDashboardPage() {
                 <div className="p-12 text-center space-y-2">
                   <CheckCircle2 className="size-8 mx-auto text-emerald-500" />
                   <h4 className="text-sm font-bold text-foreground">
-                    No Subscriptions Expiring Soon
+                    {t("noSubscriptionsExpiringSoon", "No Subscriptions Expiring Soon")}
                   </h4>
                   <p className="text-xs text-muted-foreground">
-                    All active merchant stores are well within their billing period.
+                    {t("allActiveMerchantStoresAreWellWithinThei", "All active merchant stores are well within their billing period.")}
                   </p>
                 </div>
               ) : (
@@ -914,7 +914,7 @@ function SuperAdminDashboardPage() {
                             className="h-7 text-xs font-semibold gap-1 text-primary border-primary/30 hover:bg-primary/10"
                             onClick={() => setQuickExtendOrg(org)}
                           >
-                            <Sparkles className="size-3" /> Add Trial Days
+                            <Sparkles className="size-3" /> {t("addTrialDays", "Add Trial Days")}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -985,7 +985,7 @@ function SuperAdminDashboardPage() {
                               variant="outline"
                               className="h-7 text-xs font-semibold gap-1"
                             >
-                              View Ticket
+                              {t("viewTicket", "View Ticket")}
                             </Button>
                           </Link>
                         </TableCell>
@@ -1006,11 +1006,10 @@ function SuperAdminDashboardPage() {
           >
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
               <SheetTitle className="text-lg font-bold text-foreground">
-                Provision New Tenant Store
+                {t("provisionNewTenantStore", "Provision New Tenant Store")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Instantly provision a new merchant POS account with store credentials and assigned
-                SaaS tier.
+                {t("provisionNewMerchantDesc", "Instantly provision a new merchant POS account with store credentials and assigned SaaS tier.")}
               </SheetDescription>
             </SheetHeader>
 
