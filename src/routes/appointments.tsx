@@ -4,6 +4,7 @@ import { appName } from "@/lib/env";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/layout/StatCard";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
+import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -21,6 +22,8 @@ import {
   Search,
   Filter,
   X,
+  LayoutGrid,
+  Table as TableIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -116,6 +119,7 @@ function AppointmentsPage() {
   const [filters, setFilters] = useState({ status: "" });
   const [draftFilters, setDraftFilters] = useState({ status: "" });
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "table">("table");
   const activeFilterCount = filters.status ? 1 : 0;
 
   const handleResetFilters = () => {
@@ -391,16 +395,33 @@ function AppointmentsPage() {
               </div>
             </SheetContent>
           </Sheet>
+
+          <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm">
+            <button type="button" onClick={() => setViewMode("table")}
+              className={`grid size-8 place-items-center rounded-md transition-all ${viewMode === "table" ? "bg-card text-foreground shadow-sm font-bold" : "text-muted-foreground hover:text-foreground"}`}
+              title="Table View">
+              <TableIcon className="size-4" />
+            </button>
+            <button type="button" onClick={() => setViewMode("grid")}
+              className={`grid size-8 place-items-center rounded-md transition-all ${viewMode === "grid" ? "bg-card text-foreground shadow-sm font-bold" : "text-muted-foreground hover:text-foreground"}`}
+              title="Grid View">
+              <LayoutGrid className="size-4" />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Main Table / Mobile Feed */}
       <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
         {isLoading ? (
-          <TableSkeleton columns={6} rows={5} />
+          viewMode === "table" ? (
+            <TableSkeleton columns={6} rows={6} />
+          ) : (
+            <CardGridSkeleton cards={6} />
+          )
         ) : isError ? (
           <ErrorState onRetry={refetch} />
-        ) : (
+        ) : viewMode === "table" ? (
           <>
             {/* Desktop Table View */}
             <div className="table-desktop overflow-x-auto">
@@ -662,6 +683,134 @@ function AppointmentsPage() {
               </div>
             )}
           </>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {paginatedAppointments.length === 0 ? (
+                <div className="rounded-2xl border border-border/80 bg-card shadow-soft">
+                  <EmptyState
+                    icon={CalendarDays}
+                    title={t("noAppointmentsFound", "No appointments found")}
+                    description={
+                      search
+                        ? t("noAppointmentsMatchQuery", "No appointments matched your search query.")
+                        : t("noAppointmentsYet", "You haven't scheduled any appointments yet.")
+                    }
+                    actionLabel={t("scheduleAppointment", "Schedule Appointment")}
+                    onAction={() => setIsCreateOpen(true)}
+                    className="border-none bg-transparent my-0 py-12 shadow-none"
+                  />
+                </div>
+              ) : (
+                paginatedAppointments.map((a: any) => (
+                  <div key={a.id} className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft flex flex-col justify-between space-y-4 hover:border-border transition-all group">
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="grid size-9 place-items-center rounded-lg bg-primary/10 text-primary">
+                            <User className="size-4.5" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-sm text-foreground">{a.customerName}</p>
+                            {a.customerPhone && (
+                              <p className="text-xs text-muted-foreground">{a.customerPhone}</p>
+                            )}
+                          </div>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                            a.status === "completed"
+                              ? "bg-success/15 text-success border-success/25"
+                              : a.status === "in-progress"
+                                ? "bg-amber-500/15 text-amber-600 border-amber-500/25"
+                                : a.status === "cancelled"
+                                  ? "bg-destructive/15 text-destructive border-destructive/25"
+                                  : "bg-blue-500/15 text-blue-600 border-blue-500/25"
+                          }`}
+                        >
+                          {a.status}
+                        </Badge>
+                      </div>
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex items-center gap-2 text-foreground">
+                          <Sparkles className="size-3.5 text-primary" />
+                          <span className="font-semibold">{a.serviceName}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <User className="size-3.5" />
+                          <span>{a.staffName || t("unassigned", "Unassigned")}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Clock className="size-3.5 text-primary" />
+                          <span>{formatAppDate(a.dateTime, "datetime", "PP · p")}</span>
+                        </div>
+                      </div>
+                      {a.notes && (
+                        <p className="text-xs text-muted-foreground truncate">{a.notes}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-end gap-2 border-t border-border/60 pt-3">
+                      {a.status !== "completed" && a.status !== "cancelled" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs font-semibold"
+                          onClick={() =>
+                            updateStatus.mutate({
+                              id: a.id,
+                              status: a.status === "scheduled" ? "in-progress" : "completed",
+                            })
+                          }
+                        >
+                          {a.status === "scheduled" ? t("start", "Start") : t("complete", "Complete")}
+                        </Button>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                            <MoreVertical className="size-4 text-muted-foreground" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="rounded-xl">
+                          <DropdownMenuItem
+                            onClick={() => updateStatus.mutate({ id: a.id, status: "completed" })}
+                            className="text-xs font-semibold cursor-pointer"
+                          >
+                            {t("markCompleted", "Mark Completed")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => updateStatus.mutate({ id: a.id, status: "cancelled" })}
+                            className="text-xs font-semibold cursor-pointer text-destructive"
+                          >
+                            {t("cancelBooking", "Cancel Booking")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setDeleteId(a.id)}
+                            className="text-xs font-semibold cursor-pointer text-destructive"
+                          >
+                            <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            {filteredAppointments.length > 0 && (
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  pageSize={pageSize}
+                  onPageSizeChange={setPageSize}
+                  totalItems={filteredAppointments.length}
+                />
+              </div>
+            )}
+          </div>
         )}
       </div>
 

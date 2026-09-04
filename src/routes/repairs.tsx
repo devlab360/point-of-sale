@@ -471,24 +471,27 @@ function RepairsPage() {
         ) : isRepairsError ? (
           <ErrorState onRetry={refetchRepairs} />
         ) : viewMode === "grid" ? (
-          filteredRepairs.length === 0 ? (
-            <EmptyState
-              icon={Wrench}
-              title={t("noRepairsFound", "No repair job sheets found")}
-              description={
-                search
-                  ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
-                  : t("noRepairsYet", "You haven't logged any repair or service intake tickets yet.")
-              }
-              actionLabel={t("newRepairTicket", "New Repair Ticket")}
-              onAction={() => {
-                clearRepAll();
-                setIsAddOpen(true);
-              }}
-            />
-          ) : (
           /* Grid View */
           <div className="space-y-4">
+            {filteredRepairs.length === 0 ? (
+              <div className="rounded-2xl border border-border/80 bg-card shadow-soft">
+                <EmptyState
+                  icon={Wrench}
+                  title={t("noRepairsFound", "No repair job sheets found")}
+                  description={
+                    search
+                      ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
+                      : t("noRepairsYet", "You haven't logged any repair or service intake tickets yet.")
+                  }
+                  actionLabel={t("newRepairTicket", "New Repair Ticket")}
+                  onAction={() => {
+                    clearRepAll();
+                    setIsAddOpen(true);
+                  }}
+                  className="border-none bg-transparent my-0 py-12 shadow-none"
+                />
+              </div>
+            ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {paginatedRepairs.map((r: any) => {
                 const badgeInfo = getStatusBadge(r.status, t);
@@ -579,6 +582,7 @@ function RepairsPage() {
                 );
               })}
             </div>
+            )}
             {filteredRepairs.length > 0 && (
               <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
                 <PaginationControls
@@ -592,7 +596,6 @@ function RepairsPage() {
               </div>
             )}
           </div>
-          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">

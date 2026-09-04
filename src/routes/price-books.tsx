@@ -98,7 +98,7 @@ function PriceBooksComponent() {
   const [activeTab, setActiveTab] = useState<"books" | "branches" | "matrix">("books");
 
   // Tab 1 View & Filter State
-  const [booksViewMode, setBooksViewMode] = useState<"grid" | "table">("grid");
+  const [booksViewMode, setBooksViewMode] = useState<"grid" | "table">("table");
   const [booksSearch, setBooksSearch] = useState("");
   const [booksStatusFilter, setBooksStatusFilter] = useState<"all" | "active" | "draft" | "archived">("all");
 

@@ -755,20 +755,23 @@ function SuppliersPage() {
           </div>
         ) : (
           /* Card Grid View */
-          suppliers.length === 0 ? (
-            <EmptyState
-              icon={Truck}
-              title={t("noSuppliersFound", "No suppliers found")}
-              description={
-                search
-                  ? t("adjustSearch", "Try adjusting your search criteria.")
-                  : t("noSuppliersYet", "You haven't registered any suppliers yet.")
-              }
-              actionLabel={t("addSupplier", "Add Supplier")}
-              onAction={openAddDrawer}
-            />
-          ) : (
           <div className="space-y-4">
+            {suppliers.length === 0 ? (
+              <div className="rounded-2xl border border-border/80 bg-card shadow-soft">
+                <EmptyState
+                  icon={Truck}
+                  title={t("noSuppliersFound", "No suppliers found")}
+                  description={
+                    search
+                      ? t("adjustSearch", "Try adjusting your search criteria.")
+                      : t("noSuppliersYet", "You haven't registered any suppliers yet.")
+                  }
+                  actionLabel={t("addSupplier", "Add Supplier")}
+                  onAction={openAddDrawer}
+                  className="border-none bg-transparent my-0 py-12 shadow-none"
+                />
+              </div>
+            ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {paginatedSuppliers.map((s: any) => {
                 const hasDue = Number(s.balance) > 0;
@@ -889,6 +892,7 @@ function SuppliersPage() {
                 );
               })}
             </div>
+            )}
             {suppliers.length > 0 && (
               <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
                 <PaginationControls
@@ -902,7 +906,6 @@ function SuppliersPage() {
               </div>
             )}
           </div>
-          )
         )}
       </div>
 

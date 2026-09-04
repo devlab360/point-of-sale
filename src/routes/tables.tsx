@@ -98,7 +98,7 @@ function TablesPage() {
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "table">("table");
 
   const [filters, setFilters] = useState({ status: "" });
   const [draftFilters, setDraftFilters] = useState({ status: "" });
@@ -362,22 +362,23 @@ function TablesPage() {
       ) : isError ? (
         <ErrorState onRetry={refetch} />
       ) : viewMode === "grid" ? (
-        filteredTables.length === 0 ? (
-          <div className="rounded-xl border border-border bg-card shadow-soft p-12 text-center">
-            <EmptyState
-              icon={Utensils}
-              title={t("noTablesFound", "No tables found")}
-              description={
-                search
-                  ? t("noTablesMatchedSearch", "No tables matched your search query.")
-                  : t("addFirstDiningTable", "Add your first dining table to manage floor seating.")
-              }
-              actionLabel={t("addTable", "Add Table")}
-              onAction={() => setIsCreateOpen(true)}
-              className="border-none bg-transparent my-0 py-4 shadow-none"
-            />
-          </div>
-        ) : (
+        <div className="space-y-4">
+          {filteredTables.length === 0 ? (
+            <div className="rounded-2xl border border-border/80 bg-card shadow-soft">
+              <EmptyState
+                icon={Utensils}
+                title={t("noTablesFound", "No tables found")}
+                description={
+                  search
+                    ? t("noTablesMatchedSearch", "No tables matched your search query.")
+                    : t("addFirstDiningTable", "Add your first dining table to manage floor seating.")
+                }
+                actionLabel={t("addTable", "Add Table")}
+                onAction={() => setIsCreateOpen(true)}
+                className="border-none bg-transparent my-0 py-12 shadow-none"
+              />
+            </div>
+          ) : (
           <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredTables.map((table: any) => {
               const isOccupied = table.status === "occupied";
@@ -487,11 +488,12 @@ function TablesPage() {
                     </Button>
                   </div>
                 </div>
-              );
-            })}
+);
+              })}
+            </div>
+            )}
           </div>
-        )
-      ) : (
+        ) : (
         /* Table View */
         <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
           <div className="table-desktop overflow-x-auto">

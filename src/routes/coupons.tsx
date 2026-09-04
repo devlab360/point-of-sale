@@ -393,24 +393,27 @@ function CouponsPage() {
         ) : isCouponsError ? (
           <ErrorState onRetry={refetchCoupons} />
         ) : viewMode === "grid" ? (
-          filteredCoupons.length === 0 ? (
-            <EmptyState
-              icon={Ticket}
-              title={t("noCouponsFound", "No promo codes found")}
-              description={
-                search
-                  ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
-                  : t("noCouponsYet", "You haven't generated any discount promo codes yet.")
-              }
-              actionLabel={t("createPromoCode", "Create Promo Code")}
-              onAction={() => {
-                clearCouponAll();
-                setIsAddOpen(true);
-              }}
-            />
-          ) : (
           /* Grid View */
           <div className="space-y-4">
+            {paginatedCoupons.length === 0 ? (
+              <div className="rounded-2xl border border-border/80 bg-card shadow-soft">
+                <EmptyState
+                  icon={Ticket}
+                  title={t("noCouponsFound", "No promo codes found")}
+                  description={
+                    search
+                      ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
+                      : t("noCouponsYet", "You haven't generated any discount promo codes yet.")
+                  }
+                  actionLabel={t("createPromoCode", "Create Promo Code")}
+                  onAction={() => {
+                    clearCouponAll();
+                    setIsAddOpen(true);
+                  }}
+                  className="border-none bg-transparent my-0 py-12 shadow-none"
+                />
+              </div>
+            ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {paginatedCoupons.map((c: any) => {
                 const isExpired = c.expiresAt && new Date(c.expiresAt).getTime() < Date.now();
@@ -512,6 +515,7 @@ function CouponsPage() {
                 );
               })}
             </div>
+            )}
             {filteredCoupons.length > 0 && (
               <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
                 <PaginationControls
@@ -525,7 +529,6 @@ function CouponsPage() {
               </div>
             )}
           </div>
-          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">

@@ -383,21 +383,24 @@ function TransfersPage() {
             <TableSkeleton columns={5} rows={6} />
           )
         ) : viewMode === "grid" ? (
-          filtered.length === 0 ? (
-            <EmptyState
-              icon={Truck}
-              title={t("noTransfersFound", "No transfers found")}
-              description={
-                search
-                  ? t("noTransfersSearchDesc", "Try adjusting your search criteria.")
-                  : t("noTransfersDefaultDesc", "You haven't recorded any inventory transfers yet.")
-              }
-              actionLabel={t("newTransfer", "New Transfer")}
-              onAction={() => setOpen(true)}
-            />
-          ) : (
           /* Grid View */
           <div className="space-y-4">
+            {filtered.length === 0 ? (
+              <div className="rounded-2xl border border-border/80 bg-card shadow-soft">
+                <EmptyState
+                  icon={Truck}
+                  title={t("noTransfersFound", "No transfers found")}
+                  description={
+                    search
+                      ? t("noTransfersSearchDesc", "Try adjusting your search criteria.")
+                      : t("noTransfersDefaultDesc", "You haven't recorded any inventory transfers yet.")
+                  }
+                  actionLabel={t("newTransfer", "New Transfer")}
+                  onAction={() => setOpen(true)}
+                  className="border-none bg-transparent my-0 py-12 shadow-none"
+                />
+              </div>
+            ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {paginatedTransfers.map((tItem: any) => (
                 <div
@@ -442,6 +445,7 @@ function TransfersPage() {
                 </div>
               ))}
             </div>
+            )}
             {filtered.length > 0 && (
               <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
                 <PaginationControls
@@ -455,7 +459,6 @@ function TransfersPage() {
               </div>
             )}
           </div>
-          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">

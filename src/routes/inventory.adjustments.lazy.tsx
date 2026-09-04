@@ -310,21 +310,24 @@ function AdjustmentsPage() {
             <TableSkeleton columns={4} rows={6} />
           )
         ) : viewMode === "grid" ? (
-          filtered.length === 0 ? (
-            <EmptyState
-              icon={ClipboardList}
-              title={t("noAdjustmentRecordsFound", "No adjustment records found")}
-              description={
-                search
-                  ? t("noAdjustmentSearchDesc", "Try adjusting your search criteria.")
-                  : t("noAdjustmentDefaultDesc", "No manual inventory adjustments have been recorded yet.")
-              }
-              actionLabel={t("newAdjustment", "New Adjustment")}
-              onAction={() => setOpen(true)}
-            />
-          ) : (
           /* Grid View */
           <div className="space-y-4">
+            {filtered.length === 0 ? (
+              <div className="rounded-2xl border border-border/80 bg-card shadow-soft">
+                <EmptyState
+                  icon={ClipboardList}
+                  title={t("noAdjustmentRecordsFound", "No adjustment records found")}
+                  description={
+                    search
+                      ? t("noAdjustmentSearchDesc", "Try adjusting your search criteria.")
+                      : t("noAdjustmentDefaultDesc", "No manual inventory adjustments have been recorded yet.")
+                  }
+                  actionLabel={t("newAdjustment", "New Adjustment")}
+                  onAction={() => setOpen(true)}
+                  className="border-none bg-transparent my-0 py-12 shadow-none"
+                />
+              </div>
+            ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {paginatedAdjustments.map((a: any) => {
                 const isPos = (a.net || 0) > 0;
@@ -371,6 +374,7 @@ function AdjustmentsPage() {
                 );
               })}
             </div>
+            )}
             {filtered.length > 0 && (
               <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
                 <PaginationControls
@@ -384,7 +388,6 @@ function AdjustmentsPage() {
               </div>
             )}
           </div>
-          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">

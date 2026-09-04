@@ -411,25 +411,28 @@ function PromotionsPage() {
         ) : isPromotionsError ? (
           <ErrorState onRetry={refetchPromotions} />
         ) : viewMode === "grid" ? (
-          filteredPromotions.length === 0 ? (
-            <EmptyState
-              icon={Megaphone}
-              title={t("noPromotionsFound", "No promotions found")}
-              description={
-                search
-                  ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
-                  : t("noCampaignsYet", "You haven't launched any promotional campaigns yet.")
-              }
-              actionLabel={t("createPromotion", "Create Promotion")}
-              onAction={() => {
-                setEditItem(null);
-                clearPromoAll();
-                setIsAddOpen(true);
-              }}
-            />
-          ) : (
           /* Grid View */
           <div className="space-y-4">
+            {filteredPromotions.length === 0 ? (
+              <div className="rounded-2xl border border-border/80 bg-card shadow-soft">
+                <EmptyState
+                  icon={Megaphone}
+                  title={t("noPromotionsFound", "No promotions found")}
+                  description={
+                    search
+                      ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
+                      : t("noCampaignsYet", "You haven't launched any promotional campaigns yet.")
+                  }
+                  actionLabel={t("createPromotion", "Create Promotion")}
+                  onAction={() => {
+                    setEditItem(null);
+                    clearPromoAll();
+                    setIsAddOpen(true);
+                  }}
+                  className="border-none bg-transparent my-0 py-12 shadow-none"
+                />
+              </div>
+            ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {paginatedPromotions.map((p: any) => {
                 const isActive = p.status === "active";
@@ -514,6 +517,7 @@ function PromotionsPage() {
                 );
               })}
             </div>
+            )}
             {filteredPromotions.length > 0 && (
               <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
                 <PaginationControls
@@ -527,7 +531,6 @@ function PromotionsPage() {
               </div>
             )}
           </div>
-          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">

@@ -52,6 +52,8 @@ import {
   Clock,
   Send,
   X,
+  LayoutGrid,
+  Table as TableIcon,
 } from "lucide-react";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -72,6 +74,9 @@ import { PersistStore } from "@/lib/session-store";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
+import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
+import { ErrorState } from "@/components/ui/error-state";
 
 export const Route = createFileRoute("/quotations")({
   head: () => ({ meta: [{ title: `B2B Quotations · ${appName}` }] }),
@@ -92,7 +97,12 @@ function QuotationsPage() {
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
 
-  const { data: rawQuotationsData } = useQuery({
+  const {
+    data: rawQuotationsData,
+    isLoading: isQuotationsLoading,
+    isError: isQuotationsError,
+    refetch: refetchQuotations,
+  } = useQuery({
     queryKey: ["quotations", orgId],
     queryFn: async () => {
       try {
@@ -134,6 +144,7 @@ function QuotationsPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [viewItem, setViewItem] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "table">("table");
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -516,10 +527,32 @@ function QuotationsPage() {
                 </SheetFooter>
               </SheetContent>
             </Sheet>
+
+            <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm">
+              <button type="button" onClick={() => setViewMode("table")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${viewMode === "table" ? "bg-card text-foreground shadow-sm font-bold" : "text-muted-foreground hover:text-foreground"}`}
+                title="Table View">
+                <TableIcon className="size-4" />
+              </button>
+              <button type="button" onClick={() => setViewMode("grid")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${viewMode === "grid" ? "bg-card text-foreground shadow-sm font-bold" : "text-muted-foreground hover:text-foreground"}`}
+                title="Grid View">
+                <LayoutGrid className="size-4" />
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Content Table Card */}
+        {isQuotationsLoading ? (
+          viewMode === "table" ? (
+            <TableSkeleton columns={7} rows={6} />
+          ) : (
+            <CardGridSkeleton cards={6} />
+          )
+        ) : isQuotationsError ? (
+          <ErrorState onRetry={refetchQuotations} />
+        ) : viewMode === "table" ? (
         <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
           <div className="table-desktop overflow-x-auto">
             <Table className="min-w-[800px]">
@@ -706,6 +739,139 @@ function QuotationsPage() {
             </div>
           )}
         </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {paginated.length === 0 ? (
+                <div className="rounded-2xl border border-border/80 bg-card shadow-soft col-span-full">
+                  <EmptyState
+                    icon={FileText}
+                    title={t("noQuotationsFound", "No quotations found")}
+                    description={
+                      search
+                        ? t("adjustSearch", "Try adjusting your search query.")
+                        : t("noQuotationsYet", "Create your first B2B quotation to get started.")
+                    }
+                    actionLabel={t("newQuotation", "Create Quotation")}
+                    onAction={() => setIsAddOpen(true)}
+                    className="border-none bg-transparent my-0 py-12 shadow-none"
+                  />
+                </div>
+              ) : (
+                paginated.map((item: any) => (
+                  <div key={item.id} className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft flex flex-col justify-between space-y-4 hover:border-border transition-all group">
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="font-mono text-sm font-bold text-primary cursor-pointer hover:underline truncate" onClick={() => setViewItem(item)}>
+                          {item.quotationNo}
+                        </div>
+                        {item.status === "converted" ? (
+                          <Badge className="bg-success/12 text-success border-success/25 text-[10px] font-bold whitespace-nowrap">
+                            {t("converted", "Converted")}
+                          </Badge>
+                        ) : item.status === "sent" ? (
+                          <Badge className="bg-info/12 text-info border-info/25 text-[10px] font-bold whitespace-nowrap">
+                            {t("sentToClient", "Sent to Client")}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px] font-bold capitalize whitespace-nowrap">
+                            {item.status}
+                          </Badge>
+                        )}
+                      </div>
+
+                      <div>
+                        <h3 className="font-bold text-base text-foreground group-hover:text-primary transition-colors truncate cursor-pointer" onClick={() => setViewItem(item)}>
+                          {item.customerName}
+                        </h3>
+                        <div className="flex flex-col gap-1 mt-2 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1.5">
+                            <Clock className="size-3.5" />
+                            {t("date", "Quote Date")}: {formatDate(item.date)}
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <Send className="size-3.5" />
+                            {t("validUntil", "Valid Until")}: {formatDate(item.validUntil)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-border/60 space-y-3">
+                      <div className="flex items-end justify-between">
+                        <span className="text-xs text-muted-foreground">{t("total", "Estimated Total")}</span>
+                        <span className="number text-lg font-black text-foreground">
+                          {formatCurrency(item.total)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-1.5">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setViewItem(item)}
+                          className="h-8 text-xs font-semibold"
+                        >
+                          <FileText className="size-3.5 mr-1 text-primary" /> {t("view", "View")}
+                        </Button>
+                        <div className="flex items-center gap-1.5">
+                          {item.status !== "converted" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => convertToInvoice(item)}
+                              className="h-8 text-xs font-bold text-success"
+                            >
+                              <ArrowRightLeft className="size-3.5 mr-1" /> {t("invoice", "Invoice")}
+                            </Button>
+                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                                <MoreVertical className="size-4 text-muted-foreground" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="rounded-xl">
+                              <DropdownMenuItem
+                                onClick={() => setViewItem(item)}
+                                className="text-xs font-semibold"
+                              >
+                                <FileText className="mr-2 size-3.5 text-primary" /> {t("view", "View / Print Quote")}
+                              </DropdownMenuItem>
+                              {item.status !== "converted" && (
+                                <DropdownMenuItem
+                                  onClick={() => convertToInvoice(item)}
+                                  className="text-xs font-bold text-success"
+                                >
+                                  <ArrowRightLeft className="mr-2 size-3.5" /> {t("convertToSale", "Convert to Invoice")}
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem
+                                className="text-destructive text-xs font-semibold"
+                                onClick={() => deleteQuotation(item.id)}
+                              >
+                                <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            {filteredQuotations.length > 0 && (
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  totalItems={filteredQuotations.length}
+                />
+              </div>
+            )}
+          </div>
+        )}
 
       {/* Create B2B Quotation Drawer */}
       <Sheet

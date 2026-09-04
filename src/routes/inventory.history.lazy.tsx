@@ -243,17 +243,6 @@ function HistoryPage() {
             <CardGridSkeleton cards={8} />
           )
         ) : viewMode === "table" ? (
-          filtered.length === 0 ? (
-            <EmptyState
-              icon={History}
-              title={t("noInventoryMovementLogsFound", "No inventory movement logs found")}
-              description={
-                search
-                  ? t("noMovementLogsSearchDesc", "Try adjusting your search criteria.")
-                  : t("noMovementLogsDefaultDesc", "Movement audit entries will automatically appear as POS sales and stock changes occur.")
-              }
-            />
-          ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
             <div className="table-desktop overflow-x-auto">
@@ -335,10 +324,23 @@ function HistoryPage() {
               </div>
             )}
           </div>
-          )
         ) : (
           /* Card View */
           <div className="space-y-4">
+            {filtered.length === 0 ? (
+              <div className="rounded-2xl border border-border/80 bg-card shadow-soft">
+                <EmptyState
+                  icon={History}
+                  title={t("noInventoryMovementLogsFound", "No inventory movement logs found")}
+                  description={
+                    search
+                      ? t("noMovementLogsSearchDesc", "Try adjusting your search criteria.")
+                      : t("noMovementLogsDefaultDesc", "Movement audit entries will automatically appear as POS sales and stock changes occur.")
+                  }
+                  className="border-none bg-transparent my-0 py-12 shadow-none"
+                />
+              </div>
+            ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {paginatedMovements.map((m: any) => {
                 const visuals = getActionVisuals(m.action, t);
@@ -384,6 +386,7 @@ function HistoryPage() {
                 );
               })}
             </div>
+            )}
             {filtered.length > 0 && (
               <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
                 <PaginationControls

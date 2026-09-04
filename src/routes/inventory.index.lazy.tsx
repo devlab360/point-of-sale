@@ -8,9 +8,10 @@ import { getProductsFn } from "@/api/products";
 import { getSalesFn } from "@/api/sales";
 import { getUnitsFn } from "@/api/units";
 import { cn } from "@/lib/utils";
-import { Download, Filter, Brain, PackageSearch } from "lucide-react";
+import { Download, Filter, Brain, PackageSearch, LayoutGrid, Table as TableIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useMemo, useEffect } from "react";
+import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import {
   Sheet,
   SheetContent,
@@ -68,6 +69,7 @@ function StockList() {
 
   const { t } = useLanguage();
   const { formatCurrency } = useCurrency();
+  const [viewMode, setViewMode] = useState<"grid" | "table">("table");
   const [showForecast, setShowForecast] = useState(false);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -221,6 +223,18 @@ function StockList() {
             >
               <Brain className="size-4 mr-1.5" /> {t("aiForecast", "AI Forecast")}
             </Button>
+            <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm">
+              <button type="button" onClick={() => setViewMode("table")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${viewMode === "table" ? "bg-card text-foreground shadow-sm font-bold" : "text-muted-foreground hover:text-foreground"}`}
+                title="Table View">
+                <TableIcon className="size-4" />
+              </button>
+              <button type="button" onClick={() => setViewMode("grid")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${viewMode === "grid" ? "bg-card text-foreground shadow-sm font-bold" : "text-muted-foreground hover:text-foreground"}`}
+                title="Grid View">
+                <LayoutGrid className="size-4" />
+              </button>
+            </div>
           </div>
         }
         topContent={
@@ -279,6 +293,7 @@ function StockList() {
           </div>
         }
       >
+        {viewMode === "table" ? (
         <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
           {/* Desktop Table (>= 768px) */}
           <div className="table-desktop overflow-x-auto">
@@ -470,6 +485,114 @@ function StockList() {
             </div>
           )}
         </div>
+        ) : (
+          <div className="space-y-4">
+            {paginatedProducts.length === 0 ? (
+              <div className="rounded-2xl border border-border/80 bg-card shadow-soft">
+                <EmptyState
+                  icon={PackageSearch}
+                  title={t("inventory.noInventoryRecords", "No inventory records")}
+                  description={
+                    search || filters.status
+                      ? t("inventory.adjustSearchFilters", "Try adjusting your search or active filters.")
+                      : t("inventory.startAddingStock", "Start by adding products and recording stock.")
+                  }
+                  actionLabel="Add Product"
+                  onAction={() => router.navigate({ to: "/products" })}
+                  className="border-none bg-transparent my-0 py-12 shadow-none"
+                />
+              </div>
+            ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {paginatedProducts.map((p) => {
+                const low = Number(p.stock) <= Number(p.reorderLevel);
+                const out = p.stock <= 0;
+                return (
+                  <div
+                    key={p.id}
+                    className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft flex flex-col justify-between space-y-4 hover:border-border transition-all group cursor-pointer"
+                    onClick={() => router.navigate({ to: `/products/${p.id}` })}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted/60 overflow-hidden border border-border/50">
+                        {p.image ? (
+                          <img src={p.image} alt="" className="size-full object-cover" />
+                        ) : (
+                          <PackageSearch className="size-5 text-muted-foreground/50" />
+                        )}
+                      </div>
+                      <div className="flex gap-1.5 flex-wrap justify-end">
+                        {isExpired(p.expiryDate) && (
+                          <Badge variant="destructive" className="text-[10px] font-bold">
+                            {t("expired", "Expired")}
+                          </Badge>
+                        )}
+                        {isExpiringSoon(p.expiryDate) && (
+                          <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20 text-[10px] font-bold">
+                            {t("expiring", "Expiring")}
+                          </Badge>
+                        )}
+                        {out ? (
+                          <Badge variant="destructive" className="text-[10px] font-bold">
+                            {t("outOfStock", "Out of stock")}
+                          </Badge>
+                        ) : low ? (
+                          <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20 text-[10px] font-bold">
+                            {t("lowStock", "Low stock")}
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold">
+                            {t("healthy", "Healthy")}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-bold text-foreground group-hover:text-primary transition-colors">
+                        {p.name}
+                      </div>
+                      <p className="text-xs text-muted-foreground font-mono mt-0.5">{p.sku}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2.5 pt-1 border-t border-border/60">
+                      <div>
+                        <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                          {t("inventory.stockOnHand", "Stock on Hand")}
+                        </div>
+                        <div className={cn("number font-bold", low ? "text-destructive" : "text-foreground")}>
+                          {p.stock}{" "}
+                          <span className="text-xs font-normal text-muted-foreground">
+                            {units.find((u) => u.id === p.unit)?.name || p.unit || "units"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                          {t("inventory.stockValue", "Stock Value")}
+                        </div>
+                        <div className="number font-bold text-foreground">
+                          {formatCurrency(p.stock * p.cost)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            )}
+            {filteredProducts.length > 0 && (
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                  totalItems={filteredProducts.length}
+                />
+              </div>
+            )}
+          </div>
+        )}
       </DataPage>
 
       <Sheet open={showForecast} onOpenChange={setShowForecast}>

@@ -377,21 +377,24 @@ function CategoriesPage() {
         ) : isCategoriesError ? (
           <ErrorState onRetry={refetchCategories} />
         ) : viewMode === "grid" ? (
-          filteredCategories.length === 0 ? (
-            <EmptyState
-              icon={Tag}
-              title={t("noCategoriesFound", "No categories found")}
-              description={
-                search
-                  ? t("adjustSearch", "Try adjusting your search criteria.")
-                  : t("noCategoriesYet", "You haven't created any product categories yet.")
-              }
-              actionLabel={t("addCategory", "Add Category")}
-              onAction={openNew}
-            />
-          ) : (
           /* Grid View */
           <div className="space-y-4">
+            {filteredCategories.length === 0 ? (
+              <div className="rounded-2xl border border-border/80 bg-card shadow-soft">
+                <EmptyState
+                  icon={Tag}
+                  title={t("noCategoriesFound", "No categories found")}
+                  description={
+                    search
+                      ? t("adjustSearch", "Try adjusting your search criteria.")
+                      : t("noCategoriesYet", "You haven't created any product categories yet.")
+                  }
+                  actionLabel={t("addCategory", "Add Category")}
+                  onAction={openNew}
+                  className="border-none bg-transparent my-0 py-12 shadow-none"
+                />
+              </div>
+            ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {paginatedCategories.map((c: any) => {
                 const catIcon = c.icon || "";
@@ -451,6 +454,7 @@ function CategoriesPage() {
                 );
               })}
             </div>
+            )}
             {filteredCategories.length > 0 && (
               <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
                 <PaginationControls
@@ -464,7 +468,6 @@ function CategoriesPage() {
               </div>
             )}
           </div>
-          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">

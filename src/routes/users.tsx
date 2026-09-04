@@ -578,19 +578,22 @@ function UsersPage() {
         ) : isUsersError ? (
           <ErrorState onRetry={refetchUsers} />
         ) : viewMode === "grid" ? (
-          filteredUsers.length === 0 ? (
-            <EmptyState
-              icon={Users}
-              title={t("noStaffMembersFound", "No staff members found")}
-              description={
-                search ? "Try adjusting your search criteria." : "No employee accounts found."
-              }
-              actionLabel="Add Employee"
-              onAction={() => setIsDirectAddOpen(true)}
-            />
-          ) : (
           /* Grid View — 3 Columns for Balanced Layout */
           <div className="space-y-4">
+            {filteredUsers.length === 0 ? (
+              <div className="rounded-2xl border border-border/80 bg-card shadow-soft">
+                <EmptyState
+                  icon={Users}
+                  title={t("noStaffMembersFound", "No staff members found")}
+                  description={
+                    search ? "Try adjusting your search criteria." : "No employee accounts found."
+                  }
+                  actionLabel="Add Employee"
+                  onAction={() => setIsDirectAddOpen(true)}
+                  className="border-none bg-transparent my-0 py-12 shadow-none"
+                />
+              </div>
+            ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {paginatedUsers.map((u: any) => {
                 const roleVisuals = getRoleVisuals(u.role);
@@ -735,6 +738,7 @@ function UsersPage() {
                 );
               })}
             </div>
+            )}
             {filteredUsers.length > 0 && (
               <div className="rounded-2xl border border-border/80 bg-card p-3 shadow-card">
                 <PaginationControls
@@ -748,7 +752,6 @@ function UsersPage() {
               </div>
             )}
           </div>
-          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">

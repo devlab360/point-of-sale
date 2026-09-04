@@ -337,21 +337,24 @@ function BrandsPage() {
         ) : isBrandsError ? (
           <ErrorState onRetry={refetchBrands} />
         ) : viewMode === "grid" ? (
-          filteredBrands.length === 0 ? (
-            <EmptyState
-              icon={Tag}
-              title={t("noBrandsFound", "No brands found")}
-              description={
-                search
-                  ? t("adjustSearch", "Try adjusting your search criteria.")
-                  : t("noBrandsYet", "You haven't created any product brands yet.")
-              }
-              actionLabel={t("addBrand", "Add Brand")}
-              onAction={openNew}
-            />
-          ) : (
           /* Grid View */
           <div className="space-y-4">
+            {filteredBrands.length === 0 ? (
+              <div className="rounded-2xl border border-border/80 bg-card shadow-soft">
+                <EmptyState
+                  icon={Tag}
+                  title={t("noBrandsFound", "No brands found")}
+                  description={
+                    search
+                      ? t("adjustSearch", "Try adjusting your search criteria.")
+                      : t("noBrandsYet", "You haven't created any product brands yet.")
+                  }
+                  actionLabel={t("addBrand", "Add Brand")}
+                  onAction={openNew}
+                  className="border-none bg-transparent my-0 py-12 shadow-none"
+                />
+              </div>
+            ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {paginatedBrands.map((b: any) => {
                 return (
@@ -399,6 +402,7 @@ function BrandsPage() {
                 );
               })}
             </div>
+            )}
             {filteredBrands.length > 0 && (
               <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
                 <PaginationControls
@@ -412,7 +416,6 @@ function BrandsPage() {
               </div>
             )}
           </div>
-          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">

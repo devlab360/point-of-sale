@@ -347,21 +347,24 @@ function UnitsPage() {
         ) : isUnitsError ? (
           <ErrorState onRetry={refetchUnits} />
         ) : viewMode === "grid" ? (
-          filteredUnits.length === 0 ? (
-            <EmptyState
-              icon={Scale}
-              title={t("noUnitsFound", "No units found")}
-              description={
-                search
-                  ? t("adjustSearch", "Try adjusting your search criteria.")
-                  : t("noUnitsYet", "You haven't created any measurement units yet.")
-              }
-              actionLabel={t("addUnit", "Add Unit")}
-              onAction={openNew}
-            />
-          ) : (
           /* Grid View */
           <div className="space-y-4">
+            {filteredUnits.length === 0 ? (
+              <div className="rounded-2xl border border-border/80 bg-card shadow-soft">
+                <EmptyState
+                  icon={Scale}
+                  title={t("noUnitsFound", "No units found")}
+                  description={
+                    search
+                      ? t("adjustSearch", "Try adjusting your search criteria.")
+                      : t("noUnitsYet", "You haven't created any measurement units yet.")
+                  }
+                  actionLabel={t("addUnit", "Add Unit")}
+                  onAction={openNew}
+                  className="border-none bg-transparent my-0 py-12 shadow-none"
+                />
+              </div>
+            ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {paginatedUnits.map((u: any) => {
                 return (
@@ -411,6 +414,7 @@ function UnitsPage() {
                 );
               })}
             </div>
+            )}
             {filteredUnits.length > 0 && (
               <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
                 <PaginationControls
@@ -424,7 +428,6 @@ function UnitsPage() {
               </div>
             )}
           </div>
-          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">

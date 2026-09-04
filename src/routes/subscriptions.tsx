@@ -422,24 +422,27 @@ function SubscriptionsPage() {
         ) : isSubsError ? (
           <ErrorState onRetry={refetchSubs} />
         ) : viewMode === "grid" ? (
-          filteredSubs.length === 0 ? (
-            <EmptyState
-              icon={Repeat}
-              title={t("noSubscriptionsFound", "No subscriptions found")}
-              description={
-                search
-                  ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
-                  : t("noSubscriptionsYet", "You haven't enrolled any recurring customer subscriptions yet.")
-              }
-              actionLabel={t("addSubscription", "Add Subscription")}
-              onAction={() => {
-                clearSubAll();
-                setIsAddOpen(true);
-              }}
-            />
-          ) : (
           /* Grid View */
           <div className="space-y-4">
+            {filteredSubs.length === 0 ? (
+              <div className="rounded-2xl border border-border/80 bg-card shadow-soft">
+                <EmptyState
+                  icon={Repeat}
+                  title={t("noSubscriptionsFound", "No subscriptions found")}
+                  description={
+                    search
+                      ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
+                      : t("noSubscriptionsYet", "You haven't enrolled any recurring customer subscriptions yet.")
+                  }
+                  actionLabel={t("addSubscription", "Add Subscription")}
+                  onAction={() => {
+                    clearSubAll();
+                    setIsAddOpen(true);
+                  }}
+                  className="border-none bg-transparent my-0 py-12 shadow-none"
+                />
+              </div>
+            ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {paginatedSubs.map((s: any) => {
                 const isActive = s.status === "active";
@@ -516,6 +519,7 @@ function SubscriptionsPage() {
                 );
               })}
             </div>
+            )}
             {filteredSubs.length > 0 && (
               <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
                 <PaginationControls
@@ -529,7 +533,6 @@ function SubscriptionsPage() {
               </div>
             )}
           </div>
-          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">

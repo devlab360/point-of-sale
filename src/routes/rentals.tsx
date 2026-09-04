@@ -56,6 +56,8 @@ import {
   Search,
   Filter,
   X,
+  LayoutGrid,
+  Table as TableIcon,
 } from "lucide-react";
 import { exportToCSV } from "@/lib/csv";
 import { RENTAL_STATUSES } from "@/constants";
@@ -64,6 +66,7 @@ import { PersistStore } from "@/lib/session-store";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
+import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -107,6 +110,7 @@ function RentalsPage() {
   const [filters, setFilters] = useState({ status: "" });
   const [draftFilters, setDraftFilters] = useState({ status: "" });
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "table">("table");
   const activeFilterCount = filters.status ? 1 : 0;
 
   // Form states
@@ -427,16 +431,33 @@ function RentalsPage() {
               </div>
             </SheetContent>
           </Sheet>
+
+          <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm">
+            <button type="button" onClick={() => setViewMode("table")}
+              className={`grid size-8 place-items-center rounded-md transition-all ${viewMode === "table" ? "bg-card text-foreground shadow-sm font-bold" : "text-muted-foreground hover:text-foreground"}`}
+              title="Table View">
+              <TableIcon className="size-4" />
+            </button>
+            <button type="button" onClick={() => setViewMode("grid")}
+              className={`grid size-8 place-items-center rounded-md transition-all ${viewMode === "grid" ? "bg-card text-foreground shadow-sm font-bold" : "text-muted-foreground hover:text-foreground"}`}
+              title="Grid View">
+              <LayoutGrid className="size-4" />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Main Table / Mobile Feed */}
       <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
         {isLoading ? (
-          <TableSkeleton columns={8} rows={5} />
+          viewMode === "table" ? (
+            <TableSkeleton columns={8} rows={5} />
+          ) : (
+            <CardGridSkeleton cards={6} />
+          )
         ) : isError ? (
           <ErrorState onRetry={refetch} />
-        ) : (
+        ) : viewMode === "table" ? (
           <>
             {/* Desktop View Table */}
             <div className="table-desktop overflow-x-auto">
@@ -671,6 +692,136 @@ function RentalsPage() {
               </div>
             )}
           </>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {paginatedRentals.length === 0 ? (
+                <div className="rounded-2xl border border-border/80 bg-card shadow-soft">
+                  <EmptyState
+                    icon={KeyRound}
+                    title={t("noRentalsFound", "No rentals found")}
+                    description={
+                      search
+                        ? t("noRentalsMatchQuery", "No rentals matched your search query.")
+                        : t("noRentalsYet", "You haven't dispatched any equipment rentals yet.")
+                    }
+                    actionLabel={t("newRental", "New Rental")}
+                    onAction={() => setIsAddOpen(true)}
+                    className="border-none bg-transparent my-0 py-12 shadow-none"
+                  />
+                </div>
+              ) : (
+                paginatedRentals.map((r: any) => (
+                  <div
+                    key={r.id}
+                    className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft flex flex-col justify-between space-y-4 hover:border-border transition-all group"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                            <KeyRound className="size-4" />
+                          </div>
+                          <span className="font-mono font-bold text-xs text-foreground">{r.rentalNo}</span>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                            r.status === "returned"
+                              ? "bg-muted text-muted-foreground border-border/60"
+                              : r.status === "overdue"
+                                ? "bg-destructive/15 text-destructive border-destructive/25"
+                                : "bg-emerald-500/15 text-emerald-600 border-emerald-500/25"
+                          }`}
+                        >
+                          {r.status}
+                        </Badge>
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="font-bold text-sm text-foreground">{r.customerName}</p>
+                        <p className="text-xs text-primary font-semibold">{r.itemName}</p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-xs border-t border-border/60 pt-3 text-muted-foreground">
+                        <div>
+                          <span className="text-[10px] uppercase font-bold text-muted-foreground block">
+                            {t("dailyRate", "Daily Rate")}
+                          </span>
+                          <span className="font-bold text-foreground">
+                            {formatCurrency(Number(r.dailyRate) || 0)}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] uppercase font-bold text-muted-foreground block">
+                            {t("depositsHeld", "Deposit Held")}
+                          </span>
+                          <span className="font-bold text-amber-600 dark:text-amber-400">
+                            {formatCurrency(Number(r.securityDeposit) || 0)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="text-xs text-muted-foreground border-t border-border/60 pt-3">
+                        <span className="font-semibold text-foreground">
+                          {r.rentStartDate ? formatAppDate(r.rentStartDate) : "-"}
+                        </span>
+                        <span className="mx-1 text-muted-foreground/60">→</span>
+                        <span className="font-semibold text-foreground">
+                          {r.expectedReturnDate ? formatAppDate(r.expectedReturnDate) : "-"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 border-t border-border/60 pt-3">
+                      {r.status !== "returned" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs font-semibold text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10"
+                          onClick={() => markReturned(r.id)}
+                        >
+                          <CheckCircle2 className="size-3.5 mr-1" /> {t("markReturned", "Mark Returned")}
+                        </Button>
+                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8 rounded-lg"
+                          >
+                            <MoreVertical className="size-4 text-muted-foreground" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="rounded-xl">
+                          <DropdownMenuItem
+                            onClick={() => setDeleteId(r.id)}
+                            className="text-xs font-semibold text-destructive cursor-pointer"
+                          >
+                            <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {filteredRentals.length > 0 && (
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  pageSize={pageSize}
+                  onPageSizeChange={setPageSize}
+                  totalItems={filteredRentals.length}
+                />
+              </div>
+            )}
+          </div>
         )}
       </div>
 

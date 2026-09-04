@@ -64,6 +64,8 @@ import {
   CheckCircle2,
   DollarSign,
   Wallet,
+  LayoutGrid,
+  Table as TableIcon,
 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
@@ -81,6 +83,7 @@ import {
 import { getSettingsFn } from "@/api/settings";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
+import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
@@ -105,6 +108,7 @@ function CustomersPage() {
   const [settleItem, setSettleItem] = useState<any | null>(null);
   const [settleAmount, setSettleAmount] = useState("");
   const [ledgerCustomer, setLedgerCustomer] = useState<any | null>(null);
+  const [viewMode, setViewMode] = useState<"grid" | "table">("table");
 
   const { data: customerLedgerEntriesData } = useQuery({
     queryKey: ["customerLedgers", ledgerCustomer?.id],
@@ -550,15 +554,32 @@ function CustomersPage() {
               </div>
             </SheetContent>
           </Sheet>
+
+          <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm">
+            <button type="button" onClick={() => setViewMode("table")}
+              className={`grid size-8 place-items-center rounded-md transition-all ${viewMode === "table" ? "bg-card text-foreground shadow-sm font-bold" : "text-muted-foreground hover:text-foreground"}`}
+              title="Table View">
+              <TableIcon className="size-4" />
+            </button>
+            <button type="button" onClick={() => setViewMode("grid")}
+              className={`grid size-8 place-items-center rounded-md transition-all ${viewMode === "grid" ? "bg-card text-foreground shadow-sm font-bold" : "text-muted-foreground hover:text-foreground"}`}
+              title="Grid View">
+              <LayoutGrid className="size-4" />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Main Content Card */}
       {isCustomersLoading ? (
-        <TableSkeleton columns={9} rows={6} showHeaderAction={false} showFilters={false} />
+        viewMode === "table" ? (
+          <TableSkeleton columns={9} rows={6} showHeaderAction={false} showFilters={false} />
+        ) : (
+          <CardGridSkeleton cards={6} />
+        )
       ) : isCustomersError ? (
         <ErrorState onRetry={refetchCustomers} />
-      ) : (
+      ) : viewMode === "table" ? (
         <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
           {/* Desktop Table */}
           <div className="table-desktop overflow-x-auto">
@@ -802,6 +823,94 @@ function CustomersPage() {
                 onPageChange={setPage}
                 onPageSizeChange={setPageSize}
               />
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Grid View */
+        <div className="space-y-4">
+          {customers.length === 0 ? (
+            <div className="rounded-2xl border border-border/80 bg-card shadow-soft">
+              <EmptyState
+                icon={Users}
+                title={t("noCustomersFound", "No customers found")}
+                description={
+                  search
+                    ? t("adjustSearch", "Try adjusting your search query.")
+                    : t("noCustomersYet", "You haven't added any customers yet.")
+                }
+                actionLabel={t("addCustomer", "Add Customer")}
+                onAction={() => {
+                  setEditItem(null);
+                  setIsAddOpen(true);
+                }}
+                className="border-none bg-transparent my-0 py-12 shadow-none"
+              />
+            </div>
+          ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {customers.map((c: any) => (
+              <div key={c.id} className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft flex flex-col justify-between space-y-4 hover:border-border transition-all group">
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="grid size-11 place-items-center rounded-xl bg-primary/10 text-xs font-black text-primary border border-primary/20">
+                      {c.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {c.type === "Wholesale" ? (
+                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[10px] font-semibold">{t("wholesale", "Wholesale")}</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-muted-foreground text-[10px] font-semibold">{t("retail", "Retail")}</Badge>
+                      )}
+                      {c.status === "vip" && <span className="text-warning font-black text-sm">★</span>}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 onClick={() => setLedgerCustomer(c)} className="font-bold text-base text-foreground hover:text-primary transition-colors truncate cursor-pointer">
+                      {c.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1 truncate">{c.phone}{c.email ? ` · ${c.email}` : ""}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="rounded-lg bg-muted/40 border border-border/50 p-2">
+                      <div className="text-[10px] text-muted-foreground uppercase font-bold">{t("spent", "Total Purchases")}</div>
+                      <div className="font-bold text-foreground">{formatCurrency(c.totalSpent || 0)}</div>
+                    </div>
+                    <div className="rounded-lg bg-muted/40 border border-border/50 p-2">
+                      <div className="text-[10px] text-muted-foreground uppercase font-bold">{t("points", "Points")}</div>
+                      <div className="font-bold text-primary">{(c.loyaltyPoints ?? c.points ?? 0).toLocaleString()}</div>
+                    </div>
+                    <div className="rounded-lg bg-muted/40 border border-border/50 p-2">
+                      <div className="text-[10px] text-muted-foreground uppercase font-bold">{t("visits", "Visits")}</div>
+                      <div className="font-semibold text-foreground">{c.visits || 0}</div>
+                    </div>
+                    <div className="rounded-lg bg-muted/40 border border-border/50 p-2">
+                      <div className="text-[10px] text-muted-foreground uppercase font-bold">{t("credit", "Udhaar")}</div>
+                      <div className={c.credit > 0 ? "font-bold text-destructive" : "font-semibold text-foreground"}>{c.credit > 0 ? formatCurrency(c.credit) : "—"}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-border/60 flex items-center justify-end gap-1">
+                  <Button variant="ghost" size="sm" onClick={() => setEditItem(c)} className="h-8 text-xs font-semibold">
+                    <Edit2 className="size-3.5 mr-1" /> {t("editDetails", "Edit")}
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setLedgerCustomer(c)} className="h-8 text-xs font-semibold text-primary">
+                    <Users className="size-3.5 mr-1" /> {t("ledger", "Ledger")}
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setDeleteId(c.id)} className="h-8 text-xs text-muted-foreground hover:text-destructive">
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+          )}
+          {customers.length > 0 && (
+            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
+              <PaginationControls currentPage={page} totalPages={totalPages} pageSize={pageSize} totalItems={totalCount} onPageChange={setPage} onPageSizeChange={setPageSize} />
             </div>
           )}
         </div>
