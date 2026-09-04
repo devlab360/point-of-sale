@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   pgTable,
   text,
@@ -8,6 +9,7 @@ import {
   boolean,
   jsonb,
   unique,
+  uniqueIndex,
   index,
 } from "drizzle-orm/pg-core";
 
@@ -54,7 +56,9 @@ export const organizationMemberships = pgTable(
     ...timestamps,
   },
   (t) => ({
-    orgUserUniqueIdx: unique("org_membership_org_user_idx").on(t.organizationId, t.userId),
+    orgUserUniqueIdx: uniqueIndex("org_membership_org_user_idx")
+      .on(t.organizationId, t.userId)
+      .where(sql`${t.deletedAt} IS NULL`),
     userIdx: index("org_memberships_user_idx").on(t.userId),
     orgIdx: index("org_memberships_org_idx").on(t.organizationId),
   }),
@@ -131,7 +135,9 @@ export const adminMenuGrants = pgTable(
     ...timestamps,
   },
   (t) => ({
-    orgMenuUniqueIdx: unique("admin_menu_grants_org_menu_idx").on(t.organizationId, t.menuKey),
+    orgMenuUniqueIdx: uniqueIndex("admin_menu_grants_org_menu_idx")
+      .on(t.organizationId, t.menuKey)
+      .where(sql`${t.deletedAt} IS NULL`),
     orgIdx: index("admin_menu_grants_org_idx").on(t.organizationId),
   }),
 );
@@ -226,7 +232,9 @@ export const users = pgTable(
     ...timestamps,
   },
   (t) => ({
-    userEmailIdx: unique("user_email_idx").on(t.email, t.organizationId),
+    userEmailIdx: uniqueIndex("user_email_org_idx")
+      .on(t.email, t.organizationId)
+      .where(sql`${t.deletedAt} IS NULL`),
     orgIdx: index("users_org_idx").on(t.organizationId),
   }),
 );
@@ -271,7 +279,9 @@ export const categories = pgTable(
     ...timestamps,
   },
   (t) => ({
-    catNameIdx: unique("cat_name_idx").on(t.name, t.organizationId),
+    catNameIdx: uniqueIndex("cat_name_org_idx")
+      .on(t.name, t.organizationId)
+      .where(sql`${t.deletedAt} IS NULL`),
     orgIdx: index("categories_org_idx").on(t.organizationId),
   }),
 );
@@ -288,7 +298,9 @@ export const brands = pgTable(
     ...timestamps,
   },
   (t) => ({
-    brandNameIdx: unique("brand_name_idx").on(t.name, t.organizationId),
+    brandNameIdx: uniqueIndex("brand_name_org_idx")
+      .on(t.name, t.organizationId)
+      .where(sql`${t.deletedAt} IS NULL`),
     orgIdx: index("brands_org_idx").on(t.organizationId),
   }),
 );
@@ -330,7 +342,9 @@ export const taxMasters = pgTable(
   },
   (t) => ({
     orgIdx: index("tax_masters_org_idx").on(t.organizationId),
-    nameOrgIdx: unique("tax_masters_name_org_idx").on(t.name, t.organizationId),
+    nameOrgIdx: uniqueIndex("tax_masters_name_org_idx")
+      .on(t.name, t.organizationId)
+      .where(sql`${t.deletedAt} IS NULL`),
   }),
 );
 
@@ -419,8 +433,12 @@ export const products = pgTable(
     ...timestamps,
   },
   (t) => ({
-    skuIdx: unique("sku_idx").on(t.sku, t.organizationId),
-    barcodeIdx: unique("barcode_idx").on(t.barcode, t.organizationId),
+    skuIdx: uniqueIndex("products_sku_org_idx")
+      .on(t.sku, t.organizationId)
+      .where(sql`${t.deletedAt} IS NULL`),
+    barcodeIdx: uniqueIndex("products_barcode_org_idx")
+      .on(t.barcode, t.organizationId)
+      .where(sql`${t.deletedAt} IS NULL`),
     orgIdx: index("products_org_idx").on(t.organizationId),
     categoryIdx: index("products_category_idx").on(t.category),
     brandIdx: index("products_brand_idx").on(t.brand),
@@ -446,8 +464,12 @@ export const productVariants = pgTable(
     ...timestamps,
   },
   (t) => ({
-    skuIdx: unique("variant_sku_idx").on(t.sku, t.organizationId),
-    barcodeIdx: unique("variant_barcode_idx").on(t.barcode, t.organizationId),
+    skuIdx: uniqueIndex("variant_sku_org_idx")
+      .on(t.sku, t.organizationId)
+      .where(sql`${t.deletedAt} IS NULL`),
+    barcodeIdx: uniqueIndex("variant_barcode_org_idx")
+      .on(t.barcode, t.organizationId)
+      .where(sql`${t.deletedAt} IS NULL`),
     prodIdx: index("variant_prod_idx").on(t.productId),
   }),
 );
@@ -625,12 +647,9 @@ export const serviceLocations = pgTable(
     orgIdx: index("svc_loc_org_idx").on(t.organizationId),
     locationIdx: index("svc_loc_location_idx").on(t.locationId),
     serviceIdx: index("svc_loc_service_idx").on(t.serviceId),
-    svcLocUniqueIdx: unique("svc_loc_unique_idx").on(
-      t.organizationId,
-      t.locationId,
-      t.serviceId,
-      t.serviceVariantId,
-    ),
+    svcLocUniqueIdx: uniqueIndex("svc_loc_idx")
+      .on(t.organizationId, t.locationId, t.serviceId, t.serviceVariantId)
+      .where(sql`${t.deletedAt} IS NULL`),
   }),
 );
 
@@ -660,11 +679,9 @@ export const branchPriceOverrides = pgTable(
   (t) => ({
     orgIdx: index("branch_price_overrides_org_idx").on(t.organizationId),
     locationIdx: index("branch_price_overrides_branch_idx").on(t.locationId),
-    branchEntityUniqueIdx: unique("branch_price_override_branch_entity_idx").on(
-      t.locationId,
-      t.entityType,
-      t.entityId,
-    ),
+    branchEntityUniqueIdx: uniqueIndex("branch_price_override_branch_entity_idx")
+      .on(t.locationId, t.entityType, t.entityId)
+      .where(sql`${t.deletedAt} IS NULL`),
   }),
 );
 
@@ -951,7 +968,9 @@ export const productInventory = pgTable(
   },
   (t) => ({
     orgIdx: index("prod_inv_org_idx").on(t.organizationId),
-    prodLocIdx: unique("prod_inv_prod_loc_idx").on(t.productId, t.locationId),
+    prodLocIdx: uniqueIndex("prod_inv_prod_loc_idx")
+      .on(t.productId, t.locationId)
+      .where(sql`${t.deletedAt} IS NULL`),
   }),
 );
 
@@ -974,7 +993,9 @@ export const variantInventory = pgTable(
   },
   (t) => ({
     orgIdx: index("variant_inv_org_idx").on(t.organizationId),
-    varLocIdx: unique("variant_inv_var_loc_idx").on(t.variantId, t.locationId),
+    varLocIdx: uniqueIndex("variant_inv_var_loc_idx")
+      .on(t.variantId, t.locationId)
+      .where(sql`${t.deletedAt} IS NULL`),
   }),
 );
 
@@ -1825,7 +1846,9 @@ export const priceBooks = pgTable(
   },
   (t) => ({
     orgIdx: index("price_books_org_idx").on(t.organizationId),
-    orgCodeIdx: unique("price_books_org_code_idx").on(t.organizationId, t.code),
+    orgCodeIdx: uniqueIndex("price_books_org_code_idx")
+      .on(t.organizationId, t.code)
+      .where(sql`${t.deletedAt} IS NULL`),
   }),
 );
 
@@ -1846,11 +1869,9 @@ export const branchPriceBooks = pgTable(
     ...timestamps,
   },
   (t) => ({
-    branchBookIdx: unique("branch_price_books_unique_idx").on(
-      t.organizationId,
-      t.locationId,
-      t.priceBookId,
-    ),
+    branchBookIdx: uniqueIndex("branch_price_books_idx")
+      .on(t.organizationId, t.locationId, t.priceBookId)
+      .where(sql`${t.deletedAt} IS NULL`),
     orgLocIdx: index("branch_price_books_org_loc_idx").on(t.organizationId, t.locationId),
     priceBookIdx: index("branch_price_books_book_idx").on(t.priceBookId),
   }),
@@ -1877,11 +1898,9 @@ export const priceBookItems = pgTable(
     ...timestamps,
   },
   (t) => ({
-    bookProdVarIdx: unique("price_book_items_book_prod_var_idx").on(
-      t.priceBookId,
-      t.productId,
-      t.variantId,
-    ),
+    bookProdVarIdx: uniqueIndex("price_book_items_book_prod_var_idx")
+      .on(t.priceBookId, t.productId, t.variantId)
+      .where(sql`${t.deletedAt} IS NULL`),
     orgBookIdx: index("price_book_items_org_book_idx").on(t.organizationId, t.priceBookId),
     prodIdx: index("price_book_items_prod_idx").on(t.productId),
   }),
