@@ -64,7 +64,7 @@ export function usePosState() {
     },
     staleTime: STALE_TIME,
   });
-  const locations: any[] = locationsRes || [];
+  const locations: any[] = locationsRes || bootstrapData?.locations || [];
 
   const { data: activeSessionRes } = useQuery({
     queryKey: ["active-session"],

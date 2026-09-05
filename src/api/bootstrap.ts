@@ -24,6 +24,7 @@ export const getPosBootstrapFn = createServerFn({ method: "GET" }).handler(async
       tables,
       repairs,
       taxMasters,
+      locations,
     ] = await Promise.all([
       db
         .select()
@@ -83,6 +84,12 @@ export const getPosBootstrapFn = createServerFn({ method: "GET" }).handler(async
         .where(
           and(eq(schema.taxMasters.organizationId, orgId), notDeleted(schema.taxMasters.deletedAt)),
         ),
+      db
+        .select()
+        .from(schema.locations)
+        .where(
+          and(eq(schema.locations.organizationId, orgId), notDeleted(schema.locations.deletedAt)),
+        ),
     ]);
 
     return {
@@ -98,6 +105,7 @@ export const getPosBootstrapFn = createServerFn({ method: "GET" }).handler(async
         tables: tables || [],
         repairs: repairs || [],
         taxMasters: taxMasters || [],
+        locations: locations || [],
       },
     };
   } catch (e) {

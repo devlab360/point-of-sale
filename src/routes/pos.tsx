@@ -41,7 +41,7 @@ export const Route = createFileRoute("/pos")({
       },
     ],
   }),
-  loader: async ({ context: { queryClient } }) => {
+  loader: ({ context: { queryClient } }) => {
     const orgId = PersistStore.getOrgId();
     if (!orgId) return;
 
@@ -50,25 +50,23 @@ export const Route = createFileRoute("/pos")({
         ? localStorage.getItem("pos_selected_location") || ""
         : "";
 
-    // Parallel prefetch critical POS data with matching query keys
-    await Promise.all([
-      queryClient.prefetchQuery({
-        queryKey: ["posBootstrap", orgId],
-        queryFn: async () => ((await getPosBootstrapFn()) as any)?.data,
-        staleTime: 5 * 60 * 1000,
-      }),
-      queryClient.prefetchQuery({
-        queryKey: ["posItems", orgId, savedLocation],
-        queryFn: async () =>
-          ((await getPosItemsFn({ data: { locationId: savedLocation || null } })) as any)?.data || [],
-        staleTime: 5 * 60 * 1000,
-      }),
-      queryClient.prefetchQuery({
-        queryKey: ["heldInvoices", orgId],
-        queryFn: async () => ((await getHeldInvoicesFn({ data: {} })) as any)?.data || [],
-        staleTime: 5 * 60 * 1000,
-      }),
-    ]);
+    // Non-blocking background prefetch for instant route navigation
+    queryClient.prefetchQuery({
+      queryKey: ["posBootstrap", orgId],
+      queryFn: async () => await getPosBootstrapFn(),
+      staleTime: 5 * 60 * 1000,
+    });
+    queryClient.prefetchQuery({
+      queryKey: ["posItems", orgId, savedLocation],
+      queryFn: async () =>
+        ((await getPosItemsFn({ data: { locationId: savedLocation || null } })) as any)?.data || [],
+      staleTime: 5 * 60 * 1000,
+    });
+    queryClient.prefetchQuery({
+      queryKey: ["heldInvoices", orgId],
+      queryFn: async () => ((await getHeldInvoicesFn({ data: {} })) as any)?.data || [],
+      staleTime: 5 * 60 * 1000,
+    });
   },
   component: PosScreen,
 });
