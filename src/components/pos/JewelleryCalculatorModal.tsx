@@ -1,16 +1,14 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -18,28 +16,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Gem,
-  Scale,
-  Sparkles,
-  DollarSign,
-  Calculator,
-  Percent,
-  ArrowRight,
-  ShieldCheck,
-} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { useCurrency } from "@/lib/currency";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Gem, Scale, ArrowRight, Sparkles } from "lucide-react";
 
 interface JewelleryCalculatorModalProps {
-  product: any | null;
+  product: any;
   isOpen: boolean;
   onClose: () => void;
   onAddToCart: (customLine: {
     productId: string;
     customPrice: number;
     customName?: string;
-    customMetadata: Record<string, any>;
+    customMetadata?: Record<string, any>;
   }) => void;
   settings?: any;
 }
@@ -56,96 +46,70 @@ export function JewelleryCalculatorModal({
 
   const meta = product?.metadata || {};
 
-  // Form states
-  const [metalType, setMetalType] = useState<string>("gold");
-  const [purityKarat, setPurityKarat] = useState<string>("22K");
-  const [ratePerGram, setRatePerGram] = useState<number>(7250);
-  const [grossWeight, setGrossWeight] = useState<number>(0);
-  const [stoneWeight, setStoneWeight] = useState<number>(0);
-  const [stoneCharges, setStoneCharges] = useState<number>(0);
-  const [makingChargeType, setMakingChargeType] = useState<"percent" | "per_gram" | "fixed">(
-    "percent",
-  );
-  const [makingChargeValue, setMakingChargeValue] = useState<number>(10);
-  const [wastagePercent, setWastagePercent] = useState<number>(0);
+  const [purityKarat, setPurityKarat] = useState<string>(meta.purityKarat || "22K");
+  const [metalType, setMetalType] = useState<string>(meta.metalType || "gold");
 
-  // Sync initial product defaults when modal opens
-  useEffect(() => {
-    if (product) {
-      const m = product.metadata || {};
-      setMetalType(m.metalType || "gold");
-      setPurityKarat(m.purityKarat || "22K");
+  const [grossWeight, setGrossWeight] = useState<number>(Number(meta.grossWeight) || 0);
+  const [stoneWeight, setStoneWeight] = useState<number>(Number(meta.stoneWeight) || 0);
 
-      // Default rate from settings or reasonable preset
-      const baseRate =
-        m.purityKarat === "24K"
-          ? 7850
-          : m.purityKarat === "22K"
-            ? 7250
-            : m.purityKarat === "18K"
-              ? 5950
-              : m.purityKarat === "14K"
-                ? 4650
-                : m.metalType === "silver" || m.purityKarat === "925"
-                  ? 95
-                  : 7250;
-      setRatePerGram(settings?.goldRate22K ? Number(settings.goldRate22K) : baseRate);
-
-      setGrossWeight(m.grossWeight ? Number(m.grossWeight) : 5.0);
-      setStoneWeight(m.stoneWeight ? Number(m.stoneWeight) : 0);
-      setStoneCharges(m.stoneCharges ? Number(m.stoneCharges) : 0);
-      setMakingChargeType(m.makingChargeType || "percent");
-      setMakingChargeValue(m.makingChargeValue ? Number(m.makingChargeValue) : 10);
-      setWastagePercent(m.wastagePercent ? Number(m.wastagePercent) : 0);
-    }
-  }, [product, settings, isOpen]);
-
-  // Adjust rate per gram automatically when Karat changes
-  const handleKaratChange = (karat: string) => {
-    setPurityKarat(karat);
-    if (karat === "24K") setRatePerGram(7850);
-    else if (karat === "22K") setRatePerGram(7250);
-    else if (karat === "18K") setRatePerGram(5950);
-    else if (karat === "14K") setRatePerGram(4650);
-    else if (karat === "925") {
-      setMetalType("silver");
-      setRatePerGram(95);
-    }
+  const getInitialRate = (karat: string) => {
+    if (karat === "24K") return Number(settings?.liveGoldRate24K) || 7250;
+    if (karat === "22K") return Number(settings?.liveGoldRate22K) || 6650;
+    if (karat === "18K") return Number(settings?.liveGoldRate18K) || 5450;
+    if (karat === "14K") return Number(settings?.liveGoldRate14K) || 4250;
+    if (karat === "925") return Number(settings?.liveSilverRate) || 85;
+    return Number(meta.goldRatePerGram) || 6650;
   };
 
-  // Live calculations
+  const [ratePerGram, setRatePerGram] = useState<number>(() => getInitialRate(meta.purityKarat || "22K"));
+
+  const [makingChargeType, setMakingChargeType] = useState<"percent" | "per_gram" | "fixed">(
+    meta.makingChargeType || "percent",
+  );
+  const [makingChargeValue, setMakingChargeValue] = useState<number>(
+    Number(meta.makingChargeValue) || 12,
+  );
+  const [stoneCharges, setStoneCharges] = useState<number>(Number(meta.stoneCharges) || 0);
+  const [wastagePercent, setWastagePercent] = useState<number>(Number(meta.wastagePercent) || 0);
+
+  const handleKaratChange = (val: string) => {
+    setPurityKarat(val);
+    if (val === "925") setMetalType("silver");
+    else setMetalType("gold");
+    setRatePerGram(getInitialRate(val));
+  };
+
   const netWeight = Math.max(0, grossWeight - stoneWeight);
-  const wastageWeight = (netWeight * wastagePercent) / 100;
-  const billableWeight = netWeight + wastageWeight;
-  const metalAmount = billableWeight * ratePerGram;
+  const metalAmount = netWeight * ratePerGram;
 
   let makingChargeAmount = 0;
   if (makingChargeType === "percent") {
     makingChargeAmount = (metalAmount * makingChargeValue) / 100;
   } else if (makingChargeType === "per_gram") {
-    makingChargeAmount = billableWeight * makingChargeValue;
+    makingChargeAmount = netWeight * makingChargeValue;
   } else {
     makingChargeAmount = makingChargeValue;
   }
 
-  const finalTotal = metalAmount + makingChargeAmount + stoneCharges;
-
-  if (!product) return null;
+  const wastageAmount = (metalAmount * wastagePercent) / 100;
+  const finalTotal = metalAmount + makingChargeAmount + stoneCharges + wastageAmount;
 
   const handleConfirm = () => {
+    if (finalTotal <= 0) return;
+
     onAddToCart({
       productId: product.id,
       customPrice: Number(finalTotal.toFixed(2)),
-      customName: `${product.name} (${purityKarat}, ${netWeight.toFixed(3)}g)`,
+      customName: `${product.name} (${purityKarat} ${metalType.toUpperCase()} - ${grossWeight}g)`,
       customMetadata: {
         isJewellery: true,
-        metalType,
         purityKarat,
-        ratePerGram,
+        metalType,
         grossWeight,
         stoneWeight,
         netWeight,
-        billableWeight,
+        ratePerGram,
+        metalAmount,
         makingChargeType,
         makingChargeValue,
         makingChargeAmount,
@@ -158,14 +122,16 @@ export function JewelleryCalculatorModal({
     onClose();
   };
 
+  if (!product) return null;
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-[95vw] sm:max-w-xl max-h-[calc(100dvh-2rem)] flex flex-col p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
-        {/* Tier 1: Header */}
-        <div className="p-4 sm:p-5 pr-14 sm:pr-16 border-b border-border/80 bg-amber-500/10 flex items-center justify-between shrink-0">
+      <DialogContent className="w-[95vw] sm:max-w-xl max-h-[calc(100dvh-2rem)] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl border-border/80 shadow-modal bg-card">
+        {/* Header */}
+        <div className="p-4 sm:p-5 pr-14 border-b border-border/80 bg-amber-500/10 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3 min-w-0 pr-2">
-            <div className="size-11 rounded-2xl bg-amber-500/15 border border-amber-500/30 grid place-items-center text-amber-700 dark:text-amber-400 shadow-xs shrink-0">
-              <Gem className="size-6" />
+            <div className="size-10 rounded-xl bg-amber-500/15 border border-amber-500/30 grid place-items-center text-amber-700 dark:text-amber-400 shadow-xs shrink-0">
+              <Gem className="size-5" />
             </div>
             <div className="min-w-0">
               <DialogTitle className="text-base sm:text-lg font-bold text-foreground truncate">
@@ -178,18 +144,18 @@ export function JewelleryCalculatorModal({
           </div>
           <Badge
             variant="outline"
-            className="bg-amber-500/10 text-amber-700 dark:text-amber-300 font-mono font-bold text-xs border-amber-500/30 shrink-0 mr-1 sm:mr-2"
+            className="bg-amber-500/10 text-amber-700 dark:text-amber-300 font-mono font-bold text-xs border-amber-500/30 shrink-0"
           >
             {purityKarat} {metalType.toUpperCase()}
           </Badge>
         </div>
 
-        {/* Tier 2: Body (Scrollable) */}
+        {/* Body */}
         <div className="p-4 sm:p-5 space-y-4 flex-1 min-h-0 overflow-y-auto">
           {/* Karat & Live Spot Rate */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">{t("purityKarat", "Purity / Karat")}</Label>
+              <Label className="text-xs font-semibold text-foreground">{t("purityKarat", "Purity / Karat")}</Label>
               <Select value={purityKarat} onValueChange={handleKaratChange}>
                 <SelectTrigger className="h-10 rounded-xl font-semibold">
                   <SelectValue />
@@ -205,30 +171,28 @@ export function JewelleryCalculatorModal({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">
+              <Label className="text-xs font-semibold text-foreground">
                 {t("spotRatePerGram", "Spot Rate / Gram")} ({currencySymbol})
               </Label>
-              <div className="relative">
-                <Input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={ratePerGram}
-                  onChange={(e) => setRatePerGram(parseFloat(e.target.value) || 0)}
-                  className="h-10 rounded-xl font-mono font-bold text-sm"
-                />
-              </div>
+              <Input
+                type="number"
+                min="0"
+                step="1"
+                value={ratePerGram}
+                onChange={(e) => setRatePerGram(parseFloat(e.target.value) || 0)}
+                className="h-10 rounded-xl font-mono font-bold text-sm"
+              />
             </div>
           </div>
 
           {/* Weight Matrix */}
-          <div className="rounded-2xl border border-border/80 bg-muted/20 p-4 space-y-3">
+          <div className="rounded-xl border border-border/80 bg-muted/20 p-3.5 sm:p-4 space-y-3">
             <div className="flex items-center gap-2 text-xs font-bold text-foreground">
               <Scale className="size-4 text-amber-600 dark:text-amber-400" />
               <span>{t("weightBreakdownGrams", "Weight Breakdown (Grams)")}</span>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
               <div className="space-y-1.5">
                 <Label className="text-[11px] font-semibold text-muted-foreground">
                   {t("grossWeight", "Gross Wt (g)")}
@@ -274,7 +238,7 @@ export function JewelleryCalculatorModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-bold text-foreground">{t("makingCharges", "Making Charges")}</Label>
+                <Label className="text-xs font-semibold text-foreground">{t("makingCharges", "Making Charges")}</Label>
                 <div className="flex gap-1">
                   <button
                     type="button"
@@ -323,7 +287,7 @@ export function JewelleryCalculatorModal({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">
+              <Label className="text-xs font-semibold text-foreground">
                 {t("stoneDiamondCharges", "Stone / Diamond Charges")} ({currencySymbol})
               </Label>
               <Input
@@ -339,7 +303,7 @@ export function JewelleryCalculatorModal({
           </div>
 
           {/* Real-time Calculation Summary Card */}
-          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 space-y-2 text-xs">
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3.5 sm:p-4 space-y-2 text-xs">
             <div className="flex justify-between text-muted-foreground">
               <span>
                 {t("pureMetalCost", "Pure Metal Cost")} ({netWeight.toFixed(3)}g × {currencySymbol}
@@ -384,20 +348,21 @@ export function JewelleryCalculatorModal({
           </div>
         </div>
 
-        {/* Tier 3: Sticky Footer */}
-        <div className="p-4 border-t border-border/80 bg-muted/20 flex items-center justify-between gap-3 shrink-0">
+        {/* Footer */}
+        <div className="p-4 sm:p-5 border-t border-border/80 bg-muted/20 flex items-center justify-between gap-3 shrink-0">
           <Button
+            type="button"
             variant="outline"
             onClick={onClose}
-            className="h-11 rounded-xl text-xs font-semibold"
+            className="h-10 rounded-xl text-xs font-semibold px-4"
           >
             {t("cancel", "Cancel")}
           </Button>
           <Button
             onClick={handleConfirm}
-            className="h-11 px-6 rounded-xl font-extrabold text-xs bg-amber-600 hover:bg-amber-700 text-white shadow-soft gap-2"
+            className="h-10 px-5 rounded-xl font-bold text-xs bg-amber-600 hover:bg-amber-700 text-white shadow-xs gap-2"
           >
-            {t("addJewelleryToCart", "Add Jewellery to Cart")}
+            <span>{t("addJewelleryToCart", "Add Jewellery to Cart")}</span>
             <ArrowRight className="size-4" />
           </Button>
         </div>

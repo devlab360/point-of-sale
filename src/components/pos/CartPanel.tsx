@@ -751,14 +751,14 @@ export function CartPanel({
 
       {/* Premium Repair Job Ticket Selector Modal */}
       <Dialog open={showRepairDialog} onOpenChange={setShowRepairDialog}>
-        <DialogContent className="w-[95vw] sm:max-w-lg md:max-w-xl max-h-[calc(100dvh-2rem)] flex flex-col p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
-          <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center justify-between shrink-0">
+        <DialogContent className="w-[95vw] sm:max-w-lg md:max-w-xl max-h-[calc(100dvh-2rem)] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl border-border/80 shadow-modal bg-card">
+          <div className="p-4 sm:p-5 pr-14 border-b border-border/80 bg-muted/30 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
               <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs">
                 <Wrench className="size-5" />
               </div>
               <div>
-                <DialogTitle className="text-base font-bold text-foreground">
+                <DialogTitle className="text-base sm:text-lg font-bold text-foreground">
                   {t("selectRepairTicket", "Select Repair Job Ticket")}
                 </DialogTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -773,7 +773,7 @@ export function CartPanel({
 
           <div className="p-4 sm:p-5 space-y-2.5 flex-1 min-h-0 overflow-y-auto">
             {openRepairs.length === 0 ? (
-              <div className="text-center py-10 px-4 text-muted-foreground text-xs border border-dashed border-border/80 rounded-2xl bg-muted/10">
+              <div className="text-center py-10 px-4 text-muted-foreground text-xs border border-dashed border-border/80 rounded-xl bg-muted/10">
                 <Wrench className="size-8 mx-auto mb-2 opacity-30" />
                 <p className="font-semibold">{t("noActiveRepairTickets", "No active repair tickets pending collection.")}</p>
               </div>
@@ -784,7 +784,7 @@ export function CartPanel({
                 return (
                   <div
                     key={r.id}
-                    className="p-3.5 border border-border/80 rounded-2xl cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-all flex justify-between items-center bg-card shadow-2xs group"
+                    className="p-3.5 border border-border/80 rounded-xl cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-all flex justify-between items-center bg-card shadow-2xs group"
                     onClick={() => {
                       addRepairToCart(r);
                       setShowRepairDialog(false);
@@ -830,13 +830,13 @@ export function CartPanel({
 
       {/* Premium Void Current Bill Confirmation Modal */}
       <Dialog open={showVoidConfirm} onOpenChange={setShowVoidConfirm}>
-        <DialogContent className="w-[95vw] sm:max-w-md max-h-[calc(100dvh-2rem)] flex flex-col p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
-          <div className="p-5 border-b border-border/80 bg-muted/20 flex items-center gap-3 shrink-0">
-            <div className="size-11 rounded-2xl bg-destructive/10 border border-destructive/25 grid place-items-center text-destructive shadow-xs">
-              <Ban className="size-5.5" />
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[calc(100dvh-2rem)] flex flex-col p-0 gap-0 overflow-hidden rounded-2xl border-border/80 shadow-modal bg-card">
+          <div className="p-4 sm:p-5 pr-14 border-b border-border/80 bg-muted/30 flex items-center gap-3 shrink-0">
+            <div className="size-10 rounded-xl bg-destructive/10 border border-destructive/25 grid place-items-center text-destructive shadow-xs">
+              <Ban className="size-5" />
             </div>
             <div>
-              <DialogTitle className="text-base font-bold text-foreground">
+              <DialogTitle className="text-base sm:text-lg font-bold text-foreground">
                 {t("voidActiveCartTitle", "Void Active Cart?")}
               </DialogTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -864,10 +864,11 @@ export function CartPanel({
               onClick={() => {
                 voidCart();
                 setShowVoidConfirm(false);
+                toast.success(t("cartVoidedReset", "Cart voided and reset"));
               }}
-              className="rounded-xl h-10 px-5 text-xs font-bold shadow-md"
+              className="rounded-xl h-10 px-4 text-xs font-bold"
             >
-              {t("confirmVoidCart", "Void Cart")}
+              {t("voidCart", "Void Cart")}
             </Button>
           </div>
         </DialogContent>

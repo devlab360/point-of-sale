@@ -275,15 +275,15 @@ export function SplitCheckModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[96vw] sm:max-w-3xl lg:max-w-4xl h-[90dvh] sm:h-[80vh] max-h-[720px] flex flex-col p-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+      <DialogContent className="w-[96vw] sm:max-w-3xl lg:max-w-4xl h-[90dvh] sm:h-[80vh] max-h-[720px] flex flex-col p-0 overflow-hidden rounded-2xl border-border/80 shadow-modal bg-card">
         {/* Header */}
-        <DialogHeader className="p-3.5 sm:p-4 pr-16 sm:pr-20 border-b border-border/80 bg-muted/20 flex flex-row items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0 pr-2">
-            <div className="size-9 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs shrink-0">
-              <SplitSquareHorizontal className="size-4.5" />
+        <div className="p-4 sm:p-5 pr-14 border-b border-border/80 bg-muted/30 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3 min-w-0 pr-2">
+            <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs shrink-0">
+              <SplitSquareHorizontal className="size-5" />
             </div>
             <div className="min-w-0">
-              <DialogTitle className="text-base font-bold text-foreground flex items-center gap-2 truncate">
+              <DialogTitle className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2 truncate">
                 <span>Split Check by Seat & Items</span>
                 {invoice?.customerName && (
                   <span className="text-[11px] font-semibold text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md border border-border/60 shrink-0 truncate max-w-[140px]">
@@ -291,7 +291,9 @@ export function SplitCheckModal({
                   </span>
                 )}
               </DialogTitle>
-              <DialogDescription className="text-[11px] text-muted-foreground mt-0.5 hidden sm:block truncate">{t("assignOrderedItemsSeatsDesc", "Assign ordered items to individual guests or seats for separate billing")}</DialogDescription>
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5 hidden sm:block truncate">
+                {t("assignOrderedItemsSeatsDesc", "Assign ordered items to individual guests or seats for separate billing")}
+              </DialogDescription>
             </div>
           </div>
 
@@ -299,11 +301,11 @@ export function SplitCheckModal({
             onClick={addCheck}
             size="sm"
             variant="outline"
-            className="h-8 text-xs font-bold gap-1 rounded-xl border-primary/30 text-primary hover:bg-primary/10 shrink-0 mr-1 sm:mr-2"
+            className="h-9 text-xs font-bold gap-1.5 rounded-xl border-primary/30 text-primary hover:bg-primary/10 shrink-0"
           >
             <Plus className="size-3.5" /> {t("addSeat", "Add Seat")}
           </Button>
-        </DialogHeader>
+        </div>
 
         {/* Main Workspace */}
         <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
